@@ -18,20 +18,45 @@ public class GreetingController {
     // Cada chamada de incrementAndGet() retorna um novo valor.
     private final AtomicLong counter = new AtomicLong();
 
+
     // Exemplo de acesso:
     // http://localhost:8080/greeting?name=Dionis
     //
     // Endpoint que responde à URL "/greeting".
+    //
+    /*
+     * @RequestMapping aplicado no método
+     *
+     * Define o caminho específico deste endpoint.
+     * Diferente do @RequestMapping aplicado na classe,
+     * ele pertence somente a este método.
+     *
+     * Exemplo:
+     *
+     * @RequestMapping("/greeting")
+     *
+     * URL final:
+     * http://localhost:8080/greeting
+     */
     @RequestMapping("/greeting")
     public Greeting greeting(
 
-            // Lê o parâmetro "name" enviado na URL.
-            // Se o parâmetro não for informado, será utilizado "World".
-            @RequestParam(value = "name", defaultValue = " Hello World") String name) {
+            // @RequestParam captura um parâmetro enviado pela URL.
+            //
+            // Exemplo:
+            // http://localhost:8080/greeting?name=Dionis
+            //
+            // Neste caso:
+            // name = "Dionis"
+            //
+            // Caso o parâmetro "name" não seja informado,
+            // será utilizado o valor padrão "Hello World".
+            @RequestParam(value = "name", defaultValue = "Hello World") String name) {
 
         // Cria um objeto Greeting contendo:
+        //
         // 1. Um ID sequencial gerado pelo AtomicLong.
-        // 2. A mensagem formatada com o nome recebido na requisição.
+        // 2. A mensagem formatada utilizando o nome recebido na requisição.
         return new Greeting(
                 counter.incrementAndGet(),
                 String.format(template, name)
