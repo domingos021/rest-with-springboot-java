@@ -1,0 +1,89 @@
+/*
+ * ==========================================================================
+ * GUIA PRÁTICO: PALAVRAS-CHAVE MAIS USADAS EM JAVA
+ * ==========================================================================
+ * Este guia resume os termos essenciais da linguagem, explicando o seu propósito,
+ * o momento certo de uso e o que evitar.
+ *
+ * --------------------------------------------------------------------------
+ * 1. PRIVATE (Encapsulamento / Restrição de Acesso)
+ * --------------------------------------------------------------------------
+ * O que é: Modificador de acesso que torna o atributo ou método visível
+ * e acessível APENAS dentro da própria classe onde foi declarado.
+ *
+ * - QUANDO USAR:
+ *   * Praticamente em TODOS os atributos/campos de uma classe (atributos de estado,
+ *     dependências de serviços, etc.) para garantir o Encapsulamento.
+ *   * Em métodos auxiliares "internos" que só a própria classe precisa executar
+ *     para se organizar.
+ *
+ * - QUANDO NÃO USAR:
+ *   * Em métodos que precisam ser acessados por outras camadas (como os métodos
+ *     de um `@RestController` acessados pelas requisições HTTP).
+ *   * Em métodos que classes filhas precisam herdar e modificar (nesses casos
+ *     usa-se `protected`).
+ *
+ * --------------------------------------------------------------------------
+ * 2. STATIC (Membro de Classe)
+ * --------------------------------------------------------------------------
+ * O que é: Faz com que o atributo ou método pertença à CLASSE em si, e não
+ * a uma instância (objeto) específica. Todos os objetos compartilham o mesmo.
+ *
+ * - QUANDO USAR:
+ *   * Para constantes globais (junto com final, ex: `public static final double PI = 3.14`).
+ *   * Para loggers (`private static final Logger logger = ...`).
+ *   * Para métodos utilitários puros que não dependem de dados do objeto (ex: `Math.random()`).
+ *
+ * - QUANDO NÃO USAR:
+ *   * Em serviços do Spring (`@Service`) ou controladores (`@RestController`)
+ *     quando você precisa guardar estado por usuário ou usar Injeção de Dependência
+ *     corretamente. O uso excessivo de `static` destrói a Orientação a Objetos e
+ *     dificulta testes unitários.
+ *
+ * --------------------------------------------------------------------------
+ * 3. VOID (Ausência de Retorno)
+ * --------------------------------------------------------------------------
+ * O que é: Indica que um método executa uma ação ou rotina, mas **não retorna
+ * nenhum valor** ao final da execução.
+ *
+ * - QUANDO USAR:
+ *   * Em métodos que salvam, deletam ou alteram dados, onde quem chamou
+ *     só precisa saber que a ação foi executada (ex: `public void delete(Long id)`).
+ *   * Em métodos que apenas imprimem ou logam algo.
+ *
+ * - QUANDO NÃO USAR:
+ *   * Quando o método precisa buscar ou calcular algo e entregar o resultado
+ *     de volta para quem chamou (ex: um método que busca uma pessoa por ID
+ *     precisa retornar um objeto `Person`, logo, não pode ser `void`).
+ *
+ * --------------------------------------------------------------------------
+ * 4. FINAL (Imutabilidade)
+ * --------------------------------------------------------------------------
+ * O que é: Torna a variável, atributo ou classe imutável (seu valor ou referência
+ * não pode ser alterado após ser inicializado).
+ *
+ * - QUANDO USAR:
+ *   * Na Injeção de Dependência por Construtor (ex: `private final PersonService service;`).
+ *   * Em constantes (ex: `private static final int MAX_TENTATIVAS = 3;`).
+ *
+ * - QUANDO NÃO USAR:
+ *   * Em variáveis de controle de fluxo que precisam mudar de valor durante
+ *     a execução de um loop ou lógica matemática (ex: um contador `int i = 0`
+ *     que precisa incrementar `i++`).
+ *
+ * --------------------------------------------------------------------------
+ * 5. PUBLIC (Acesso Aberto)
+ * --------------------------------------------------------------------------
+ * O que é: Modificador de acesso que permite que o elemento seja visto e
+ * chamado por qualquer outra classe de qualquer pacote do projeto.
+ *
+ * - QUANDO USAR:
+ *   * Em endpoints de controladores REST (`@GetMapping`, `@PostMapping`).
+ *   * Em métodos de serviços que precisam ser consumidos pelo Controller.
+ *
+ * - QUANDO NÃO USAR:
+ *   * Em atributos internos de classes (isso quebra o Encapsulamento; atributos
+ *     devem ser sempre `private`).
+ *   * Em métodos auxiliares "internos" que só a própria classe usa para se organizar.
+ * ==========================================================================
+ */

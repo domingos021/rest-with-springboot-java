@@ -1,0 +1,27 @@
+/*
+ * ==========================================================================
+ * GUIA DE ARQUITETURA: DEPENDÊNCIAS INJETADAS VS. ESTADO INTERNO (COMPOSIÇÃO)
+ * ==========================================================================
+ *
+ * 1. O CONCEITO DE COMPOSIÇÃO (Tem-um / "Has-A"):
+ *    Tanto as dependências externas quanto os dados internos fazem parte da
+ *    composição da classe. A classe é composta por ferramentas de lógica
+ *    (serviços) e por dados de controle (estado).
+ *
+ * 2. DEPENDÊNCIA INJETADA (Inversão de Controle - IoC):
+ *    - O que é: Um objeto/serviço externo (ex: repositories, outros services).
+ *    - Como funciona: A classe **não** cria esse objeto. O Spring gerencia o
+ *      ciclo de vida dele e o **injeta** de fora para dentro (via construtor).
+ *    - Motivo: A classe precisa terceirizar regras de negócio e comportamentos
+ *      que pertencem a outro domínio.
+ *
+ * 3. ATRIBUTO DE ESTADO / DADO INTERNO (Dado Simples):
+ *    - O que é: Uma informação, primitivo ou ferramenta de controle local
+ *      (ex: `AtomicLong counter`, `int`, `String` de configuração).
+ *    - Como funciona: **Nasce junto com a classe** (inicializado na declaração
+ *      ou via construtor interno). Ele não vem de fora e o Spring não o injeta.
+ *    - Motivo: Pertence exclusivamente àquela instância para gerenciar o seu
+ *      próprio estado interno e fluxo de dados local.
+ *
+ * ==========================================================================
+ */

@@ -1,0 +1,31 @@
+/*
+ * ==========================================================================
+ * ANATOMIA DO LOGGER: EXPLICAÇÃO DETALHADA DA LINHA DE LOG
+ * ==========================================================================
+ * private static final Logger logger = Logger.getLogger(PersonService.class.getName());
+ *
+ * Cada parte desta linha tem uma função arquitetural específica:
+ *
+ * 1. private (Encapsulamento):
+ *    - Restringe o acesso ao logger exclusivamente para dentro desta classe.
+ *      Nenhuma classe externa precisa ou deve mexer nele.
+ *
+ * 2. static (De Classe):
+ *    - O logger pertence à classe como um todo e é compartilhado entre todas
+ *      as instâncias. Isso economiza memória, evitando criar um gravador
+ *      novo para cada objeto criado pelo Spring.
+ *
+ * 3. final (Imutabilidade):
+ *    - Garante que a referência do logger nunca poderá ser alterada ou
+ *      substituída durante a execução do programa.
+ *
+ * 4. Logger (A Ferramenta):
+ *    - A classe nativa do Java (`java.util.logging.Logger`) especializada
+ *      em registrar mensagens informativas, avisos e erros no console.
+ *
+ * 5. Logger.getLogger(PersonService.class.getName()) (Identificação):
+ *    - Cria o gravador etiquetado com o nome completo da classe. Quando
+ *      aparece um erro no console, o log exibe exatamente o nome da classe
+ *      (`PersonService`), facilitando muito a localização de bugs.
+ * ==========================================================================
+ */

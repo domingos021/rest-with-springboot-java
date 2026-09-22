@@ -1,0 +1,33 @@
+/*
+ * ==========================================================================
+ * GUIA DE ENCAPSULAMENTO: MODIFICADORES DE ACESSO EM JAVA
+ * ==========================================================================
+ * O encapsulamento é o pilar responsável por proteger os dados e controlar
+ * quem pode ver ou alterar o quê. Em Java, usamos 4 níveis de visibilidade
+ * (do mais seguro/restrito para o mais aberto):
+ *
+ * 1. private (Privado - Máxima Segurança):
+ *    - Visível APENAS dentro da própria classe onde foi criado. Nenhuma outra
+ *      classe do projeto consegue acessar diretamente.
+ *    - Exemplo:
+ *      private String dadoSecreto = "Só eu mesma vejo";
+ *
+ * 2. Default / Package-Private (Visibilidade de Pacote - Sem palavra reservada):
+ *    - Se você não colocar nenhuma palavra, o Java restringe o acesso apenas
+ *      às classes que estão dentro do **mesmo pacote** (mesma pasta de código).
+ *    - Exemplo:
+ *      String dadoDoPacote = "Quem está no mesmo pacote vê";
+ *
+ * 3. protected (Protegido - Focado em Herança):
+ *    - Permite o acesso dentro do mesmo pacote E também por classes filhas
+ *      (subclasses), mesmo que elas estejam em pacotes diferentes.
+ *    - Exemplo:
+ *      protected String dadoProtegido = "Eu e meus filhos vemos";
+ *
+ * 4. public (Público - Acesso Global):
+ *    - O mundo inteiro tem acesso. Qualquer classe, de qualquer pacote do projeto,
+ *      pode enxergar e manipular esse atributo ou método.
+ *    - Exemplo:
+ *      public String dadoPublico = "Todo mundo vê";
+ * ==========================================================================
+ */
