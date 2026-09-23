@@ -1,0 +1,59 @@
+/*
+ * ==========================================================================
+ * GUIA DE ESTUDOS: PRINCIPAIS ANOTAÇÕES NO SPRING BOOT
+ * ==========================================================================
+ * Este guia detalha as principais anotações utilizadas no desenvolvimento
+ * de APIs RESTful, explicando o papel de cada uma, onde são aplicadas e
+ * o conceito arquitetural por trás delas.
+ *
+ * --------------------------------------------------------------------------
+ * 1. @SpringBootApplication
+ * --------------------------------------------------------------------------
+ * - O que é: A anotação "mãe" que inicializa toda a aplicação Spring Boot.
+ *   Ela fica na classe principal (aquela que possui o método `main`).
+ * - Por que usar: Reúne três funções vitais em uma só:
+ *   1. @EnableAutoConfiguration: Configura automaticamente com base nas dependências.
+ *   2. @ComponentScan: Escaneia pacotes procurando classes anotadas (@Service, @RestController).
+ *   3. @SpringBootConfiguration: Permite registrar beans adicionais.
+ * - Quem usa: Apenas a **classe principal** do projeto.
+ * - Conceito: Centralização e Convenção sobre Configuração.
+ *
+ * --------------------------------------------------------------------------
+ * 2. @RestController
+ * --------------------------------------------------------------------------
+ * - O que é: Transforma uma classe comum em um **Controlador Web RESTful**.
+ * - Por que usar: Avisa que a classe vai receber requisições HTTP (GET, POST, etc.)
+ *   e converter as respostas automaticamente (geralmente para JSON). É a união
+ *   de @Controller com @ResponseBody.
+ * - Quem usa: Classes da camada de **Controller** (ex: `PersonController`).
+ * - Conceito: Separação de Camadas (interface de entrada da aplicação).
+ *
+ * --------------------------------------------------------------------------
+ * 3. @RequestMapping (ou @GetMapping, @PostMapping, etc.)
+ * --------------------------------------------------------------------------
+ * - O que é: Anotação de mapeamento de URL que define os caminhos (endpoints).
+ * - Por que usar: Organiza as rotas da API. Ex: `@RequestMapping("/person")`
+ *   na classe agrupa rotas, e `@GetMapping("/{id}")` no método trata buscas específicas.
+ * - Quem usa: Classes de Controller e métodos específicos de rotas.
+ * - Conceito: Roteamento e Mapeamento de Protocolo HTTP.
+ *
+ * --------------------------------------------------------------------------
+ * 4. @Service
+ * --------------------------------------------------------------------------
+ * - O que é: Marca uma classe como um **Componente de Serviço** (Bean de Negócio).
+ * - Por que usar: Informa ao Spring que a classe contém regras de negócio. O Spring
+ *   cria um objeto dela automaticamente e o guarda na memória para injeção.
+ * - Quem usa: Classes da camada de **Service** (ex: `PersonService`).
+ * - Conceito: Inversão de Controle (IoC) e Injeção de Dependência (DI).
+ *
+ * --------------------------------------------------------------------------
+ * 5. @Autowired (E o contexto moderno do Spring Boot 3.4)
+ * --------------------------------------------------------------------------
+ * - O que é: Anotação tradicional usada para injeção de dependência via campo.
+ * - Por que usar (e por que evitar): Antigamente usada direto nos atributos.
+ *   Nas versões modernas (Spring Boot 3.4+), **não é mais necessária** em classes
+ *   com construtor único, permitindo usar o `final` (imutabilidade).
+ * - Quem usa: Injetores automáticos do framework em pontos legados ou construtores.
+ * - Conceito: Injeção de Dependência e Desacoplamento.
+ * ==========================================================================
+ */

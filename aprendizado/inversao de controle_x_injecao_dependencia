@@ -1,0 +1,359 @@
+/*
+ * ================================================================
+ * INVERSÃO DE CONTROLE (IoC - Inversion of Control)
+ * ================================================================
+ *
+ * CONCEITO
+ * --------
+ * Inversão de Controle (IoC) é um princípio de desenvolvimento
+ * onde a responsabilidade de criar, configurar e gerenciar os
+ * objetos deixa de ser da própria classe e passa para um
+ * framework ou container (como o Spring).
+ *
+ * Em outras palavras:
+ *
+ * Antes:
+ *   A classe controla a criação de seus próprios objetos.
+ *
+ * Depois (IoC):
+ *   O Spring controla a criação e o ciclo de vida dos objetos.
+ *
+ *
+ * ------------------------------------------------
+ * SEM IoC (A própria classe cria suas dependências)
+ * ------------------------------------------------
+ *
+ * public class PedidoService {
+ *
+ *     private PedidoRepository repository = new PedidoRepository();
+ *
+ * }
+ *
+ * Neste exemplo:
+ * - PedidoService cria PedidoRepository.
+ * - A classe fica fortemente acoplada.
+ * - Trocar a implementação torna-se mais difícil.
+ *
+ *
+ * ----------------------------------------
+ * COM IoC (O Spring controla os objetos)
+ * ----------------------------------------
+ *
+ * @Repository
+ * public class PedidoRepository {
+ * }
+ *
+ * @Service
+ * public class PedidoService {
+ *
+ *     private final PedidoRepository repository;
+ *
+ *     public PedidoService(PedidoRepository repository) {
+ *         this.repository = repository;
+ *     }
+ * }
+ *
+ * Agora:
+ * - PedidoService NÃO cria PedidoRepository.
+ * - Quem cria é o Spring.
+ * - O Spring controla todo o ciclo de vida do objeto.
+ *
+ *
+ *
+ * ================================================================
+ * INJEÇÃO DE DEPENDÊNCIA (DI - Dependency Injection)
+ * ================================================================
+ *
+ * CONCEITO
+ * --------
+ * Injeção de Dependência é uma técnica utilizada para implementar
+ * a Inversão de Controle.
+ *
+ * Em vez da classe criar os objetos de que precisa,
+ * o Spring fornece (injeta) esses objetos automaticamente.
+ *
+ *
+ * A dependência é qualquer objeto que outra classe necessita
+ * para funcionar.
+ *
+ *
+ * Exemplo:
+ *
+ * PedidoService precisa de:
+ *
+ *      PedidoRepository
+ *
+ * Logo:
+ *
+ * PedidoRepository é uma dependência de PedidoService.
+ *
+ *
+ * -------------------------------------------------
+ * SEM Injeção de Dependência
+ * -------------------------------------------------
+ *
+ * public class PedidoService {
+ *
+ *     private PedidoRepository repository =
+ *             new PedidoRepository();
+ *
+ * }
+ *
+ * Problemas:
+ * - Alto acoplamento.
+ * - Difícil realizar testes.
+ * - Difícil trocar implementações.
+ *
+ *
+ * -------------------------------------------------
+ * COM Injeção de Dependência
+ * -------------------------------------------------
+ *
+ * @Service
+ * public class PedidoService {
+ *
+ *     private final PedidoRepository repository;
+ *
+ *     public PedidoService(PedidoRepository repository) {
+ *         this.repository = repository;
+ *     }
+ * }
+ *
+ * O Spring faz automaticamente:
+ *
+ * 1. Cria PedidoRepository.
+ * 2. Cria PedidoService.
+ * 3. Entrega (injeta) PedidoRepository dentro de PedidoService.
+ *
+ *
+ *
+ * ================================================================
+ * RELAÇÃO ENTRE IoC E DI
+ * ================================================================
+ *
+ * IoC (Inversão de Controle)
+ *      ↓
+ * É o princípio.
+ *
+ * DI (Injeção de Dependência)
+ *      ↓
+ * É uma das formas de colocar esse princípio em prática.
+ *
+ *
+ * Ou seja:
+ *
+ * IoC = "Quem controla os objetos é o Spring."
+ *
+ * DI = "O Spring entrega os objetos para quem precisa."
+ *
+ *
+ *
+ * ================================================================
+ * COMO O SPRING FUNCIONA
+ * ================================================================
+ *
+ * Você escreve:
+ *
+ * @Repository
+ * class PedidoRepository { }
+ *
+ * @Service
+ * class PedidoService {
+ *
+ *     private final PedidoRepository repository;
+ *
+ *     public PedidoService(PedidoRepository repository) {
+ *         this.repository = repository;
+ *     }
+ * }
+ *
+ *
+ * O Spring faz nos bastidores:
+ *
+ * 1. Encontra as classes anotadas (@Component, @Service,
+ *    @Repository, @Controller, etc.).
+ *
+ * 2. Cria os objetos (Beans).
+ *
+ * 3. Guarda esses objetos no Container IoC.
+ *
+ * 4. Quando outra classe precisa deles,
+ *    realiza automaticamente a Injeção de Dependência.
+ *
+ *
+ *
+ * ================================================================
+ * RESUMO
+ * ================================================================
+ *
+ * IoC (Inversão de Controle)
+ * --------------------------
+ * • É um princípio.
+ * • O Spring passa a controlar os objetos.
+ * • A aplicação perde o controle da criação dos objetos.
+ *
+ *
+ * DI (Injeção de Dependência)
+ * ---------------------------
+ * • É uma técnica.
+ * • O Spring fornece as dependências automaticamente.
+ * • Evita que uma classe use "new" para criar suas dependências.
+ *
+ *
+ * REGRA PARA MEMORIZAR
+ * --------------------
+ *
+ * IoC = Quem controla?
+ *      → O Spring.
+ *
+ * DI = Como a dependência chega na classe?
+ *      → O Spring injeta automaticamente.
+ *
+ * Em resumo:
+ *
+ * IoC é o conceito.
+ * DI é a implementação mais comum desse conceito no Spring.
+ */
+
+                  SPRING CONTAINER
+                        |
+                        |
+               Controla os objetos
+                        |
+                        ↓
+               Inversão de Controle (IoC)
+                        |
+                        ↓
+         --------------------------------
+         |                              |
+  Cria os Beans                 Gerencia o ciclo de vida
+         |
+         ↓
+  Injeção de Dependência (DI)
+         |
+         ↓
+  Entrega os objetos para as classes
+
+
+  No Spring Boot, você verá IoC principalmente através de:
+
+  @Component
+  @Service
+  @Repository
+  @Controller
+  @RestController
+  @Bean
+
+  Todos eles dizem ao Spring:
+
+  "Esse objeto deve ser criado e gerenciado pelo container."
+
+  Então, sim: IoC é um dos pilares do Spring Boot, junto com DI, MVC, Beans e configuração automática.
+
+
+  /*
+   * ==========================================================================
+   * COMPARAÇÃO: SEM INJEÇÃO DE DEPENDÊNCIA VS. COM INJEÇÃO DO SPRING BOOT (3.4)
+   * ==========================================================================
+   *
+   * 1. O CENÁRIO MANUAL (SEM INJEÇÃO DE DEPENDÊNCIA):
+   *    No modelo manual, o próprio Controller é responsável por "dar vida"
+   *    ao serviço usando a palavra `new`.
+   *
+   *    EXEMPLO PRÁTICO:
+   *    ----------------------------------------------------------------------
+   *    @RestController
+   *    @RequestMapping("/person")
+   *    public class PersonControllerManual {
+   *
+   *        // 🔴 O Controller cria o objeto manualmente (Acoplamento Forte)
+   *        private final PersonService personService = new PersonService();
+   *
+   *        @GetMapping(value = "/{id}")
+   *        public Person findById(@RequestParam(value = "id") Long id) {
+   *            return personService.findById(id);
+   *        }
+   *    }
+   *    ----------------------------------------------------------------------
+   *    * Problema: Se o `PersonService` precisar de outras dependências no futuro
+   *      (como um repositório de banco de dados), o `new PersonService()` vai
+   *      quebrar e você terá que mexer diretamente no Controller.
+   *
+   *
+   * 2. O CENÁRIO COM SPRING BOOT (INJEÇÃO DE DEPENDÊNCIA POR CONSTRUTOR):
+   *    No modelo profissional, o Spring gerencia o ciclo de vida dos objetos
+   *    e entrega a dependência pronta para o Controller.
+   *
+   *    EXEMPLO PRÁTICO (Spring Boot 3.4+):
+   *    ----------------------------------------------------------------------
+   *    // A classe de serviço vira um "Bean" gerenciado pelo Spring
+   *    @Service
+   *    public class PersonService {
+   *        public Person findById(Long id) {
+   *            return new Person();
+   *        }
+   *    }
+   *
+   *    @RestController
+   *    @RequestMapping("/person")
+   *    public class PersonControllerWithDI {
+   *
+   *        // 🟢 Declaramos o serviço como 'final', mas SEM dar 'new'
+   *        private final PersonService personService;
+   *
+   *        // Injeção por Construtor:
+   *        // Na versão 3.4, se a classe tem APENAS UM construtor, o Spring Boot
+   *        // injeta o serviço automaticamente (não precisa da anotação @Autowired).
+   *        public PersonControllerWithDI(PersonService personService) {
+   *            this.personService = personService;
+   *        }
+   *
+   *        @GetMapping(value = "/{id}")
+   *        public Person findById(@RequestParam(value = "id") Long id) {
+   *            return personService.findById(id);
+   *        }
+   *    }
+   *    ----------------------------------------------------------------------
+   *    * Vantagem: O Controller não se preocupa em *como* o serviço é criado.
+   *      Garante desacoplamento, imutabilidade, economia de memória (Singleton)
+   *      e facilidade para testes automatizados.
+   * ==========================================================================
+   */
+
+  /*
+   * ==========================================================================
+   * BOAS PRÁTICAS: INJEÇÃO POR CONSTRUTOR VS. FIELD INJECTION (@Autowired)
+   * ==========================================================================
+   *
+   * 1. POR QUE A INJEÇÃO POR CONSTRUTOR É MAIS PROFISSIONAL?
+   *    Embora colocar `@Autowired` direto no atributo funcione (Field Injection),
+   *    a comunidade Java e o Spring recomendam a Injeção por Construtor pelos
+   *    seguintes motivos cruciais:
+   *
+   *    - **Imutabilidade (`final`):** Podemos declarar o serviço como `private final`,
+   *      garantindo que a dependência nunca será alterada ou corrompida após a
+   *      criação do objeto.
+   *    - **Facilidade em Testes Unitários:** Fica muito mais fácil testar o Controller
+   *      passando objetos simulados (*mocks*) diretamente para o construtor,
+   *      sem precisar subir o contexto inteiro do Spring.
+   *    - **Prevenção de Erros (Fail-Fast):** A aplicação avisa ou falha logo na
+   *      inicialização se faltar alguma dependência obrigatória, em vez de
+   *      lançar um erro inesperado apenas quando o método for acessado.
+   *
+   * 2. EXEMPLO DA ABORDAGEM PROFISSIONAL (Spring Boot 3.4+):
+   *    ----------------------------------------------------------------------
+   *    @RestController
+   *    @RequestMapping("/person")
+   *    public class PersonController {
+   *
+   *        // Atributo imutável e seguro
+   *        private final PersonService personService;
+   *
+   *        // Injeção por Construtor: o Spring Boot injeta automaticamente aqui
+   *        public PersonController(PersonService personService) {
+   *            this.personService = personService;
+   *        }
+   *    }
+   *    ----------------------------------------------------------------------
+   * ==========================================================================
+   */

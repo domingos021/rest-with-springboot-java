@@ -1,0 +1,342 @@
+/*
+ * ==========================================================================
+ * GUIA DE ESTUDOS: PRINCIPAIS ANOTAÇÕES E CONCEITOS DO SPRING BOOT
+ * ==========================================================================
+ * Este guia detalha as principais anotações utilizadas no desenvolvimento
+ * de aplicações Spring Boot, explicando o papel de cada uma, onde são
+ * aplicadas e o conceito arquitetural por trás delas.
+ *
+ * O objetivo é entender não apenas "como usar", mas também "por que usar".
+ *
+ * ==========================================================================
+ * 1. @SpringBootApplication
+ * ==========================================================================
+ * O que é:
+ * - É a anotação principal do Spring Boot e deve ser colocada na classe
+ *   que contém o método main().
+ *
+ * Por que usar:
+ * - Inicializa toda a aplicação Spring Boot.
+ * - Reúne três importantes anotações:
+ *
+ *   1. @EnableAutoConfiguration
+ *      Configura automaticamente diversos recursos do Spring de acordo
+ *      com as dependências presentes no projeto.
+ *
+ *   2. @ComponentScan
+ *      Procura automaticamente classes anotadas com:
+ *      @Component
+ *      @Service
+ *      @Repository
+ *      @Controller
+ *      @RestController
+ *
+ *   3. @SpringBootConfiguration
+ *      Especialização de @Configuration que identifica a classe principal
+ *      de configuração da aplicação, permitindo registrar Beans através
+ *      de métodos anotados com @Bean.
+ *
+ * Quem usa:
+ * - Apenas a classe principal da aplicação.
+ *
+ * Conceito:
+ * - Convenção sobre Configuração (Convention over Configuration).
+ * - Inicialização automática da aplicação.
+ *
+ *
+ * ==========================================================================
+ * 2. @RestController
+ * ==========================================================================
+ * O que é:
+ * - Transforma uma classe comum em um Controlador REST.
+ *
+ * Por que usar:
+ * - Recebe requisições HTTP.
+ * - Processa essas requisições.
+ * - Retorna automaticamente objetos convertidos para JSON (ou outro formato).
+ *
+ * Equivale à combinação:
+ *
+ * @Controller
+ * +
+ * @ResponseBody
+ *
+ * Quem usa:
+ * - Classes da camada Controller.
+ *
+ * Exemplo:
+ *
+ * PersonController
+ * ProductController
+ * GreetingController
+ *
+ * Conceito:
+ * - Camada de apresentação.
+ * - Interface de entrada da aplicação.
+ *
+ *
+ * ==========================================================================
+ * 3. @RequestMapping
+ * ==========================================================================
+ * O que é:
+ * - Define o endereço (URL) pelo qual uma classe ou método será acessado.
+ *
+ * Por que usar:
+ * - Organiza os endpoints da API.
+ *
+ * Exemplo:
+ *
+ * @RequestMapping("/person")
+ *
+ * Todos os métodos dessa classe passarão a iniciar por:
+ *
+ * /person
+ *
+ * Também existem especializações:
+ *
+ * @GetMapping
+ * @PostMapping
+ * @PutMapping
+ * @DeleteMapping
+ * @PatchMapping
+ *
+ * Elas são versões específicas de @RequestMapping para cada método HTTP.
+ *
+ * Quem usa:
+ * - Controllers.
+ *
+ * Conceito:
+ * - Roteamento.
+ * - Mapeamento HTTP.
+ *
+ *
+ * ==========================================================================
+ * 4. @Service
+ * ==========================================================================
+ * O que é:
+ * - Indica que uma classe contém as regras de negócio da aplicação.
+ *
+ * Por que usar:
+ * - O Spring cria automaticamente um Bean dessa classe.
+ * - Esse Bean é registrado no Container IoC (ApplicationContext).
+ * - Depois poderá ser utilizado por outras classes através da
+ *   Injeção de Dependência.
+ *
+ * Quem usa:
+ * - Classes da camada Service.
+ *
+ * Exemplo:
+ *
+ * PersonService
+ * ProductService
+ * OrderService
+ *
+ * Conceito:
+ * - Camada de negócio.
+ * - Inversão de Controle (IoC).
+ * - Injeção de Dependência (DI).
+ *
+ *
+ * ==========================================================================
+ * 5. @Autowired
+ * ==========================================================================
+ * O que é:
+ * - Anotação utilizada para realizar Injeção de Dependência.
+ *
+ * Contexto atual (Spring Boot 3.x):
+ * - Em classes que possuem apenas um construtor,
+ *   o @Autowired não é mais necessário.
+ *
+ * Exemplo moderno:
+ *
+ * public PersonService(PersonRepository repository){
+ *     this.repository = repository;
+ * }
+ *
+ * O Spring identifica automaticamente esse construtor.
+ *
+ * Quem usa:
+ * - Código legado.
+ * - Classes com múltiplos construtores.
+ *
+ * Conceito:
+ * - Injeção de Dependência.
+ * - Desacoplamento.
+ *
+ *
+ * ==========================================================================
+ * 6. Bean
+ * ==========================================================================
+ * O que é:
+ * - Um Bean é qualquer objeto criado, configurado e gerenciado pelo
+ *   Container IoC do Spring.
+ *
+ * Em outras palavras:
+ *
+ * Ao invés de você criar:
+ *
+ * new PersonService();
+ *
+ * O Spring cria esse objeto automaticamente.
+ *
+ * Depois, sempre que outra classe precisar dele,
+ * o Spring reutiliza esse Bean.
+ *
+ * Exemplos de Beans:
+ *
+ * @Component
+ * @Service
+ * @Repository
+ * @Controller
+ * @RestController
+ * @Bean
+ *
+ * Conceito:
+ * - Gerenciamento de objetos.
+ * - Container IoC.
+ *
+ *
+ * ==========================================================================
+ * 7. Inversão de Controle (IoC)
+ * ==========================================================================
+ * O que é:
+ * - Um princípio de desenvolvimento onde o controle da criação e do
+ *   gerenciamento dos objetos deixa de ser da aplicação e passa para
+ *   o Spring.
+ *
+ * Antes:
+ *
+ * A própria classe criava seus objetos.
+ *
+ * Depois:
+ *
+ * O Spring cria e controla esses objetos.
+ *
+ * Sem IoC:
+ *
+ * PedidoRepository repository = new PedidoRepository();
+ *
+ * Com IoC:
+ *
+ * O Spring cria PedidoRepository e controla seu ciclo de vida.
+ *
+ * Conceito:
+ * - O Spring passa a controlar os objetos da aplicação.
+ *
+ *
+ * ==========================================================================
+ * 8. Injeção de Dependência (DI)
+ * ==========================================================================
+ * O que é:
+ * - Técnica utilizada para implementar a Inversão de Controle.
+ *
+ * Ao invés da classe criar seus objetos,
+ * o Spring entrega esses objetos automaticamente.
+ *
+ * Exemplo:
+ *
+ * public PersonService(PersonRepository repository){
+ *     this.repository = repository;
+ * }
+ *
+ * O Spring:
+ *
+ * 1. Cria PersonRepository.
+ * 2. Cria PersonService.
+ * 3. Injeta PersonRepository dentro de PersonService.
+ *
+ * Benefícios:
+ *
+ * - Baixo acoplamento.
+ * - Código mais organizado.
+ * - Facilidade para testes.
+ * - Maior reutilização.
+ *
+ * Conceito:
+ * - Desacoplamento entre classes.
+ *
+ *
+ * ==========================================================================
+ * RELAÇÃO ENTRE IoC E DI
+ * ==========================================================================
+ *
+ * Inversão de Controle (IoC)
+ *              │
+ *              ▼
+ *      O Spring controla
+ *      a criação dos objetos.
+ *              │
+ *              ▼
+ * Injeção de Dependência (DI)
+ *              │
+ *              ▼
+ * O Spring entrega esses objetos
+ * para quem precisa utilizá-los.
+ *
+ *
+ * Em resumo:
+ *
+ * IoC responde:
+ *
+ * "Quem controla os objetos?"
+ *
+ * Resposta:
+ * O Spring.
+ *
+ *
+ * DI responde:
+ *
+ * "Como os objetos chegam às classes?"
+ *
+ * Resposta:
+ * Através da Injeção de Dependência.
+ *
+ *
+ * ==========================================================================
+ * RESUMO FINAL
+ * ==========================================================================
+ *
+ * @SpringBootApplication
+ * → Inicializa toda a aplicação.
+ *
+ * @RestController
+ * → Cria um controlador REST.
+ *
+ * @RequestMapping
+ * → Define as URLs da aplicação.
+ *
+ * @Service
+ * → Define a camada de regras de negócio.
+ *
+ * @Autowired
+ * → Realiza Injeção de Dependência (hoje normalmente dispensável em
+ *   classes com construtor único).
+ *
+ * Bean
+ * → Objeto criado e gerenciado pelo Spring.
+ *
+ * IoC
+ * → O Spring controla a criação e o ciclo de vida dos objetos.
+ *
+ * DI
+ * → O Spring injeta automaticamente as dependências nas classes.
+ *
+ * REGRA PARA MEMORIZAR
+ * --------------------
+ *
+ * Bean
+ * → É o objeto gerenciado pelo Spring.
+ *
+ * IoC
+ * → Quem controla os objetos?
+ * → O Spring.
+ *
+ * DI
+ * → Como os objetos chegam às classes?
+ * → O Spring injeta automaticamente.
+ *
+ * Em uma aplicação Spring Boot, IoC, DI e Beans trabalham juntos para
+ * produzir um código desacoplado, organizado, reutilizável e de fácil
+ * manutenção.
+ * ==========================================================================
+ */

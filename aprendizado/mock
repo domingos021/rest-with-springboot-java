@@ -1,0 +1,90 @@
+/*
+ * ==========================================================================
+ * GUIA DE CONCEITOS: O QUE É UM MOCK E POR QUE USAR?
+ * ==========================================================================
+ * Este guia explica o conceito de Mocking, amplamente utilizado em testes
+ * unitários na programação moderna.
+ *
+ * --------------------------------------------------------------------------
+ * 1. O QUE É UM MOCK?
+ * --------------------------------------------------------------------------
+ * - Definição: Um "Mock" (que significa simulação ou imitação) é um objeto
+ *   falso, simulado, criado para substituir uma dependência real durante um
+ *   teste unitário.
+ * - Papel: Ele finge ser o componente real (como um banco de dados, um serviço
+ *   externo ou uma API), mas com comportamento totalmente controlado por você.
+ *
+ * --------------------------------------------------------------------------
+ * 2. POR QUE USAR MOCKS?
+ * --------------------------------------------------------------------------
+ * - Isolamento: Permite testar uma classe (ex: `PersonController`) de forma
+ *   completamente isolada, sem precisar que o serviço real (`PersonService`)
+ *   ou o banco de dados estejam funcionando de verdade.
+ * - Velocidade: Testes com mocks rodam instantaneamente, pois evitam operações
+ *   lentas como consultas reais a banco de dados ou requisições de rede.
+ * - Previsibilidade: Você programa o mock para devolver exatamente o que você
+ *   quiser (inclusive simular falhas ou erros de rede), garantindo que o teste
+ *   seja repetível e confiável.
+ *
+ * --------------------------------------------------------------------------
+ * 3. QUEM USA E QUANDO USAR?
+ * --------------------------------------------------------------------------
+ * - Quem usa: Desenvolvedores durante a criação de **Testes Unitários**
+ *   (frequentemente usando bibliotecas como *Mockito* no ecossistema Java).
+ * - Quando usar: Sempre que a classe que você quer testar depende de outras
+ *   classes complexas, serviços externos ou bancos de dados, e você quer
+ *   focar o teste apenas na lógica daquela unidade isolada.
+ *
+ * --------------------------------------------------------------------------
+ * 4. CONCEITO RELACIONADO (Stubs vs Mocks)
+ * --------------------------------------------------------------------------
+ * - Embora muitas vezes usados como sinônimos, um **Stub** apenas fornece
+ *   respostas prontas para chamadas, enquanto um **Mock** também pode verificar
+ *   e validar *se* determinado método foi chamado da forma correta.
+ * ==========================================================================
+ */
+
+
+
+
+ // ============================================================================
+ // MOCK
+ // ============================================================================
+ // Mock utilizado apenas para simular a inserção (set) de dados durante os testes.
+ // Neste momento os dados são criados manualmente na aplicação.
+ // Futuramente este código será substituído por uma chamada ao banco de dados.
+ // ============================================================================
+
+ Person person = new Person(); // Instanciamos um novo objeto da classe Person.
+
+ person.setId(counter.incrementAndGet());
+ person.setFirstName("Dinis");
+ person.setLastName("Jovete");
+ person.setAddress("Luanda - Angola");
+ person.setGender("Male");
+
+ // ------------------------- FIM DO MOCK -------------------------
+
+ /*
+  * CONCEITO
+  * --------------------------------------------------------------------------
+  * A variável "person" é uma referência (reference) para o objeto criado com
+  * o operador "new".
+  *
+  * Em outras palavras:
+  *
+  *      Person person = new Person();
+  *
+  *      Person  -> tipo da referência.
+  *      person  -> variável que armazena a referência (endereço lógico) do objeto.
+  *      new Person() -> cria um novo objeto na memória (Heap).
+  *
+  * Sempre que utilizamos:
+  *
+  *      person.setFirstName(...);
+  *
+  * estamos acessando esse objeto por meio da referência armazenada na variável
+  * "person".
+  */
+
+ return person;
