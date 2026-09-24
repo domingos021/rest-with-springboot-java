@@ -2,12 +2,11 @@ package com.dinisjovete.restwithspringbootjava.controllers;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
 import com.dinisjovete.restwithspringbootjava.services.PersonService;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import java.awt.*;
+import java.util.List;
+
 
 @RestController
 /*
@@ -84,6 +83,109 @@ public class PersonController {
     public Person findById(@PathVariable("id") String id) {
         return service.findById(id);
     }
+
+   //GET http://localhost:8080/person
+    @RequestMapping(
+            value = "",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+       public List<Person> findAll() {
+        return service.findAll();
+    }
+
+
+    //http://localhost:8080/person/create
+    @RequestMapping(
+            value = "/create",
+
+            // Define que este endpoint aceita apenas requisições HTTP POST.
+            // POST é utilizado para enviar dados e criar novos recursos.
+            method = RequestMethod.POST,
+
+            // Define o formato dos dados recebidos no corpo da requisição.
+            // Neste caso, a API espera um JSON.
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+
+            // Define o formato da resposta enviada pela API.
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public Person create(@RequestBody Person person) {
+
+        return service.create(person);
+
+    }
+
+
+
+    /*
+     * ============================================================================
+     * UPDATE - ALTERAR UMA PESSOA
+     * ============================================================================
+     *
+     * Método HTTP:
+     *      PUT
+     *
+     * Endpoint:
+     *      http://localhost:8080/person/{id}
+     *
+     * Exemplo:
+     *
+     *      PUT http://localhost:8080/person/6
+     *
+     * O ID vem pela URL (Path Variable)
+     * e os novos dados vêm pelo corpo da requisição (Request Body).
+     *
+     * ============================================================================
+     */
+    @RequestMapping(
+            value = "/{id}",
+            method = RequestMethod.PUT,
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public Person update(
+            @PathVariable("id") String id,
+            @RequestBody Person person
+    ) {
+
+        return service.update(id, person);
+    }
+
+
+
+    /*
+     * ============================================================================
+     * DELETE - REMOVER UMA PESSOA
+     * ============================================================================
+     *
+     * Método HTTP:
+     *      DELETE
+     *
+     * Endpoint:
+     *      http://localhost:8080/person/{id}
+     *
+     * Exemplo:
+     *
+     *      DELETE http://localhost:8080/person/6
+     *
+     * O ID da pessoa que será removida é enviado pela URL.
+     *
+     * ============================================================================
+     */
+    @RequestMapping(
+            value = "/{id}",
+            method = RequestMethod.DELETE
+    )
+    public ResponseEntity<?> delete(
+            @PathVariable("id") String id
+    ) {
+
+        service.delete(id);
+
+        return ResponseEntity.noContent().build();
+    }
+
 }
 
 

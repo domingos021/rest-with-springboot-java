@@ -1,0 +1,321 @@
+/*
+ * ============================================================================
+ * CONCEITO: BUSCA POR ID UTILIZANDO STREAM
+ * ============================================================================
+ *
+ * Código:
+ *
+ * public static Person findById(Long id) {
+ *
+ *     return persons.stream()
+ *             .filter(person -> person.getId().equals(id))
+ *             .findFirst()
+ *             .orElse(null);
+ * }
+ *
+ *
+ * LEITURA DO FLUXO:
+ *
+ *
+ * Controller
+ *     |
+ *     ↓
+ * Usuário informa o ID na URL
+ *     |
+ *     ↓
+ * Controller recebe o id
+ *     |
+ *     ↓
+ * Service recebe o id
+ *     |
+ *     ↓
+ * PersonMock.findById(id)
+ *     |
+ *     ↓
+ * persons.stream()
+ *
+ *
+ * ============================================================================
+ * STREAM
+ * ============================================================================
+ *
+ * persons.stream()
+ *
+ * Transforma a List<Person> em um fluxo de elementos.
+ *
+ * Podemos imaginar como uma "esteira" onde cada objeto Person dentro da lista passa
+ * individualmente para ser analisado.
+ *
+ *
+ * Exemplo:
+ *
+ * Lista original:
+ *
+ * [
+ *   Person(id=1),
+ *   Person(id=2),
+ *   Person(id=3),
+ *   Person(id=4)
+ * ]
+ *
+ *
+ * Stream:
+ *
+ * Person(id=1) → Person(id=2) → Person(id=3) → Person(id=4)
+ *
+ *
+ * ============================================================================
+ * FILTER
+ * ============================================================================
+ *
+ * .filter(person -> person.getId().equals(id))
+ *
+ * O filtro analisa cada objeto que passa pela esteira.
+ *
+ * Exemplo:
+ *
+ * id recebido = 3
+ *
+ *
+ * Person(id=1)
+ *      |
+ *      └── diferente → descarta
+ *
+ *
+ * Person(id=2)
+ *      |
+ *      └── diferente → descarta
+ *
+ *
+ * Person(id=3)
+ *      |
+ *      └── igual → mantém  (getFirst() vai pegar esse elemento) -> termina a análise mesmo que o Stream ainda tenha elementos na esteira
+ *
+ *
+ * Person(id=4)
+ *      |
+ *      └── não precisa analisar (já encontrou)
+ *
+ *
+ * ============================================================================
+ * FIND FIRST
+ * ============================================================================
+ *
+ * .findFirst()
+ *
+ * Significa:
+ *
+ * "Pegue o primeiro elemento que passou pelo filtro."
+ *
+ * Como o ID é único, normalmente existirá apenas um resultado.
+ *
+ *
+ * Resultado encontrado:
+ *
+ * Person(id=3)
+ *        |
+ *        ↓
+ * retorna para Service
+ *        |
+ *        ↓
+ * Controller
+ *        |
+ *        ↓
+ * Usuário recebe JSON
+ *
+ *
+ * ============================================================================
+ * CASO NÃO ENCONTRE O ID
+ * ============================================================================
+ *
+ * Person(id=1) → diferente
+ * Person(id=2) → diferente
+ * Person(id=3) → diferente
+ *
+ *
+ * findFirst()
+ *        |
+ *        ↓
+ * não encontrou nenhum elemento
+ *        |
+ *        ↓
+ * Optional vazio
+ *        |
+ *        ↓
+ * .orElse(null)
+ *        |
+ *        ↓
+ * retorna null
+ *
+ *
+ * ============================================================================
+ * RESUMO:
+ *
+ * Entrada:
+ *      ID recebido pela URL
+ *
+ * Processamento:
+ *      Stream percorre a lista e o filter compara os IDs
+ *
+ * Saída:
+ *      Person encontrada ou null
+ *
+ * ============================================================================
+ */
+public static Person findById(Long id) {
+
+    return persons.stream()
+            .filter(person -> person.getId().equals(id))
+            .findFirst()
+            .orElse(null);
+}
+
+
+
+
+/*
+ * ============================================================================
+ * CONCEITO: EXPRESSÃO LAMBDA
+ * ============================================================================
+ *
+ * Código:
+ *
+ * .filter(person -> person.getId().equals(id))
+ *
+ *
+ * A expressão Lambda é uma forma reduzida de escrever uma implementação de
+ * uma função que será executada pelo Stream.
+ *
+ * Estrutura da Lambda:
+ *
+ *      parâmetro  ->  expressão
+ *
+ *
+ * Exemplo:
+ *
+ *      person -> person.getId().equals(id)
+ *
+ *
+ * Leitura:
+ *
+ * "Para cada objeto Person recebido, execute a comparação do seu ID
+ *  com o ID informado."
+ *
+ *
+ * ============================================================================
+ * COMO FUNCIONARIA SEM LAMBDA
+ * ============================================================================
+ *
+ * Antes da Lambda, a mesma lógica seria escrita utilizando uma classe anônima:
+ *
+ *
+ * .filter(new Predicate<Person>() {
+ *
+ *      @Override
+ *      public boolean test(Person person) {
+ *
+ *          return person.getId().equals(id);
+ *
+ *      }
+ * })
+ *
+ *
+ * A Lambda apenas reduz esse código:
+ *
+ *
+ *      new Predicate<Person>() {
+ *
+ *          public boolean test(Person person) {
+ *
+ *              return person.getId().equals(id);
+ *
+ *          }
+ *      }
+ *
+ *
+ * Transforma em:
+ *
+ *
+ *      person -> person.getId().equals(id)
+ *
+ *
+ * ============================================================================
+ * O QUE ACONTECE INTERNAMENTE
+ * ============================================================================
+ *
+ * O Stream pega cada objeto Person da lista e envia para a Lambda.
+ *
+ *
+ * Exemplo:
+ *
+ * id recebido = 3
+ *
+ *
+ * Primeiro elemento:
+ *
+ *      person = Person(id=1)
+ *
+ * Executa:
+ *
+ *      person.getId().equals(3)
+ *
+ * Resultado:
+ *
+ *      false
+ *
+ *
+ * Segundo elemento:
+ *
+ *      person = Person(id=2)
+ *
+ * Executa:
+ *
+ *      person.getId().equals(3)
+ *
+ * Resultado:
+ *
+ *      false
+ *
+ *
+ * Terceiro elemento:
+ *
+ *      person = Person(id=3)
+ *
+ * Executa:
+ *
+ *      person.getId().equals(3)
+ *
+ * Resultado:
+ *
+ *      true
+ *
+ *
+ * O Stream mantém esse elemento e envia para o findFirst().
+ *
+ *
+ * ============================================================================
+ * RESUMO DA LAMBDA:
+ *
+ * Lambda:
+ *
+ *      person -> person.getId().equals(id)
+ *
+ *
+ * Significa:
+ *
+ *      "Receba uma Person e devolva true ou false informando se o ID
+ *       dessa pessoa é igual ao ID procurado."
+ *
+ *
+ * Entrada:
+ *      Person
+ *
+ * Processamento:
+ *      comparação dos IDs
+ *
+ * Saída:
+ *      true  -> mantém no Stream
+ *      false -> descarta
+ *
+ * ============================================================================
+ */

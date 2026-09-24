@@ -1,67 +1,168 @@
 package com.dinisjovete.restwithspringbootjava.services;
 
 import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
+import com.dinisjovete.restwithspringbootjava.mock.PersonMock;
 import org.springframework.stereotype.Service;
-import java.util.concurrent.atomic.AtomicLong;
+
+import java.util.List;
 import java.util.logging.Logger;
 
 @Service // Marca a classe como um Bean gerenciado pelo Spring (Injeção de Dependência)
 public class PersonService {
-    // Controla IDs sequenciais de forma segura entre múltiplas threads (simulando um banco de dados)
-    private final AtomicLong counter = new AtomicLong();
+
     // Registry logs (mensagens de erro, avisos e informações) no console da aplicação
-    private static final Logger logger = Logger.getLogger(PersonService.class.getName());
+    private static final Logger logger =
+            Logger.getLogger(PersonService.class.getName());
 
-    //ME TODOS PARA REQUISIÇÕES
+
+    // MÉTODOS PARA REQUISIÇÕES
+
     public Person findById(String id) {
+
         logger.info("finding one Person");
+
+
         // ============================================================================
-// MOCK
-// ============================================================================
-// Mock utilizado apenas para simular a inserção (set) de dados durante os testes.
-// Neste momento os dados são criados manualmente na aplicação.
-// Futuramente este código será substituído por uma chamada ao banco de dados.
-// ============================================================================
+        // MOCK
+        // ============================================================================
+        // Os dados de teste estão separados na classe PersonMock.
+        //
+        // O Service não conhece como os dados são armazenados.
+        // Ele apenas solicita a informação ao Mock.
+        //
+        // Neste momento:
+        //
+        // PersonService -> PersonMock -> Lista em memória
+        //
+        // Futuramente:
+        //
+        // PersonService -> PersonRepository -> Banco de Dados
+        //
+        // ============================================================================
 
-        Person person = new Person(); // Instanciamos um novo objeto da classe Person.
 
-        person.setId(counter.incrementAndGet());
-        person.setFirstName("Dinis");
-        person.setLastName("Jovete");
-        person.setAddress("Luanda - Angola");
-        person.setGender("Male");
+        return PersonMock.findById(Long.parseLong(id));
 
-// ------------------------- FIM DO MOCK -------------------------
 
         /*
          * CONCEITO
          * --------------------------------------------------------------------------
-         * A variável "person" é uma referência (reference) para o objeto criado com
-         * o operador "new".
+         * O Service possui a responsabilidade de controlar o fluxo da aplicação.
          *
-         * Em outras palavras:
+         * Ele não cria objetos Person e não manipula diretamente a fonte de dados.
          *
-         *      Person person = new Person();
+         * Responsabilidades:
          *
-         *      Person  -> tipo da referência.
-         *      person  -> variável que armazena a referência (endereço lógico) do objeto.
-         *      new Person() -> cria um novo objeto na memória (Heap).
+         *      Controller  -> recebe requisições HTTP
          *
-         * Sempre que utilizamos:
+         *      Service    -> regras de negócio
          *
-         *      person.setFirstName(...);
+         *      Mock       -> dados temporários para teste
          *
-         * estamos acessando esse objeto por meio da referência armazenada na variável
-         * "person".
+         *      Repository -> acesso ao banco de dados (futuro)
+         *
+         * --------------------------------------------------------------------------
          */
+    }
 
-        return person;
+
+    public List<Person> findAll() {
+
+        logger.info("finding all Persons");
+
+
+        // ============================================================================
+        // MOCK
+        // ============================================================================
+        // Simula uma consulta:
+        //
+        // SELECT * FROM person;
+        //
+        // Futuramente será:
+        //
+        // personRepository.findAll();
+        //
+        // ============================================================================
+
+
+        return PersonMock.findAll();
+    }
+
+    public Person create(Person person) {
+
+        logger.info("creating a new Person");
+
+        return PersonMock.create(person);
+        //personRepository.save(person);
+
+    }
+
+
+    /*
+     * ============================================================================
+     * UPDATE
+     * ============================================================================
+     * Atualiza os dados de uma pessoa existente.
+     *
+     * Fluxo:
+     *
+     * Controller
+     *      |
+     *      ↓
+     * PersonService.update()
+     *      |
+     *      ↓
+     * PersonMock.update()
+     *      |
+     *      ↓
+     * Lista em memória
+     *
+     * Futuramente será substituído por:
+     *
+     * personRepository.save(person);
+     *
+     * ============================================================================
+     */
+    public Person update(String id, Person person) {
+
+        logger.info("updating Person");
+
+        return PersonMock.update(Long.parseLong(id), person);
+    }
+
+
+
+    /*
+     * ============================================================================
+     * DELETE
+     * ============================================================================
+     * Remove uma pessoa pelo ID.
+     *
+     * Fluxo:
+     *
+     * Controller
+     *      |
+     *      ↓
+     * PersonService.delete()
+     *      |
+     *      ↓
+     * PersonMock.delete()
+     *      |
+     *      ↓
+     * Remove da lista em memória
+     *
+     * Futuramente será substituído por:
+     *
+     * personRepository.deleteById(id);
+     *
+     * VOID-> não retorna conteúdo
+     * ============================================================================
+     */
+    public void delete(String id) {
+
+        logger.info("deleting Person");
+
+        PersonMock.delete(Long.parseLong(id));
+
     }
 }
-
-
-
-
-
-
-

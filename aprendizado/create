@@ -1,0 +1,125 @@
+/*
+ * ============================================================================
+ * TESTE DO ENDPOINT PELO POSTMAN
+ * ============================================================================
+ *
+ * OBJETIVO:
+ *      Criar uma nova pessoa utilizando uma requisição HTTP POST.
+ *
+ *
+ * CONFIGURAÇÃO NO POSTMAN:
+ *
+ * Método HTTP:
+ *
+ *      POST
+ *
+ *
+ * URL:
+ *
+ *      http://localhost:8080/person/create
+ *
+ *
+ * Headers:
+ *
+ *      Content-Type: application/json
+ *
+ *
+ * Body -> raw -> JSON:
+ *
+ * {
+ *      "firstName": "Dinis",
+ *      "lastName": "Jovete",
+ *      "address": "Luanda - Angola",
+ *      "gender": "Male"
+ * }
+ *
+ *
+ * IMPORTANTE:
+ *
+ * O campo "id" não deve ser enviado pelo usuário.
+ *
+ * O ID é gerado automaticamente pelo sistema:
+ *
+ *      counter.incrementAndGet()
+ *
+ *
+ * ============================================================================
+ * FLUXO DA REQUISIÇÃO
+ * ============================================================================
+ *
+ * Postman
+ *    |
+ *    | POST /person/create
+ *    | JSON
+ *    ↓
+ *
+ * Controller
+ *
+ *    |
+ *    ↓
+ *
+ * @RequestBody converte o JSON recebido em um objeto Person
+ *
+ *    |
+ *    ↓
+ *
+ * PersonService.create(person)
+ *
+ *    |
+ *    ↓
+ *
+ * PersonMock.create(person)
+ *
+ *    |
+ *    ↓
+ *
+ * Gera o ID e adiciona na lista em memória:
+ *
+ *      persons.add(person)
+ *
+ *    |
+ *    ↓
+ *
+ * Retorna a Person criada para o usuário
+ *
+ *
+ * ============================================================================
+ * RESPOSTA ESPERADA
+ * ============================================================================
+ *
+ * {
+ *      "id": 6,
+ *      "firstName": "Dinis",
+ *      "lastName": "Jovete",
+ *      "address": "Luanda - Angola",
+ *      "gender": "Male"
+ * }
+ *
+ *
+ * ============================================================================
+ * SIMULAÇÃO DO BANCO DE DADOS
+ * ============================================================================
+ *
+ * Hoje:
+ *
+ *      PersonService
+ *            |
+ *            ↓
+ *      PersonMock
+ *            |
+ *            ↓
+ *      List<Person> (memória)
+ *
+ *
+ * Futuramente:
+ *
+ *      PersonService
+ *            |
+ *            ↓
+ *      PersonRepository
+ *            |
+ *            ↓
+ *      Banco de Dados
+ *
+ * ============================================================================
+ */
