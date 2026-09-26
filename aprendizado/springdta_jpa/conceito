@@ -1,0 +1,364 @@
+/*
+ * ==========================================================================
+ * GUIA DE ESTUDOS: SPRING DATA JPA
+ * ==========================================================================
+ *
+ * 1. O QUE É SPRING DATA JPA?
+ * --------------------------------------------------------------------------
+ *
+ * Spring Data JPA é um módulo do ecossistema Spring que facilita o acesso
+ * e manipulação de dados em bancos relacionais usando a especificação JPA
+ * (Java Persistence API).
+ *
+ * Ele reduz a quantidade de código necessário para criar operações básicas
+ * de banco de dados, como:
+ *
+ * - Buscar registros
+ * - Salvar dados
+ * - Atualizar informações
+ * - Excluir registros
+ *
+ * Sem Spring Data JPA, normalmente precisaríamos escrever muito código
+ * utilizando EntityManager, consultas SQL ou JPQL manualmente.
+ *
+ *
+ * Exemplo sem Spring Data JPA:
+ *
+ * EntityManager entityManager = ...
+ *
+ * Person person = entityManager.find(Person.class, 1L);
+ *
+ *
+ * Com Spring Data JPA:
+ *
+ * Person person = personRepository.findById(1L);
+ *
+ *
+ * O Spring cria automaticamente a implementação dos métodos do Repository.
+ *
+ *
+ * ==========================================================================
+ *
+ * 2. RELAÇÃO ENTRE JPA E SPRING DATA JPA
+ * --------------------------------------------------------------------------
+ *
+ * JPA:
+ *
+ * É uma especificação (um conjunto de regras/interfaces).
+ *
+ * Ela define COMO uma aplicação Java deve conversar com um banco relacional.
+ *
+ *
+ * Hibernate:
+ *
+ * É uma implementação da JPA.
+ *
+ * Ele transforma objetos Java em registros do banco.
+ *
+ *
+ * Spring Data JPA:
+ *
+ * É uma camada acima do Hibernate que simplifica o uso da JPA.
+ *
+ *
+ * Arquitetura:
+ *
+ *
+ *       Aplicação Spring Boot
+ *               |
+ *               |
+ *       Spring Data JPA
+ *               |
+ *               |
+ *             JPA
+ *               |
+ *               |
+ *           Hibernate
+ *               |
+ *               |
+ *          Banco de Dados
+ *
+ *
+ * ==========================================================================
+ *
+ * 3. ENTIDADE (@Entity)
+ * --------------------------------------------------------------------------
+ *
+ * Para o JPA entender que uma classe representa uma tabela no banco,
+ * usamos a anotação @Entity.
+ *
+ *
+ * Exemplo:
+ *
+ */
+
+
+@Entity
+public class Person {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String firstName;
+
+    private String lastName;
+
+    private String address;
+
+    private String gender;
+}
+
+
+/*
+ *
+ * O que acontece:
+ *
+ * Classe Java:
+ *
+ * Person
+ *
+ *
+ * Banco:
+ *
+ * Tabela PERSON
+ *
+ *
+ * Objeto:
+ *
+ * Person person = new Person("Ana", "Costa");
+ *
+ *
+ * Registro:
+ *
+ * | id | first_name | last_name |
+ * |----|------------|-----------|
+ * | 1  | Ana        | Costa     |
+ *
+ *
+ * ==========================================================================
+ *
+ * 4. REPOSITORY
+ * --------------------------------------------------------------------------
+ *
+ * Repository é a interface responsável pelo acesso aos dados.
+ *
+ * Normalmente criamos uma interface que herda de JpaRepository.
+ *
+ */
+
+
+public interface PersonRepository
+        extends JpaRepository<Person, Long> {
+
+}
+
+
+/*
+ *
+ * O Spring cria automaticamente uma implementação dessa interface.
+ *
+ * Não precisamos escrever:
+ *
+ * - INSERT
+ * - UPDATE
+ * - DELETE
+ * - SELECT
+ *
+ *
+ * ==========================================================================
+ *
+ * 5. MÉTODOS PRONTOS DO JpaRepository
+ * --------------------------------------------------------------------------
+ *
+ * Ao herdar JpaRepository recebemos vários métodos:
+ *
+ *
+ * Salvar:
+ *
+ */
+
+
+personRepository.save(person);
+
+
+/*
+ *
+ * SQL gerado:
+ *
+ * INSERT INTO person (...)
+ * VALUES (...);
+ *
+ *
+ *
+ * Buscar todos:
+ *
+ */
+
+
+List<Person> persons = personRepository.findAll();
+
+
+/*
+ *
+ * SQL:
+ *
+ * SELECT * FROM person;
+ *
+ *
+ *
+ * Buscar por ID:
+ *
+ */
+
+
+Optional<Person> person = personRepository.findById(1L);
+
+
+/*
+ *
+ * SQL:
+ *
+ * SELECT * FROM person WHERE id = 1;
+ *
+ *
+ *
+ * Deletar:
+ *
+ */
+
+
+personRepository.deleteById(1L);
+
+
+/*
+ *
+ * SQL:
+ *
+ * DELETE FROM person WHERE id = 1;
+ *
+ *
+ * ==========================================================================
+ *
+ * 6. INJEÇÃO DO REPOSITORY NO SERVICE
+ * --------------------------------------------------------------------------
+ *
+ * O Controller não deve conversar diretamente com o Repository.
+ *
+ * O fluxo recomendado:
+ *
+ *
+ * Controller
+ *      |
+ *      |
+ *      v
+ * Service
+ *      |
+ *      |
+ *      v
+ * Repository
+ *      |
+ *      |
+ *      v
+ * Banco
+ *
+ *
+ * Exemplo:
+ *
+ */
+
+
+@Service
+public class PersonService {
+
+    @Autowired
+    private PersonRepository repository;
+
+
+    public Person create(Person person) {
+
+        return repository.save(person);
+    }
+}
+
+
+/*
+ *
+ * ==========================================================================
+ *
+ * 7. CONSULTAS PERSONALIZADAS
+ * --------------------------------------------------------------------------
+ *
+ * O Spring Data JPA consegue criar consultas pelo nome do método.
+ *
+ *
+ * Exemplo:
+ *
+ */
+
+
+List<Person> findByFirstName(String firstName);
+
+
+/*
+ *
+ * O Spring entende:
+ *
+ * SELECT *
+ * FROM person
+ * WHERE first_name = ?
+ *
+ *
+ * Outro exemplo:
+ *
+ */
+
+
+List<Person> findByGender(String gender);
+
+
+/*
+ *
+ * Resultado:
+ *
+ * SELECT *
+ * FROM person
+ * WHERE gender = ?
+ *
+ *
+ * ==========================================================================
+ *
+ * 8. RESUMO FINAL
+ * --------------------------------------------------------------------------
+ *
+ * JPA:
+ * Define o padrão para persistência de objetos Java.
+ *
+ * Hibernate:
+ * Implementa a JPA e faz a comunicação real com o banco.
+ *
+ * Spring Data JPA:
+ * Facilita o trabalho criando repositories e métodos automáticos.
+ *
+ *
+ * Em uma API REST:
+ *
+ *
+ * Controller
+ *     Recebe HTTP
+ *
+ * Service
+ *     Regras de negócio
+ *
+ * Repository
+ *     Acesso aos dados
+ *
+ * JPA/Hibernate
+ *     Comunicação com banco
+ *
+ *
+ * O objetivo principal do Spring Data JPA é permitir trabalhar com
+ * objetos Java em vez de escrever SQL manualmente para operações comuns.
+ *
+ * ==========================================================================
+ */

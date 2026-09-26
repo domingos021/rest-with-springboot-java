@@ -1,24 +1,91 @@
 package com.dinisjovete.restwithspringbootjava.data_model.entities;
 
+import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
+import jakarta.persistence.*;
+
+import java.io.Serial;
 import java.io.Serializable;
-import java.util.Objects;
 
+/*
+ * A classe inteira corresponde a uma entidade do banco de dados, representando uma tabela chamada "person".
+ * Cada instância da classe Person representa uma linha (registro) nessa tabela.
+ * A anotação @Entity indica que a classe é uma entidade JPA (Java Persistence API).
+ * A anotação @Table(name = "person") especifica o nome da tabela no banco de dados que essa entidade representa.
+ * A interface Serializable permite que objetos dessa classe possam ser convertidos em uma sequência de bytes, o que é útil para persistência, envio pela rede ou armazenamento em cache.
+ * O campo serialVersionUID é usado para garantir a compatibilidade durante a serialização e desserialização, evitando problemas quando a classe é modificada.
+ */
+@Entity
+@Table(name = "person")
 public class Person implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
 
+    /*
+     * A cada atributo da classe corresponde a uma coluna na tabela "person" do banco de dados.
+     * A anotação @Id indica que o atributo 'id' é a chave primária da tabela, garantindo que cada registro seja único.
+     * Os demais atributos representam informações pessoais e são mapeados para colunas correspondentes na tabela.
+     * A classe possui construtores, getters e setters para manipulação dos dados, além de métodos equals e hashCode para comparação e armazenamento eficiente em coleções.
+     */
+    /*
+     *  nullable = false -> não pode ser nulo
+     *  length = 70 -> tamanho máximo do campo
+     *  @Column() -> quando não definimos o nome, significa que o nome da coluna será o mesmo do atributo
+     */
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // incremento automático do id
     private Long id;
+
+    @Column(name = "first_name", nullable = false, length = 70)
     private String firstName;
+
+    @Column(name = "last_name", nullable = false, length = 70)
     private String lastName;
+
+    @Column(name = "cpf", unique = true, nullable = false, length = 100)
+    private String cpf;
+
+    @Column(unique = true, nullable = false, length = 100)
+    private String email;
+
+    @Column(nullable = false, length = 100)
+    private String password;
+
+    @Column(name = "address", nullable = false, length = 100)
     private String address;
+
+    @Column(name = "gender", length = 10)
     private String gender;
+
+    /*
+     * Persistent PersonRole enum field stored as String in the database.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PersonRole role;
 
     public Person() {}
 
-    public Person(Long id, String firstName, String lastName, String address, String gender) {
+    public Person(
+            Long id,
+            String firstName,
+            String lastName,
+            String cpf,
+            String email,
+            String password,
+            String address,
+            String gender,
+            PersonRole role
+    ) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.cpf = cpf;
+        this.email = email;
+        this.password = password;
         this.address = address;
         this.gender = gender;
+        this.role = role;
     }
 
     public Long getId() {
@@ -45,6 +112,30 @@ public class Person implements Serializable {
         this.lastName = lastName;
     }
 
+    public String getCpf() {
+        return cpf;
+    }
+
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public String getAddress() {
         return address;
     }
@@ -61,6 +152,14 @@ public class Person implements Serializable {
         this.gender = gender;
     }
 
+    public PersonRole getRole() {
+        return role;
+    }
+
+    public void setRole(PersonRole role) {
+        this.role = role;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -75,33 +174,3 @@ public class Person implements Serializable {
         return getClass().hashCode();
     }
 }
-
-/*
- * ==========================================================================
- * CONCEITO: O QUE É O `Serializable`?
- * ==========================================================================
- *
- * 1. O QUE SIGNIFICA?
- *    `Serializable` é uma interface de marcação do Java (ela não possui nenhum
- *    método obrigatório para implementar). Quando uma classe implementa `Serializable`
- *    (ex: `public class MinhaClasse implements Serializable`), ela está dizendo ao Java:
- *    "Os objetos desta classe podem ser transformados em uma sequência de bytes".
- *
- * 2. PARA QUE SERVE? (Serialização e Desserialização)
- *    - **Serialização:** É o processo de converter o estado atual de um objeto em
- *      bytes. Isso é usado para:
- *        • Salvar o objeto em um arquivo no disco (persistência).
- *        • Enviar o objeto através de uma rede (ex: microsserviços conversando).
- *        • Guardar o objeto em uma sessão ou cache distribuído (como Redis).
- *    - **Desserialização:** É o processo inverso, onde pegamos essa sequência de
- *      bytes e reconstruímos o objeto original na memória.
- *
- * 3. NO CONTEXTO DO SPRING BOOT E EXCEÇÕES:
- *    Muitas vezes você verá exceptions personalizadas (como a sua
- *    `UnsupportedMathOperationException`) implementando `Serializable`.
- *    Isso acontece porque, se uma exceção precisar ser transportada pela rede
- *    (por exemplo, em arquiteturas distribuídas ou quando o servidor precisa
- *    serializar o erro para JSON/Binary), o Java precisa garantir que o objeto
- *    de erro possa ser convertido em bytes sem perder informações.
- * ==========================================================================
- */

@@ -1,12 +1,15 @@
 package com.dinisjovete.restwithspringbootjava.controllers;
-import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
+
+import com.dinisjovete.restwithspringbootjava.data.dto.PersonDTO;
+import com.dinisjovete.restwithspringbootjava.data.dto.PersonInsertDTO;
+import com.dinisjovete.restwithspringbootjava.data.dto.PersonUpdateDTO;
 import com.dinisjovete.restwithspringbootjava.services.PersonService;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 
 @RestController
 /*
@@ -47,7 +50,7 @@ public class PersonController {
      * =========================================================================
      * ENDPOINT HTTP
      * =========================================================================
-     * Retorna uma pessoa a partir do seu ID.
+     * Retorna uma pessoa a partir do seu ID, repassando o DTO retornado pelo service.
      *
      * Método HTTP:
      *      GET
@@ -66,56 +69,78 @@ public class PersonController {
      * =========================================================================
      */
     @RequestMapping(
-
             // Caminho relativo ao @RequestMapping("/person") da classe.
             // "{id}" representa um Path Parameter.
             value = "/{id}",
 
             // Define que este endpoint responderá apenas a requisições HTTP GET.
-            // GET é utilizado para consultar ou recuperar informações.
             method = RequestMethod.GET,
 
             // Define que a resposta será enviada no formato JSON
-            // (JavaScript Object Notation), o padrão utilizado em APIs REST.
             produces = MediaType.APPLICATION_JSON_VALUE
-
     )
-    public Person findById(@PathVariable("id") String id) {
+    public PersonDTO findById(@PathVariable("id") Long id) {
+        // solicita ao Service o PersonDTO correspondente ao ID informado.
+        /*
+         * Fluxo da requisição:
+         *
+         * Controller
+         *      ↓
+         * Aciona o método findById() do Service.
+         *
+         * Service
+         *      ↓
+         * Aciona o método findById() do Repository.
+         *
+         * Repository
+         *      ↓
+         * Consulta o banco de dados utilizando o ID informado.
+         *
+         * Banco de Dados
+         *      ↓
+         * Retorna a Entity encontrada.
+         *
+         * Service
+         *      ↓
+         * Converte a Entity em PersonDTO.
+         *
+         * Controller
+         *      ↓
+         * Retorna o PersonDTO como resposta da API.
+         */
         return service.findById(id);
+
     }
 
-   //GET http://localhost:8080/person
+    // GET http://localhost:8080/person
     @RequestMapping(
             value = "",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-       public List<Person> findAll() {
+    public List<PersonDTO> findAll() {
+        // Retorna a lista de PersonDTO já mapeada pelo service
         return service.findAll();
     }
 
 
-    //http://localhost:8080/person/create
+    /*
+     * ============================================================================
+     * CREATE - CRIAR UMA NOVA PESSOA
+     * ============================================================================
+     * Utiliza o PersonInsertDTO no corpo da requisição (@RequestBody) validado
+     * pelas regras da anotação @Valid. Retorna o PersonDTO de saída fornecido pelo service.
+     * ============================================================================
+     */
     @RequestMapping(
-            value = "/create",
-
-            // Define que este endpoint aceita apenas requisições HTTP POST.
-            // POST é utilizado para enviar dados e criar novos recursos.
+            value = "",
             method = RequestMethod.POST,
-
-            // Define o formato dos dados recebidos no corpo da requisição.
-            // Neste caso, a API espera um JSON.
             consumes = MediaType.APPLICATION_JSON_VALUE,
-
-            // Define o formato da resposta enviada pela API.
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public Person create(@RequestBody Person person) {
-
-        return service.create(person);
-
+    public PersonDTO create(@Valid @RequestBody PersonInsertDTO personDTO) {
+        return service.create(personDTO);
     }
-
 
 
     /*
@@ -129,12 +154,8 @@ public class PersonController {
      * Endpoint:
      *      http://localhost:8080/person/{id}
      *
-     * Exemplo:
-     *
-     *      PUT http://localhost:8080/person/6
-     *
-     * O ID vem pela URL (Path Variable)
-     * e os novos dados vêm pelo corpo da requisição (Request Body).
+     * O ID vem pela URL (Path Variable) e os novos dados de entrada vêm pelo
+     * corpo da requisição utilizando o PersonUpdateDTO com @Valid.
      *
      * ============================================================================
      */
@@ -144,14 +165,12 @@ public class PersonController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public Person update(
-            @PathVariable("id") String id,
-            @RequestBody Person person
+    public PersonDTO update(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody PersonUpdateDTO personUpdate
     ) {
-
-        return service.update(id, person);
+        return service.update(id, personUpdate);
     }
-
 
 
     /*
@@ -165,10 +184,6 @@ public class PersonController {
      * Endpoint:
      *      http://localhost:8080/person/{id}
      *
-     * Exemplo:
-     *
-     *      DELETE http://localhost:8080/person/6
-     *
      * O ID da pessoa que será removida é enviado pela URL.
      *
      * ============================================================================
@@ -178,14 +193,10 @@ public class PersonController {
             method = RequestMethod.DELETE
     )
     public ResponseEntity<?> delete(
-            @PathVariable("id") String id
+            @PathVariable("id") Long id
     ) {
-
         service.delete(id);
-
         return ResponseEntity.noContent().build();
     }
 
 }
-
-
