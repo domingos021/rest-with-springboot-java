@@ -4,8 +4,8 @@ import com.dinisjovete.restwithspringbootjava.data.dto.PersonDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.PersonInsertDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.PersonUpdateDTO;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
-import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.dinisjovete.restwithspringbootjava.exception.project_exception.ResourceNotFoundException;
+import com.dinisjovete.restwithspringbootjava.mappers.PersonMapper;
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,9 +23,13 @@ public class PersonService {
     // Injeção de Dependência do Repositório JPA para acesso ao Banco de Dados
     private final PersonRepository repository;
 
-    @Autowired   // injetando a dependência repository no construtor
-    public PersonService(PersonRepository repository) {
+    // Injeção de Dependência do Mapper para centralizar conversões e criptografia
+    private final PersonMapper mapper;
+
+    @Autowired   // injetando as dependências no construtor
+    public PersonService(PersonRepository repository, PersonMapper mapper) {
         this.repository = repository;
+        this.mapper = mapper;
     }
 
 
@@ -59,9 +63,34 @@ public class PersonService {
          */
         Person entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No record found for this ID!"));
-
-        // Converte a entidade JPA recuperada para o DTO de resposta seguro
-        return new PersonDTO(entity);
+        /*
+         * O Repository solicita ao JPA/Hibernate a busca da entidade Person no banco.
+         *
+         * O resultado retornado é uma entidade Person contendo os dados persistidos,
+         * inclusive campos internos da entidade como a senha.
+         *
+         * Por isso, antes de enviar a resposta ao cliente, a entidade é convertida
+         * para um DTO, que controla quais dados serão expostos pela API.
+         *
+         * Fluxo:
+         *
+         * 1. O Controller recebe a requisição HTTP GET para buscar uma pessoa pelo ID.
+         *
+         * 2. O Controller chama o método findById() do Service, passando o ID recebido.
+         *
+         * 3. O Service chama repository.findById(id).
+         *
+         * 4. O Repository utiliza o JPA/Hibernate para buscar os dados no banco.
+         *
+         * 5. O JPA/Hibernate monta uma entidade Person com os dados encontrados.
+         *
+         * 6. O Mapper converte a entidade Person em PersonDTO, removendo dados
+         *    que não devem ser expostos, como a senha.
+         *
+         * 7. O Service retorna o DTO para o Controller enviar ao cliente.
+         */
+        // Converte a entidade JPA recuperada para o DTO de resposta seguro usando o Mapper
+        return mapper.toDTO(entity); // envia a entidade para ser convertida em um DTO filtrando dados sensíveis como a senha antes de enviar a resposta final ao cliente
     }
 
     //método que retorna uma lista do tipo personDto
@@ -82,7 +111,7 @@ public class PersonService {
         /*
          * pega a resposta recebida via: banco -> repository -> service -> controller -> web user
          *  e converte cada entidade Person para PersonDTO, filtrando dados sensíveis como a senha, antes de enviar a resposta final ao cliente.
-         *  O método .stream() cria um fluxo de dados, .map(PersonDTO::new) aplica a conversão para cada elemento do fluxo, e .toList() coleta os resultados em uma lista final de PersonDTO.
+         *  O método .stream() cria um fluxo de dados, .map(mapper::toDTO) aplica a conversão para cada elemento do fluxo, e .toList() coleta os resultados em uma lista final de PersonDTO.
          *       *
          * E interessante notar que a resposta e retornada como a entidade pura
          * esse dados são colocado na esteira (stream) para serem transformados
@@ -90,75 +119,184 @@ public class PersonService {
          * do tipo personDto e por fim constrói uma lista com os dados da dto e apresenta essa lista ao cliente web
          */
         return repository.findAll().stream()
-                .map(PersonDTO::new)
+                .map(mapper::toDTO)
                 .toList();
     }
 
     public PersonDTO create(PersonInsertDTO personDto) {
 
-        logger.info("Creating a new Person!");
+        logger.info("Creating a new Person!"); // Registra no log que uma nova pessoa será criada.
 
-        // 1. Instancia a Entidade JPA
-        Person person = new Person();
+        /*
+         * ============================================================================
+         * FLUXO DE CRIAÇÃO DE UMA NOVA PESSOA
+         * ============================================================================
+         *
+         * O cliente envia os dados através da API no formato PersonInsertDTO.
+         *
+         * O DTO representa os dados recebidos da requisição, mas não é o objeto
+         * utilizado pelo JPA/Hibernate para persistência.
+         *
+         * Por isso, o Mapper é responsável por converter:
+         *
+         * PersonInsertDTO  --->  Person (Entidade)
+         *
+         * Durante essa conversão, o Mapper aplica regras necessárias:
+         * - Criptografa a senha utilizando BCrypt.
+         * - Define a Role padrão CLIENT caso nenhuma seja informada.
+         *
+         * Depois da conversão, o Repository recebe uma entidade Person e o JPA/Hibernate
+         * transforma essa entidade em comandos SQL para salvar no banco de dados.
+         *
+         * Após salvar, a entidade persistida retorna para o Service.
+         *
+         * Por segurança, essa entidade não é enviada diretamente ao cliente, pois possui
+         * campos internos como senha.
+         *
+         * Então o Mapper converte novamente:
+         *
+         * Person (Entidade)  --->  PersonDTO (Resposta)
+         *
+         * O DTO de resposta contém apenas os dados permitidos para exposição na API.
+         *
+         * Fluxo completo:
+         *
+         * Cliente
+         *    |
+         *    ▼
+         * Controller
+         *    |
+         *    ▼
+         * PersonInsertDTO
+         *    |
+         *    ▼
+         * PersonMapper.toEntity()
+         *    |
+         *    ▼
+         * Person (Entidade)
+         *    |
+         *    ▼
+         * Repository.save()
+         *    |
+         *    ▼
+         * Banco de Dados
+         *    |
+         *    ▼
+         * Person salva
+         *    |
+         *    ▼
+         * PersonMapper.toDTO()
+         *    |
+         *    ▼
+         * PersonDTO
+         *    |
+         *    ▼
+         * Resposta HTTP para o cliente
+         *
+         * ============================================================================
+         */
 
-        // 2. Mapeia os dados do DTO de entrada para a Entidade
-        person.setFirstName(personDto.getFirstName());
-        person.setLastName(personDto.getLastName());
-        person.setCpf(personDto.getCpf());
-        person.setEmail(personDto.getEmail());
-        person.setPassword(personDto.getPassword()); // (Futuramente aqui passará pelo BCrypt)
-        person.setAddress(personDto.getAddress());
-        person.setGender(personDto.getGender());
 
-        // Se o DTO enviar um role, define ele; senão, define o padrão CLIENT
-        person.setRole(personDto.getRole() != null ? personDto.getRole() : PersonRole.CLIENT);
+        // Converte o DTO recebido pelo Controller em uma entidade Person pronta para persistência.
+        Person person = mapper.toEntity(personDto); // DTO de entrada -> Entidade Person (aplica BCrypt e regras padrão).
 
-        // 3. Salva a Entidade no banco de dados (INSERT)
-        Person savedPerson = repository.save(person);
 
-        // 4. Retorna convertido para PersonDTO (filtrando dados internos e a senha)
-        return new PersonDTO(savedPerson);
+        // Envia a entidade para o Repository, que utiliza o JPA/Hibernate para salvar no banco.
+        Person savedPerson = repository.save(person); // Entidade Person -> INSERT no banco de dados.
+
+
+        // Converte a entidade salva em DTO de resposta, ocultando dados sensíveis como senha.
+        return mapper.toDTO(savedPerson); // Entidade Person persistida -> PersonDTO enviado ao cliente.
     }
-
 
     /*
      * ============================================================================
-     * UPDATE
+     * UPDATE - ATUALIZAÇÃO DE UMA PESSOA EXISTENTE
      * ============================================================================
-     * Atualiza os dados de uma pessoa existente.
+     *
+     * O cliente envia uma requisição PUT/PATCH contendo:
+     *
+     * - ID da pessoa que será atualizada.
+     * - Novos valores através do PersonUpdateDTO.
+     *
+     * O Service primeiro busca a entidade existente no banco.
+     *
+     * Caso encontre:
+     * - O Mapper copia os valores permitidos do DTO para a entidade existente.
+     * - O Repository salva a entidade alterada.
+     * - O Mapper converte a entidade atualizada em PersonDTO para resposta.
+     *
+     * Caso não encontre:
+     * - O Service lança ResourceNotFoundException.
+     * - O ControllerAdvice transforma a exceção em resposta HTTP 404.
+     *
      *
      * Fluxo:
      *
+     * Cliente
+     *    |
+     *    ▼
      * Controller
-     *      |
-     *      ↓
+     *    |
+     *    ▼
      * PersonService.update()
-     *      |
-     *      ↓ (Busca se existe, atualiza os campos e salva)
-     * PersonRepository.save()
-     *      |
-     *      ↓
+     *    |
+     *    ▼
+     * repository.findById(id)
+     *    |
+     *    ▼
+     * Banco de Dados
+     *    |
+     *    ▼
+     * Person (entidade existente)
+     *    |
+     *    ▼
+     * PersonMapper.updateEntityFromDTO()
+     *    |
+     *    ▼
+     * Person modificada
+     *    |
+     *    ▼
+     * repository.save()
+     *    |
+     *    ▼
      * Banco de Dados (UPDATE)
+     *    |
+     *    ▼
+     * PersonMapper.toDTO()
+     *    |
+     *    ▼
+     * PersonDTO
+     *    |
+     *    ▼
+     * Resposta HTTP para o cliente
+     *
      * ============================================================================
      */
     public PersonDTO update(Long id, PersonUpdateDTO dto) {
 
-        logger.info("Updating one Person!");
+        logger.info("Updating one Person!"); // Registra no log que uma atualização será realizada.
 
-        // Primeiro verifica se o registro existe no banco. Se não existir, lança 404.
+
+        // Busca a pessoa existente pelo ID informado.
+        // Se não encontrar, lança ResourceNotFoundException e retorna HTTP 404.
         Person entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No record found for this ID!"));
 
-        // Atualiza os dados da entidade existente com os novos valores enviados pelo DTO de atualização
-        entity.setFirstName(dto.getFirstName());
-        entity.setLastName(dto.getLastName());
-        entity.setAddress(dto.getAddress());
-        entity.setGender(dto.getGender());
 
-        // Salva as alterações no banco de dados (UPDATE)
+        // Recebe o DTO de atualização e altera somente os campos permitidos
+        // da entidade que foi carregada do banco.
+        mapper.updateEntityFromDTO(dto, entity);
+
+
+        // Salva a entidade modificada.
+        // Como a entidade possui ID, o JPA/Hibernate executa um UPDATE no banco.
         Person updatedPerson = repository.save(entity);
 
-        return new PersonDTO(updatedPerson);
+
+        // Converte a entidade atualizada em DTO de resposta,
+        // ocultando campos internos que não devem ser enviados ao cliente.
+        return mapper.toDTO(updatedPerson);
     }
 
 
@@ -194,5 +332,28 @@ public class PersonService {
                 .orElseThrow(() -> new ResourceNotFoundException("No record found for this ID!"));
 
         repository.delete(entity);
+
+        // não retona nada ao cliente
     }
 }
+
+    /*
+    Controller
+        |
+        | recebe requisição HTTP
+        | valida entrada básica
+        |
+        ▼
+    Service
+        |
+        | regra de negócio
+        | coordena operações
+        |
+        ├── Mapper
+        |       |
+        |       └── DTO <-> Entity
+        |
+        └── Repository
+                |
+                └── Banco de Dados
+     */

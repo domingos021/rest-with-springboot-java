@@ -1,10 +1,12 @@
 package com.dinisjovete.restwithspringbootjava.config;
 
 import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
+import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -41,9 +43,11 @@ public class PersonTestDataConfig implements CommandLineRunner {
     // CONSTRUCTOR INJECTION (Recommended Standard)
     // =========================================================
     private final PersonRepository personRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public PersonTestDataConfig(PersonRepository personRepository) {
+    public PersonTestDataConfig(PersonRepository personRepository, PasswordEncoder passwordEncoder) {
         this.personRepository = personRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // ========================================================================
@@ -58,52 +62,75 @@ public class PersonTestDataConfig implements CommandLineRunner {
         // sejam refletidas imediatamente ao reiniciar a aplicação no ambiente dev/test.
         personRepository.deleteAll();
 
-        logger.info("Initializing database with updated seed data...");
+        logger.info("Initializing database with updated seed data (with BCrypt passwords)...");
+
+        // Definindo uma senha padrão para os testes (ex: "123456" criptografada)
+        String defaultEncodedPassword = passwordEncoder.encode("123456");
 
         Person p1 = new Person(
                 null,
                 "Ayrton",
                 "Senna",
+                "11122233344", // CPF exigido pela entidade
+                "ayrton.senna@email.com", // E-mail exigido (unique)
+                defaultEncodedPassword, // Senha criptografada com BCrypt
                 "São Paulo - Brasil",
-                "Male"
+                "Male",
+                PersonRole.ADMIN
         );
 
         Person p2 = new Person(
                 null,
                 "Nikola",
                 "Tesla",
+                "22233344455",
+                "nikola.tesla@email.com",
+                defaultEncodedPassword,
                 "Smiljan - Croácia",
-                "Male"
+                "Male",
+                PersonRole.CLIENT
         );
 
         Person p3 = new Person(
                 null,
                 "Ada",
                 "Lovelace",
+                "33344455666",
+                "ada.lovelace@email.com",
+                defaultEncodedPassword,
                 "Londres - Inglaterra",
-                "Female"
+                "Female",
+                PersonRole.CLIENT
         );
 
         Person p4 = new Person(
                 null,
                 "Albert",
                 "Einstein",
+                "44455566777",
+                "albert.einstein@email.com",
+                defaultEncodedPassword,
                 "Ulm - Alemanha",
-                "Male"
+                "Male",
+                PersonRole.CLIENT
         );
 
         Person p5 = new Person(
                 null,
                 "Marie",
                 "Curie",
+                "55566677888",
+                "marie.curie@email.com",
+                defaultEncodedPassword,
                 "Varsóvia - Polônia",
-                "Female"
+                "Female",
+                PersonRole.CLIENT
         );
 
         // Saving mock persons into the database
         personRepository.saveAll(Arrays.asList(p1, p2, p3, p4, p5));
 
-        logger.info("Database seeding completed successfully!");
+        logger.info("Database seeding completed successfully with encrypted passwords!");
 
         // ====================================================================
         // DATABASE SEEDING COMPLETE

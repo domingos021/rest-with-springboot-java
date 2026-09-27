@@ -5,6 +5,7 @@ import com.dinisjovete.restwithspringbootjava.data.dto.PersonInsertDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.PersonUpdateDTO;
 import com.dinisjovete.restwithspringbootjava.services.PersonService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -129,7 +130,8 @@ public class PersonController {
      * CREATE - CRIAR UMA NOVA PESSOA
      * ============================================================================
      * Utiliza o PersonInsertDTO no corpo da requisição (@RequestBody) validado
-     * pelas regras da anotação @Valid. Retorna o PersonDTO de saída fornecido pelo service.
+     * pelas regras da anotação @Valid. Retorna o PersonDTO de saída fornecido pelo service
+     * com o status HTTP 201 (Created).
      * ============================================================================
      */
     @RequestMapping(
@@ -138,8 +140,9 @@ public class PersonController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public PersonDTO create(@Valid @RequestBody PersonInsertDTO personDTO) {
-        return service.create(personDTO);
+    public ResponseEntity<PersonDTO> create(@Valid @RequestBody PersonInsertDTO personDTO) {
+        PersonDTO createdPerson = service.create(personDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdPerson);
     }
 
 
