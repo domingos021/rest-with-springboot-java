@@ -132,6 +132,20 @@ public class PersonController {
      * Utiliza o PersonInsertDTO no corpo da requisição (@RequestBody) validado
      * pelas regras da anotação @Valid. Retorna o PersonDTO de saída fornecido pelo service
      * com o status HTTP 201 (Created).
+     *
+     * ----------------------------------------------------------------------------
+     * EXEMPLO DE JSON PARA O POSTMAN (POST http://localhost:8080/person):
+     * ----------------------------------------------------------------------------
+     * {
+     *   "firstName": "Elon",
+     *   "lastName": "Musk",
+     *   "cpf": "99988877766",
+     *   "email": "elon.musk@email.com",
+     *   "password": "123456",
+     *   "address": "Texas - EUA",
+     *   "gender": "Male",
+     *   "role": "CLIENT"
+     * }
      * ============================================================================
      */
     @RequestMapping(
@@ -160,6 +174,16 @@ public class PersonController {
      * O ID vem pela URL (Path Variable) e os novos dados de entrada vêm pelo
      * corpo da requisição utilizando o PersonUpdateDTO com @Valid.
      *
+     * ----------------------------------------------------------------------------
+     * EXEMPLO DE JSON PARA O POSTMAN (PUT http://localhost:8080/person/1):
+     * ----------------------------------------------------------------------------
+     * {
+     *   "firstName": "Ayrton",
+     *   "lastName": "Senna da Silva",
+     *   "address": "São Paulo - SP - Brasil",
+     *   "gender": "Male",
+     *   "role": "ADMIN"
+     * }
      * ============================================================================
      */
     @RequestMapping(

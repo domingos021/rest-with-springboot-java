@@ -1,10 +1,11 @@
-package com.dinisjovete.restwithspringbootjava;
+package com.dinisjovete.restwithspringbootjava.user_test.controller;
 
 import com.dinisjovete.restwithspringbootjava.controllers.PersonController;
 import com.dinisjovete.restwithspringbootjava.data.dto.PersonDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.PersonInsertDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.PersonUpdateDTO;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
+import com.dinisjovete.restwithspringbootjava.exception.project_exception.ResourceNotFoundException;
 import com.dinisjovete.restwithspringbootjava.services.PersonService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -114,6 +115,10 @@ public class PersonControllerTest {
         personUpdateDTO.setGender("Male");
     }
 
+    // ========================================================================
+    // 🟢 TESTES DE SUCESSO (HAPPY PATH - TESTES DE INTEGRAÇÃO WEB / MOCK)
+    // ========================================================================
+
     @Test
     public void testFindById() throws Exception {
         // Ensinamos o serviço falso a retornar o PersonDTO quando buscarem pelo ID 1
@@ -207,6 +212,33 @@ public class PersonControllerTest {
         mockMvc.perform(delete("/person/1"))
                 .andExpect(status().isNoContent());
     }
+
+    // ========================================================================
+    // 🔴 TESTES DE ERRO / EXCEÇÃO (SAD PATH - VALIDAÇÃO DE FLUXOS ALTERNATIVOS)
+    // ========================================================================
+
+    @Test
+    public void testFindByIdNotFound() throws Exception {
+        // Configura o serviço mock para lançar a exceção personalizada de recurso não encontrado
+        when(service.findById(99L)).thenThrow(new ResourceNotFoundException("Resource not found"));
+
+        // Executa a requisição GET para um ID inexistente e valida se o Controller lida com a exceção retornando 404 Not Found
+        mockMvc.perform(get("/person/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Resource not found"));
+    }
+
+    @Test
+    public void testCreateInvalidData() throws Exception {
+        // Cria um DTO completamente vazio para violar as regras de validação (@NotBlank, etc.)
+        PersonInsertDTO invalidDTO = new PersonInsertDTO();
+
+        // Executa a requisição POST com dados inválidos e valida se a camada web barra com status 400 Bad Request
+        mockMvc.perform(post("/person")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                .andExpect(status().isBadRequest());
+    }
 }
 
 
@@ -228,7 +260,7 @@ public class PersonControllerTest {
  *
  *          ✅ MockMvc      -> Simula requisições HTTP
  *          ✅ MockitoBean  -> Cria um Service falso (Mock)
- *          ✅ JUnit 5      -> Executa os testes
+ *          ✅ JUnit 5      -> Executa los testes
  *
  *
  * ============================================================================
@@ -316,7 +348,7 @@ public class PersonControllerTest {
  *
  *          Teste valida:
  *
- *          ✔ Status HTTP 200 / 201 / 204
+ *          ✔ Status HTTP 200 / 201 / 204 / 400 / 404
  *          ✔ Campos do JSON
  *          ✔ Dados retornados
  *
