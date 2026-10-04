@@ -42,7 +42,10 @@ public class Person implements Serializable {
     @Column(name = "last_name", nullable = false, length = 70)
     private String lastName;
 
-    @Column(name = "cpf", unique = true, nullable = false, length = 100)
+    /*
+     * Ajustado para length = 14 (tamanho exato e otimizado para o formato "000.000.000-00")
+     */
+    @Column(name = "cpf", unique = true, nullable = false, length = 14)
     private String cpf;
 
     @Column(unique = true, nullable = false, length = 100)
@@ -170,7 +173,22 @@ public class Person implements Serializable {
 
     @Override
     public int hashCode() {
-        // Retorna um valor fixo ou baseado no ID para evitar que mude se o objeto for alterado
-        return getClass().hashCode();
+        // Retorna um valor constante recomendado para entidades JPA com ID gerado por banco
+        return 31;
+    }
+
+    @Override
+    public String toString() {
+        return "Person{" +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", cpf='" + cpf + '\'' +
+                ", email='" + email + '\'' +
+                ", password='" + password + '\'' +
+                ", address='" + address + '\'' +
+                ", gender='" + gender + '\'' +
+                ", role=" + role +
+                '}';
     }
 }

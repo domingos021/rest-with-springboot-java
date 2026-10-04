@@ -1,37 +1,74 @@
 package com.dinisjovete.restwithspringbootjava.services;
 
+
 import com.dinisjovete.restwithspringbootjava.data.dto.PersonDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.PersonInsertDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.PersonUpdateDTO;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
+import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.dinisjovete.restwithspringbootjava.exception.project_exception.ResourceNotFoundException;
-import com.dinisjovete.restwithspringbootjava.mappers.PersonMapper;
+import com.dinisjovete.restwithspringbootjava.mappers.dozer.ObjectMpper;
+import com.dinisjovete.restwithspringbootjava.mappers.mapper_manual.PersonMapper;
+import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.PersonMapper_MapStruct;
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 @Service // Marca a classe como um Bean gerenciado pelo Spring (Injeção de Dependência)
 public class PersonService {
 
     // Registry logs (mensagens de erro, avisos e informações) no console da aplicação
-    private static final Logger logger =
-            Logger.getLogger(PersonService.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(PersonService.class.getName());
 
     // Injeção de Dependência do Repositório JPA para acesso ao Banco de Dados
     private final PersonRepository repository;
 
-    // Injeção de Dependência do Mapper para centralizar conversões e criptografia
-    private final PersonMapper mapper;
+    /*
+     * ============================================================================
+     * ARQUITETURA DE MÁSCARAS E CONVERSÃO (ESTRATÉGIAS DE MAPPER)
+     * ============================================================================
+     *
+     * O projeto explora e compara três abordagens distintas de mapeamento entre
+     * Entidades e DTOs, mantendo o ecossistema flexível para estudo comparativo:
+     *
+     * 1. Mapper Manual (`PersonMapper`):
+     *    - Implementação nativa própria, controlada linha a linha.
+     *    - Total transparência, sem mágica ou dependências de bibliotecas de terceiros.
+     *
+     * 2. Dozer (`ObjectMapper`):
+     *    - Abordagem baseada em reflexão em tempo de execução (Reflection).
+     *    - Conveniente pela cópia automática por nome de propriedades, porém
+     *      com menor performance e alto custo computacional em larga escala.
+     *
+     * 3. MapStruct (`PersonMapper_MapStruct`):
+     *    - Abordagem moderna baseada em anotações e processamento em tempo de compilação.
+     *    - Gera código Java puro (bytecode otimizado), unindo a velocidade do mapeamento
+     *      manual com a produtividade da automação.
+     *
+     * ----------------------------------------------------------------------------
+     * CONFIGURAÇÃO ATIVA NA CAMADA DE SERVIÇO:
+     * ----------------------------------------------------------------------------
+     */
+
+    // Injeção de Dependência do Mapper ativo para centralizar as conversões da API
+   // private final PersonMapper mapper01;  // 1ª Alternativa: Mapper Manual (Foco em controle total)
+    // private final ObjectMapper mapper02;     // 2ª Alternativa: Dozer Mapper (Foco em reflexão/dinamismo)
+     private final PersonMapper_MapStruct mapper03; // 3ª Alternativa: MapStruct (Foco em performance em tempo de compilação)
+
+    // Injeção de Dependência do PasswordEncoder para tratar a regra de negócio de segurança da senha
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired   // injetando as dependências no construtor
-    public PersonService(PersonRepository repository, PersonMapper mapper) {
+    public PersonService(PersonMapper_MapStruct mapper03, PasswordEncoder passwordEncoder, PersonRepository repository) {
+        this.mapper03 = mapper03;
+        this.passwordEncoder = passwordEncoder;
         this.repository = repository;
-        this.mapper = mapper;
     }
-
 
     public PersonDTO findById(Long id) {
 
@@ -62,7 +99,7 @@ public class PersonService {
          * ============================================================================
          */
         Person entity = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("No record found for this ID!"));
+                .orElseThrow(() -> new ResourceNotFoundException("ID não existente na base de dados!"));
         /*
          * O Repository solicita ao JPA/Hibernate a busca da entidade Person no banco.
          *
@@ -90,7 +127,7 @@ public class PersonService {
          * 7. O Service retorna o DTO para o Controller enviar ao cliente.
          */
         // Converte a entidade JPA recuperada para o DTO de resposta seguro usando o Mapper
-        return mapper.toDTO(entity); // envia a entidade para ser convertida em um DTO filtrando dados sensíveis como a senha antes de enviar a resposta final ao cliente
+        return mapper03.mapEntityToDto(entity); // envia a entidade para ser convertida em um DTO filtrando dados sensíveis como a senha antes de enviar a resposta final ao cliente
     }
 
     //método que retorna uma lista do tipo personDto
@@ -119,7 +156,7 @@ public class PersonService {
          * do tipo personDto e por fim constrói uma lista com os dados da dto e apresenta essa lista ao cliente web
          */
         return repository.findAll().stream()
-                .map(mapper::toDTO)
+                .map(mapper03::mapEntityToDto) // converte cada entidade Person em PersonDTO
                 .toList();
     }
 
@@ -141,7 +178,7 @@ public class PersonService {
          *
          * PersonInsertDTO  --->  Person (Entidade)
          *
-         * Durante essa conversão, o Mapper aplica regras necessárias:
+         * Durante essa conversão, o Service aplica regras necessárias de segurança:
          * - Criptografa a senha utilizando BCrypt.
          * - Define a Role padrão CLIENT caso nenhuma seja informada.
          *
@@ -175,6 +212,7 @@ public class PersonService {
          *    ▼
          * Person (Entidade)
          *    |
+         *    ▼ (Aplica PasswordEncoder e Role padrão no Service)
          *    ▼
          * Repository.save()
          *    |
@@ -197,16 +235,27 @@ public class PersonService {
          */
 
 
-        // Converte o DTO recebido pelo Controller em uma entidade Person pronta para persistência.
-        Person person = mapper.toEntity(personDto); // DTO de entrada -> Entidade Person (aplica BCrypt e regras padrão).
+        // Converte o DTO recebido pelo Controller em uma entidade Person pura através do Mapper.
+        Person person = mapper03.mapDtoToEntity(personDto);
+
+        // Aplica a regra de negócio/segurança de criptografia da senha via BCrypt (caso informada)
+        if (personDto.getPassword() != null) {
+            person.setPassword(passwordEncoder.encode(personDto.getPassword()));
+        }
+
+        // Garante a atribuição da Role (padrão CLIENT se vier nula)
+        if (person.getRole() == null) {
+            person.setRole(PersonRole.CLIENT);
+        }
 
 
-        // Envia a entidade para o Repository, que utiliza o JPA/Hibernate para salvar no banco.
+        // Envia a entidade tratada para o Repository, que utiliza o JPA/Hibernate para salvar no banco.
         Person savedPerson = repository.save(person); // Entidade Person -> INSERT no banco de dados.
 
 
         // Converte a entidade salva em DTO de resposta, ocultando dados sensíveis como senha.
-        return mapper.toDTO(savedPerson); // Entidade Person persistida -> PersonDTO enviado ao cliente.
+        // a entidade criada retorna a dto de retorno para o cliente
+        return mapper03.mapEntityToDto(savedPerson); // Entidade Person persistida -> PersonDTO enviado ao cliente.
     }
 
     /*
@@ -286,7 +335,7 @@ public class PersonService {
 
         // Recebe o DTO de atualização e altera somente os campos permitidos
         // da entidade que foi carregada do banco.
-        mapper.updateEntityFromDTO(dto, entity);
+        mapper03.updateEntityFromDTO(dto, entity);
 
 
         // Salva a entidade modificada.
@@ -296,9 +345,8 @@ public class PersonService {
 
         // Converte a entidade atualizada em DTO de resposta,
         // ocultando campos internos que não devem ser enviados ao cliente.
-        return mapper.toDTO(updatedPerson);
+        return mapper03.mapEntityToDto(updatedPerson);
     }
-
 
 
     /*

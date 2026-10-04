@@ -4,17 +4,19 @@ import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRo
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Objects;
 
-// ============================================================================
-// DATA TRANSFER OBJECT (DTO) LAYER - PERSON RESPONSE CONTRACT
-// ============================================================================
-// Core Purpose:
-// Represents the outgoing data payload returned to the client (GET responses).
-// Excludes sensitive data (like passwords) and exposes safe fields.
-// ============================================================================
-
-/**
- * Data Transfer Object for transferring Person data to the client.
+/*
+ * ============================================================================
+ * TÍTULO DA CLASSE: PersonDTO
+ * ----------------------------------------------------------------------------
+ * O QUE ELA FAZ:
+ * Representa o contrato oficial de dados (Data Transfer Object) da entidade
+ * Person na camada de API. Utilizado para transportar dados de forma segura
+ * entre o servidor e o cliente, omitindo informações sensíveis (como senhas)
+ * e servindo como padrão unificado para todas as estratégias de mapeamento
+ * (Manual, Dozer e MapStruct).
+ * ============================================================================
  */
 public class PersonDTO implements Serializable {
 
@@ -34,7 +36,7 @@ public class PersonDTO implements Serializable {
     public PersonDTO() {
     }
 
-    // Parameterized Constructor (Used by PersonMapper.toDTO())
+    // Parameterized Constructor
     public PersonDTO(Long id, String firstName, String lastName, String cpf, String email, String address, String gender, PersonRole role) {
         this.id = id;
         this.firstName = firstName;
@@ -112,5 +114,35 @@ public class PersonDTO implements Serializable {
 
     public void setRole(PersonRole role) {
         this.role = role;
+    }
+
+    // ========================================================================
+    // EQUALS AND HASHCODE (Baseados no ID único)
+    // ========================================================================
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PersonDTO personDTO)) return false;
+        return Objects.equals(id, personDTO.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "PersonDTO{" +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", cpf='" + cpf + '\'' +
+                ", email='" + email + '\'' +
+                ", address='" + address + '\'' +
+                ", gender='" + gender + '\'' +
+                ", role=" + role +
+                '}';
     }
 }

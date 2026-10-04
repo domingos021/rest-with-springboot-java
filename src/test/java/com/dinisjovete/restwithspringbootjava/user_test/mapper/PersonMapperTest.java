@@ -5,7 +5,7 @@ import com.dinisjovete.restwithspringbootjava.data.dto.PersonInsertDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.PersonUpdateDTO;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
-import com.dinisjovete.restwithspringbootjava.mappers.PersonMapper;
+import com.dinisjovete.restwithspringbootjava.mappers.mapper_manual.PersonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

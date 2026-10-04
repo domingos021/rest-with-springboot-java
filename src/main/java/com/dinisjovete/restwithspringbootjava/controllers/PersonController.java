@@ -69,13 +69,10 @@ public class PersonController {
      * O valor informado na URL será recebido pelo parâmetro "id".
      * =========================================================================
      */
-    @RequestMapping(
-            // Caminho relativo ao @RequestMapping("/person") da classe.
+    @GetMapping(
+            // Caminho relativo ao @GetMapping("/person") da classe.
             // "{id}" representa um Path Parameter.
             value = "/{id}",
-
-            // Define que este endpoint responderá apenas a requisições HTTP GET.
-            method = RequestMethod.GET,
 
             // Define que a resposta será enviada no formato JSON
             produces = MediaType.APPLICATION_JSON_VALUE
@@ -114,9 +111,8 @@ public class PersonController {
     }
 
     // GET http://localhost:8080/person
-    @RequestMapping(
+    @GetMapping(
             value = "",
-            method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public List<PersonDTO> findAll() {
@@ -148,9 +144,8 @@ public class PersonController {
      * }
      * ============================================================================
      */
-    @RequestMapping(
+    @PostMapping(
             value = "",
-            method = RequestMethod.POST,
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -186,9 +181,8 @@ public class PersonController {
      * }
      * ============================================================================
      */
-    @RequestMapping(
+    @PutMapping(
             value = "/{id}",
-            method = RequestMethod.PUT,
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -215,15 +209,15 @@ public class PersonController {
      *
      * ============================================================================
      */
-    @RequestMapping(
-            value = "/{id}",
-            method = RequestMethod.DELETE
+    @DeleteMapping(
+            value = "/{id}"
     )
+    //ResponseEntity<?> -> retorna o status code 204 que e o correto nesse caso
     public ResponseEntity<?> delete(
             @PathVariable("id") Long id
     ) {
         service.delete(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().build(); // não retorna nenhum conteúdo no body de resposta, apenas 204
     }
 
 }

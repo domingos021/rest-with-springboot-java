@@ -143,4 +143,18 @@ public class PersonInsertDTO implements Serializable {
     public void setRole(PersonRole role) {
         this.role = role;
     }
+
+    @Override
+    public String toString() {
+        return "PersonInsertDTO{" +
+                "firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", cpf='" + cpf + '\'' +
+                ", email='" + email + '\'' +
+                ", password='" + password + '\'' +
+                ", address='" + address + '\'' +
+                ", gender='" + gender + '\'' +
+                ", role=" + role +
+                '}';
+    }
 }
