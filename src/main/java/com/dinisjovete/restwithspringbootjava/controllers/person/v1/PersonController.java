@@ -1,9 +1,9 @@
-package com.dinisjovete.restwithspringbootjava.controllers;
+package com.dinisjovete.restwithspringbootjava.controllers.person.v1;
 
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonDTO;
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonInsertDTO;
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonUpdateDTO;
-import com.dinisjovete.restwithspringbootjava.services.PersonService;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonDTO;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonInsertDTO;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonUpdateDTO;
+import com.dinisjovete.restwithspringbootjava.services.person.v1.PersonService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,12 +21,12 @@ import java.util.List;
  *
  * Todas as requisições para este Controller começarão com:
  *
- *      http://localhost:8080/person
+ *      http://localhost:8080/person/v1
  *
  * Assim, todos os métodos desta classe herdam esse caminho base.
  * ============================================================================
  */
-@RequestMapping("/person")
+@RequestMapping("/person/v1")
 public class PersonController {
 
     // =========================================================================
@@ -57,20 +57,20 @@ public class PersonController {
      *      GET
      *
      * Endpoint:
-     *      http://localhost:8080/person/{id}
+     *      http://localhost:8080/person/v1/{id}
      *
      * Exemplo:
-     *      http://localhost:8080/person/1
+     *      http://localhost:8080/person/v1/1
      *
      * Onde:
-     *      /person -> recurso (Resource)
-     *      /1      -> Path Parameter (ID da pessoa)
+     *      /person/v1 -> recurso (Resource)
+     *      /1         -> Path Parameter (ID da pessoa)
      *
      * O valor informado na URL será recebido pelo parâmetro "id".
      * =========================================================================
      */
     @GetMapping(
-            // Caminho relativo ao @GetMapping("/person") da classe.
+            // Caminho relativo ao @RequestMapping da classe.
             // "{id}" representa um Path Parameter.
             value = "/{id}",
 
@@ -110,7 +110,7 @@ public class PersonController {
 
     }
 
-    // GET http://localhost:8080/person
+    // GET http://localhost:8080/person/v1
     @GetMapping(
             value = "",
             produces = MediaType.APPLICATION_JSON_VALUE
@@ -130,7 +130,7 @@ public class PersonController {
      * com o status HTTP 201 (Created).
      *
      * ----------------------------------------------------------------------------
-     * EXEMPLO DE JSON PARA O POSTMAN (POST http://localhost:8080/person):
+     * EXEMPLO DE JSON PARA O POSTMAN (POST http://localhost:8080/person/v1):
      * ----------------------------------------------------------------------------
      * {
      *   "firstName": "Elon",
@@ -164,13 +164,13 @@ public class PersonController {
      *      PUT
      *
      * Endpoint:
-     *      http://localhost:8080/person/{id}
+     *      http://localhost:8080/person/v1/{id}
      *
      * O ID vem pela URL (Path Variable) e os novos dados de entrada vêm pelo
      * corpo da requisição utilizando o PersonUpdateDTO com @Valid.
      *
      * ----------------------------------------------------------------------------
-     * EXEMPLO DE JSON PARA O POSTMAN (PUT http://localhost:8080/person/1):
+     * EXEMPLO DE JSON PARA O POSTMAN (PUT http://localhost:8080/person/v1/1):
      * ----------------------------------------------------------------------------
      * {
      *   "firstName": "Ayrton",
@@ -203,7 +203,7 @@ public class PersonController {
      *      DELETE
      *
      * Endpoint:
-     *      http://localhost:8080/person/{id}
+     *      http://localhost:8080/person/v1/{id}
      *
      * O ID da pessoa que será removida é enviado pela URL.
      *

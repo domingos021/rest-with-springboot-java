@@ -1,4 +1,4 @@
-package com.dinisjovete.restwithspringbootjava.data.dto;
+package com.dinisjovete.restwithspringbootjava.data.dto.person.v2;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -20,7 +20,7 @@ import java.io.Serializable;
 /**
  * Data Transfer Object for receiving person update data payloads (HTTP PUT).
  */
-public class PersonUpdateDTO implements Serializable {
+public class PersonUpdateDTOV2 implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -42,7 +42,7 @@ public class PersonUpdateDTO implements Serializable {
     private String gender;
 
     // Default Constructor (required for JSON deserialization frameworks like Jackson)
-    public PersonUpdateDTO() {
+    public PersonUpdateDTOV2() {
     }
 
     /**
@@ -53,7 +53,7 @@ public class PersonUpdateDTO implements Serializable {
      * @param address   Person Address
      * @param gender    Person Gender
      */
-    public PersonUpdateDTO(String firstName, String lastName, String address, String gender) {
+    public PersonUpdateDTOV2(String firstName, String lastName, String address, String gender) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.address = address;

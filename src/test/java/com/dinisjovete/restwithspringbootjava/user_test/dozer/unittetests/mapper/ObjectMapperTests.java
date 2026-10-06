@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonDTO;
-import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonDTO;
+import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.dinisjovete.restwithspringbootjava.user_test.dozer.unittetests.mapper.mocks.MockPerson;
 import org.junit.jupiter.api.BeforeEach;

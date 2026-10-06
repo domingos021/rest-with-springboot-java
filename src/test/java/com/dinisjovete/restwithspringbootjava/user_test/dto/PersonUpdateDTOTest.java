@@ -1,5 +1,5 @@
 package com.dinisjovete.restwithspringbootjava.user_test.dto;
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonUpdateDTO;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonUpdateDTO;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;

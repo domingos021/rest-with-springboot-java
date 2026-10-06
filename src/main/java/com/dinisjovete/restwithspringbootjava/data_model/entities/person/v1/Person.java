@@ -1,10 +1,11 @@
-package com.dinisjovete.restwithspringbootjava.data_model.entities;
+package com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1;
 
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDate;
 
 /*
  * A classe inteira corresponde a uma entidade do banco de dados, representando uma tabela chamada "person".
@@ -42,6 +43,7 @@ public class Person implements Serializable {
     @Column(name = "last_name", nullable = false, length = 70)
     private String lastName;
 
+
     /*
      * Ajustado para length = 14 (tamanho exato e otimizado para o formato "000.000.000-00")
      */
@@ -67,18 +69,18 @@ public class Person implements Serializable {
     @Column(nullable = false)
     private PersonRole role;
 
-    public Person() {}
+    public Person() {
+    }
 
-    public Person(
-            Long id,
-            String firstName,
-            String lastName,
-            String cpf,
-            String email,
-            String password,
-            String address,
-            String gender,
-            PersonRole role
+    public Person(Long id,
+                  String firstName,
+                  String lastName,
+                  String cpf,
+                  String email,
+                  String password,
+                  String address,
+                  String gender,
+                  PersonRole role
     ) {
         this.id = id;
         this.firstName = firstName;
@@ -114,6 +116,7 @@ public class Person implements Serializable {
     public void setLastName(String lastName) {
         this.lastName = lastName;
     }
+
 
     public String getCpf() {
         return cpf;

@@ -1,6 +1,6 @@
 package com.dinisjovete.restwithspringbootjava.mock;
 
-import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
+import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
 
 import java.util.ArrayList;
 import java.util.List;

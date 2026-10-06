@@ -1,0 +1,111 @@
+/*
+ * ============================================================
+ *                    VERSIONAMENTO
+ * ============================================================
+ *
+ * CONCEITO
+ * ------------------------------------------------------------
+ * Versionamento é o processo de controlar e registrar todas as
+ * alterações realizadas em um projeto ao longo do tempo.
+ *
+ * Cada alteração gera uma nova versão, permitindo acompanhar
+ * quem modificou o código, quando a modificação foi feita e
+ * qual foi o motivo da mudança.
+ *
+ *
+ * OBJETIVOS
+ * ------------------------------------------------------------
+ * • Manter um histórico completo das alterações.
+ * • Permitir voltar para versões anteriores quando necessário.
+ * • Facilitar o trabalho em equipe sem sobrescrever alterações.
+ * • Organizar a evolução do software de forma segura.
+ * • Identificar rapidamente quando um erro foi introduzido.
+ *
+ *
+ * COMO FUNCIONA (VISÃO GERAL)
+ * ------------------------------------------------------------
+ *
+ * Desenvolvedor
+ *       │
+ *       ▼
+ * Faz alterações no código
+ *       │
+ *       ▼
+ * Commit (salva uma versão)
+ *       │
+ *       ▼
+ * Histórico de versões
+ *       │
+ *       ├── Versão 1
+ *       ├── Versão 2
+ *       ├── Versão 3
+ *       └── Versão Atual
+ *
+ *
+ * PRINCIPAIS CONCEITOS
+ * ------------------------------------------------------------
+ * Commit
+ *   Salva um conjunto de alterações criando uma nova versão.
+ *
+ * Histórico
+ *   Lista cronológica de todos os commits realizados.
+ *
+ * Branch
+ *   Ramificação independente utilizada para desenvolver novas
+ *   funcionalidades sem afetar a versão principal.
+ *
+ * Merge
+ *   Une alterações de uma branch em outra.
+ *
+ * Repositório
+ *   Local onde todo o histórico do projeto é armazenado.
+ *
+ *
+ * EXEMPLOS
+ * ------------------------------------------------------------
+ *
+ * Exemplo 1
+ * ----------
+ * Versão 1.0
+ * Sistema possui apenas cadastro de usuários.
+ *
+ * Versão 1.1
+ * Adicionada validação de CPF.
+ *
+ * Versão 1.2
+ * Corrigido erro no cadastro.
+ *
+ *
+ * Exemplo 2 (Git)
+ * ----------------
+ * git add .
+ * git commit -m "Implementa validação de CPF"
+ * git push origin main
+ *
+ *
+ * VANTAGENS
+ * ------------------------------------------------------------
+ * ✓ Segurança das alterações.
+ * ✓ Facilidade para localizar erros.
+ * ✓ Trabalho colaborativo.
+ * ✓ Recuperação de versões antigas.
+ * ✓ Organização da evolução do sistema.
+ *
+ *
+ * FERRAMENTAS MAIS UTILIZADAS
+ * ------------------------------------------------------------
+ * • Git
+ * • GitHub
+ * • GitLab
+ * • Bitbucket
+ *
+ *
+ * RESUMO
+ * ------------------------------------------------------------
+ * Versionamento é o gerenciamento das versões de um projeto,
+ * registrando todas as alterações realizadas para garantir
+ * organização, rastreabilidade, colaboração e recuperação
+ * segura do código durante toda a evolução do software.
+ *
+ * ============================================================
+ */

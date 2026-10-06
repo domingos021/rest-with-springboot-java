@@ -1,9 +1,8 @@
-package com.dinisjovete.restwithspringbootjava.data.dto;
+package com.dinisjovete.restwithspringbootjava.data.dto.person.v1;
 
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.io.Serial;

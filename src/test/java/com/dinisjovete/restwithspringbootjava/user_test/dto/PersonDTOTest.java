@@ -1,6 +1,6 @@
 package com.dinisjovete.restwithspringbootjava.user_test.dto;
 
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonDTO;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonDTO;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

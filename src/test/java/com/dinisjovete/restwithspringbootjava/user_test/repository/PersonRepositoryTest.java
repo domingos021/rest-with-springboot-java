@@ -1,6 +1,6 @@
 package com.dinisjovete.restwithspringbootjava.user_test.repository;
 
-import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
+import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
 import org.junit.jupiter.api.BeforeEach;

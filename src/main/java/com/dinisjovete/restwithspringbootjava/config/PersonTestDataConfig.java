@@ -1,7 +1,7 @@
 package com.dinisjovete.restwithspringbootjava.config;
 
-import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
+import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;

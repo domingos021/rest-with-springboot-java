@@ -1,14 +1,14 @@
 package com.dinisjovete.restwithspringbootjava.user_test.service;
 
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonDTO;
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonInsertDTO;
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonUpdateDTO;
-import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonDTO;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonInsertDTO;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonUpdateDTO;
+import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.dinisjovete.restwithspringbootjava.exception.project_exception.ResourceNotFoundException;
 import com.dinisjovete.restwithspringbootjava.mappers.mapper_manual.PersonMapper;
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
-import com.dinisjovete.restwithspringbootjava.services.PersonService;
+import com.dinisjovete.restwithspringbootjava.services.person.v1.PersonService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

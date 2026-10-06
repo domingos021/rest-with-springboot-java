@@ -1,6 +1,6 @@
 package com.dinisjovete.restwithspringbootjava.repositories;
 
-import com.dinisjovete.restwithspringbootjava.data_model.entities.Person;
+import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

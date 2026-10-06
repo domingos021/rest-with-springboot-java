@@ -1,12 +1,12 @@
 package com.dinisjovete.restwithspringbootjava.user_test.controller;
 
-import com.dinisjovete.restwithspringbootjava.controllers.PersonController;
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonDTO;
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonInsertDTO;
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonUpdateDTO;
+import com.dinisjovete.restwithspringbootjava.controllers.person.v1.PersonController;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonDTO;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonInsertDTO;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonUpdateDTO;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.dinisjovete.restwithspringbootjava.exception.project_exception.ResourceNotFoundException;
-import com.dinisjovete.restwithspringbootjava.services.PersonService;
+import com.dinisjovete.restwithspringbootjava.services.person.v1.PersonService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -126,8 +126,19 @@ public class PersonControllerTest {
 
         // Executamos a requisição GET e validamos os campos do JSON retornado pelo Controller
         mockMvc.perform(get("/person/1"))
+                /*
+                 * Garante que a requisição retornou o status HTTP 200 (OK)
+                 */
                 .andExpect(status().isOk())
+
+                /*
+                 * Verifica se a entidade existe validando a presença do ID no JSON
+                 */
                 .andExpect(jsonPath("$.id").exists())
+
+                /*
+                 * Verifica se os campos do JSON retornado correspondem aos valores esperados
+                 */
                 .andExpect(jsonPath("$.firstName").value("Ayrton"))
                 .andExpect(jsonPath("$.lastName").value("Senna"))
                 .andExpect(jsonPath("$.cpf").value("11122233344"))

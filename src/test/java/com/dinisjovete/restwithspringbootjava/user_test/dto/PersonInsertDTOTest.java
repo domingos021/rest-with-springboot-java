@@ -1,7 +1,7 @@
 package com.dinisjovete.restwithspringbootjava.user_test.dto;
 
 
-import com.dinisjovete.restwithspringbootjava.data.dto.PersonInsertDTO;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonInsertDTO;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;

@@ -1,0 +1,82 @@
+/*
+ * ============================================================
+ *                VERSIONAMENTO DE APIs
+ * ============================================================
+ *
+ * CONCEITO
+ * ------------------------------------------------------------
+ * Versionamento de APIs é a prática de disponibilizar diferentes
+ * versões de uma mesma API para que novas funcionalidades ou
+ * alterações possam ser implementadas sem quebrar a compatibilidade
+ * com aplicações que utilizam versões anteriores.
+ *
+ *
+ * OBJETIVOS
+ * ------------------------------------------------------------
+ * • Manter compatibilidade com clientes existentes.
+ * • Permitir evolução da API de forma controlada.
+ * • Evitar que alterações interrompam sistemas em produção.
+ * • Disponibilizar novos recursos sem remover os antigos.
+ * • Facilitar a migração entre versões.
+ *
+ *
+ * EXEMPLO
+ * ------------------------------------------------------------
+ *
+ * API V1
+ * GET /api/person/v1
+ *
+ * Resposta:
+ * {
+ *   "id": 1,
+ *   "firstName": "João"
+ * }
+ *
+ *
+ * API V2
+ * GET /api/person/v2
+ *
+ * Resposta:
+ * {
+ *   "id": 1,
+ *   "firstName": "João",
+ *   "lastName": "Silva",
+ *   "email": "joao@email.com"
+ * }
+ *
+ * A versão 2 adicionou novos campos sem alterar a versão 1.
+ *
+ *
+ * FORMAS COMUNS DE VERSIONAR
+ * ------------------------------------------------------------
+ *
+ * 1) Pela URL (mais utilizada)
+ *    /api/person/v1
+ *    /api/person/v2
+ *
+ * 2) Por parâmetro
+ *    /api/person?version=1
+ *
+ * 3) Por Header HTTP
+ *    API-Version: 1
+ *
+ * 4) Pelo Header Accept (Media Type)
+ *    Accept: application/vnd.company.v1+json
+ *
+ *
+ * VANTAGENS
+ * ------------------------------------------------------------
+ * ✓ Evolução segura da API.
+ * ✓ Compatibilidade entre versões.
+ * ✓ Menor impacto para clientes existentes.
+ * ✓ Permite atualização gradual dos consumidores da API.
+ *
+ *
+ * RESUMO
+ * ------------------------------------------------------------
+ * Versionamento de APIs é a estratégia de manter múltiplas
+ * versões de uma API para permitir sua evolução sem quebrar
+ * aplicações que dependem de versões anteriores.
+ *
+ * ============================================================
+ */
