@@ -1,0 +1,41 @@
+/*
+ * ==============================================================================
+ * DIAGRAMA DO CICLO DE VIDA E ORDEM DE EXECUÇÃO DA API (SPRING BOOT)
+ * ==============================================================================
+ *
+ * 1ª FASE: COMPILAÇÃO E DEPENDÊNCIAS
+ * ------------------------------------------------------------------------------
+ * [ pom.xml / Maven ] -> Lê as dependências do projeto, valida as bibliotecas
+ *                         (Spring, Flyway, PostgreSQL, etc.) e compila o código.
+ *
+ * 2ª FASE: CARREGAMENTO DE CONFIGURAÇÕES
+ * ------------------------------------------------------------------------------
+ * [ application.properties ] -> O Spring Boot inicializa a JVM e lê as
+ *                               propriedades de ambiente (perfil dev, URL do
+ *                               banco, credenciais e ddl-auto=none).
+ *
+ * 3ª FASE: CONEXÃO E VERSIONAMENTO DE BANCO (FLYWAY)
+ * ------------------------------------------------------------------------------
+ * [ db/migration/ ] -> O Flyway conecta ao PostgreSQL e executa os scripts
+ *                      sequenciais pendentes na ordem exata:
+ *                      - 3.1º: V1__Create_Table_Person.sql (Cria a tabela base)
+ *                      - 3.2º: V2__Add_Birth_Date_To_Person.sql (Adiciona colunas)
+ *
+ * 4ª FASE: INICIALIZAÇÃO DO CONTEXTO DA APLICAÇÃO (JAVA)
+ * ------------------------------------------------------------------------------
+ * [ src/main/java ] -> O Spring Boot sobe os Beans do ecossistema:
+ *                      - Controllers, Services, Repositories e Spring Security.
+ *                      - O Hibernate apenas valida o mapeamento (sem alterar o banco).
+ *
+ * 5ª FASE: EXECUÇÃO DO SEED DE TESTES
+ * ------------------------------------------------------------------------------
+ * [ PersonTestDataConfig ] -> Implementa o CommandLineRunner e roda no final:
+ *                             Verifica se os dados de mock já existem e popula
+ *                             o banco de dados com os usuários iniciais.
+ *
+ * 6ª FASE: API PRONTA E OPERACIONAL
+ * ------------------------------------------------------------------------------
+ * [ Servidor Ativo ] -> Aplicação com arquitetura 100% pronta, banco estruturado
+ *                       e aguardando requisições HTTP na porta configurada.
+ * ==============================================================================
+ */

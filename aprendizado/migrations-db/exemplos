@@ -1,0 +1,107 @@
+/*
+ * ==============================================================================
+ * GUIA DE REFERÊNCIA: CONCEITO, NOMENCLATURA E EXEMPLOS DE MIGRATIONS
+ * ==============================================================================
+ *
+ * ------------------------------------------------------------------------------
+ * 📌 CONCEITO FUNDAMENTAL: POR QUE AS MIGRATIONS SÃO FEITAS ANTES?
+ * ------------------------------------------------------------------------------
+ * As migrations de banco de dados são sempre criadas e executadas ANTES ou
+ * em conjunto com a alteração do código da API. O principal objetivo disso é
+ * PREPARAR O TERRENO NO BANCO DE DADOS PARA RECEBER CÓDIGOS FUTUROS.
+ *
+ * Quando você cria uma migration prevendo uma mudança estrutural (como adicionar
+ * uma coluna nova), o Flyway executa o script e atualiza fisicamente o banco
+ * segundos antes de a nova versão da API entrar em execução. Isso garante que a
+ * base de dados esteja totalmente estruturada e com as portas abertas para
+ * suportar o novo contrato da aplicação sem quebrar o sistema.
+ *
+ * ==============================================================================
+ * CATÁLOGO PRÁTICO DE MIGRATIONS USANDO A ENTIDADE 'person' COMO MOLDE
+ * ==============================================================================
+ *
+ * ------------------------------------------------------------------------------
+ * 1. PADRÃO DE NOMENCLATURA DO FLYWAY
+ * ------------------------------------------------------------------------------
+ * Formato obrigatório: V<Numero>__<Descricao_Em_PascalCase_Ou_Com_Underscore>.sql
+ * Exemplo: V3__Add_Phone_Column_To_Person.sql
+ *
+ * ------------------------------------------------------------------------------
+ * 2. CATÁLOGO DE EXEMPLOS DE MIGRATIONS FUTURAS
+ * ------------------------------------------------------------------------------
+ */
+
+/*
+ * ==============================================================================
+ * EXEMPLO 1: Adição de uma nova coluna opcional
+ * Nome do arquivo: V3__Add_Phone_Column_To_Person.sql
+ * Objetivo: Preparar o banco para receber um novo dado no contrato da API (telefone).
+ * ------------------------------------------------------------------------------
+ * Comando SQL:
+ * ==============================================================================
+ */
+ALTER TABLE public.person
+ADD COLUMN phone VARCHAR(20);
+
+
+/*
+ * ==============================================================================
+ * EXEMPLO 2: Criação de um índice de performance para buscas rápidas
+ * Nome do arquivo: V4__Create_Index_Person_Email.sql
+ * Objetivo: Otimizar consultas frequentes filtradas por e-mail, acelerando a API.
+ * ------------------------------------------------------------------------------
+ * Comando SQL:
+ * ==============================================================================
+ */
+CREATE INDEX idx_person_email ON public.person(email);
+
+
+/*
+ * ==============================================================================
+ * EXEMPLO 3: Adição de restrição de unicidade (Unique Constraint)
+ * Nome do arquivo: V5__Add_Unique_Constraint_To_Person_Email.sql
+ * Objetivo: Garantir a nível de banco de dados que não existam dois cadastros
+ * com o mesmo endereço de e-mail.
+ * ------------------------------------------------------------------------------
+ * Comando SQL:
+ * ==============================================================================
+ */
+ALTER TABLE public.person
+ADD CONSTRAINT uk_person_email UNIQUE (email);
+
+
+/*
+ * ==============================================================================
+ * EXEMPLO 4: Criação de uma nova tabela relacionada (Ex: Endereços secundários)
+ * Nome do arquivo: V6__Create_Table_Address.sql
+ * Objetivo: Expandir o domínio criando uma nova tabela ligada por chave estrangeira.
+ * ------------------------------------------------------------------------------
+ * Comando SQL:
+ * ==============================================================================
+ */
+CREATE TABLE IF NOT EXISTS public.address_details (
+    id SERIAL PRIMARY KEY,
+    person_id BIGINT NOT NULL,
+    street VARCHAR(150) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(50) NOT NULL,
+    CONSTRAINT fk_address_person FOREIGN KEY (person_id) REFERENCES public.person(id)
+);
+
+
+/*
+ * ==============================================================================
+ * EXEMPLO 5: Alteração de tipo de dado de uma coluna existente
+ * Nome do arquivo: V7__Alter_Password_Column_Size.sql
+ * Objetivo: Aumentar o limite de caracteres suportados em uma coluna já existente.
+ * ------------------------------------------------------------------------------
+ * Comando SQL:
+ * ==============================================================================
+ */
+ALTER TABLE public.person
+ALTER COLUMN password TYPE VARCHAR(500);
+
+
+/* ==============================================================================
+ * FIM DO GUIA DE REFERÊNCIA DE MIGRATIONS
+ * ============================================================================== */

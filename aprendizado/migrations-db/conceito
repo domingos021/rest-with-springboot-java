@@ -1,0 +1,47 @@
+/*
+ * ==============================================================================
+ * CONCEITO, OBJETIVO E QUANDO USAR MIGRATIONS DE BANCO DE DADOS
+ * ==============================================================================
+ *
+ * ------------------------------------------------------------------------------
+ * 1. O CONCEITO
+ * ------------------------------------------------------------------------------
+ * Uma migration (migração de banco de dados) é um arquivo de script versionado
+ * (geralmente em SQL) que trata o banco de dados da mesma forma que tratamos
+ * o código-fonte: com controle de versão, histórico e automação.
+ *
+ * Cada arquivo representa uma versão específica (ex: V1, V2, V3) e é executado
+ * de forma controlada e sequencial. A ferramenta (como o Flyway) mantém uma
+ * tabela interna no banco para registrar o que já foi aplicado, garantindo
+ * que cada script rode apenas uma vez por ambiente.
+ *
+ * ------------------------------------------------------------------------------
+ * 2. O OBJETIVO
+ * ------------------------------------------------------------------------------
+ * O objetivo central é eliminar o trabalho manual e o caos na gestão de bancos
+ * de dados relacionais, garantindo:
+ *
+ * - Consistência: O banco de dados de qualquer pessoa da equipe ou de produção
+ *   terá exatamente a mesma estrutura e os mesmos dados iniciais.
+ * - Reprodutibilidade: Se alguém clonar o projeto e subir a aplicação do zero em
+ *   um banco vazio, a estrutura e os dados são montados automaticamente.
+ * - Rastreabilidade: Histórico claro de como a base de dados evoluiu ao longo
+ *   do tempo.
+ *
+ * ------------------------------------------------------------------------------
+ * 3. QUANDO USAR?
+ * ------------------------------------------------------------------------------
+ * Você deve usar migrations sempre que houver qualquer alteração na estrutura
+ * ou no estado inicial do banco de dados, tais como:
+ *
+ * - Criação Inicial: Para criar o esqueleto de tabelas, chaves primárias e
+ *   relacionamentos (ex: script V1).
+ * - Dados Iniciais (Seed Data): Para popular registros essenciais para o
+ *   funcionamento do sistema (ex: perfis ADMIN/CLIENT ou configurações, como o V2).
+ * - Evolução Estrutural (Alterações): Sempre que o sistema crescer e precisar de:
+ *   * Adição de novas colunas em tabelas existentes (ALTER TABLE).
+ *   * Criação de novas tabelas de relacionamento.
+ *   * Criação de índices para otimizar buscas (CREATE INDEX).
+ *   * Aplicação de restrições e regras de integridade (UNIQUE, CHECK, etc.).
+ * ==============================================================================
+ */

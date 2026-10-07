@@ -1,0 +1,48 @@
+/*
+ * ==============================================================================
+ * GUIA PRÁTICO: O FLUXO CORRETO DE MIGRATIONS AO VERSIONAR A API
+ * ==============================================================================
+ *
+ * Este bloco documenta a ordem exata de desenvolvimento quando precisamos
+ * alterar o contrato de uma API que exige mudanças no banco de dados.
+ *
+ * Regra de Ouro: O banco de dados precisa estar preparado ANTES de o novo
+ * código da API entrar em execução. Portanto, NUNCA criamos a migration
+ * depois que tudo já está pronto; ela faz parte do processo de entrega.
+ *
+ * ------------------------------------------------------------------------------
+ * PASSO A PASSO: DO CONTRATO DA API ATÉ O DEPLOY COM FLYWAY
+ * ------------------------------------------------------------------------------
+ *
+ * PASSO 1: Identificação da Mudança no Contrato
+ * - Você decide alterar a API (ex: adicionar um novo campo no JSON de cadastro,
+ *   como 'phone', ou criar uma nova entidade/relação).
+ * - Você mapeia exatamente o que precisará ser alterado ou criado nas tabelas
+ *   do banco de dados para suportar esse novo contrato.
+ *
+ * PASSO 2: Criação da Migration ANTES do Código
+ * - Antes de mexer nas classes Java (Entities, DTOs, Services), você cria um
+ *   novo arquivo de migration versionado na pasta de recursos
+ *   (ex: V3__Add_Phone_Column_To_Person.sql).
+ * - Escreve o script SQL correspondente (ex: ALTER TABLE person ADD COLUMN phone VARCHAR(20);).
+ *
+ * PASSO 3: Desenvolvimento do Código da API
+ * - Com a migration criada e estruturada, você vai para o código-fonte da aplicação.
+ * - Ajusta as Entities do Hibernate, DTOs, Mappers e a lógica de negócios para
+ *   passar a interagir com a nova estrutura que a migration acabou de definir.
+ *
+ * PASSO 4: Execução Local e Testes
+ * - Ao iniciar a aplicação localmente, o Flyway detecta a nova migration pendente
+ *   (V3), executa-a automaticamente no banco de dados para atualizar a estrutura
+ *   e, em seguida, inicia o Spring Boot.
+ * - Você testa se a nova versão da API está conversando perfeitamente com o
+ *   banco atualizado.
+ *
+ * PASSO 5: Deploy e Entrega Contínua
+ * - Você envia para o repositório (Git) o código da API junto com o novo arquivo
+ *   de migration na mesma branch/pull request.
+ * - No ambiente de homologação ou produção, quando o sistema for atualizado,
+ *   o Flyway roda o script no banco de forma segura e o novo contrato da API
+ *   entra no ar funcionando sem quebrar nenhuma regra.
+ * ==============================================================================
+ */

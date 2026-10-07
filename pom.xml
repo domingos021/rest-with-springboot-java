@@ -3,11 +3,19 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-    <!-- 1ª -CONFIGURAÇÃO DO PROJETO -->
+    <!-- 1ª - CONFIGURAÇÃO DO MODELO -->
     <modelVersion>4.0.0</modelVersion>
 
 
-    <!-- 2ª  SPRING BOOT PARENT
+    <!-- 2ª - PROPRIEDADES DO PROJETO (Centralizando versões) -->
+    <properties>
+        <java.version>21</java.version>
+        <dozer.version>7.0.0</dozer.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+    </properties>
+
+
+    <!-- 3ª - SPRING BOOT PARENT
 
          Fornece:
          - Gerenciamento de dependências
@@ -20,16 +28,6 @@
         <version>3.4.0</version>
         <relativePath/>
     </parent>
-
-
-    <!-- 3ª - VERSÃO DO JAVA
-
-         Java 21 = Versão LTS (Suporte de Longo Prazo)
-    -->
-    <properties>
-        <java.version>21</java.version>
-        <dozer.version>7.0.0</dozer.version>
-    </properties>
 
 
     <!-- 4ª - IDENTIFICAÇÃO DO PROJETO -->
@@ -67,6 +65,104 @@
 
 
         <!--
+             SPRING DATA JPA
+
+             Fornece suporte para trabalhar com banco de dados usando JPA.
+
+             Inclui:
+             - Spring Data Repository
+             - JpaRepository
+             - Integração com Hibernate (implementação JPA padrão)
+             - Gerenciamento de entidades (@Entity)
+       -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+
+        <!--
+             SPRING BOOT VALIDATION
+
+             Fornece suporte para validações baseadas em Bean Validation
+             (como @NotNull, @Size, @Email, etc.).
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+
+        <!--
+             SPRING SECURITY CRYPTO
+
+             Fornece utilitários e algoritmos para criptografia
+             e hash de senhas (como BCryptPasswordEncoder).
+        -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+
+        <!--
+             POSTGRESQL DRIVER
+
+             Fornece o driver JDBC para comunicação
+             entre a aplicação Java e o banco PostgreSQL.
+
+             O scope runtime indica que ele é necessário
+             durante a execução da aplicação.
+       -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+
+        <!--
+             FLYWAY (Core e PostgreSQL)
+
+             Flyway Core: Responsável por gerenciar o versionamento e a aplicação automática das migrações do banco de dados (DDL/DML).
+             Flyway Database Support para PostgreSQL: Adaptador específico para o PostgreSQL.
+        -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
+
+        <!--
+             DOZER MAPPER
+
+             Biblioteca tradicional de mapeamento de objetos (Entity <-> DTO).
+        -->
+        <dependency>
+            <groupId>com.github.dozermapper</groupId>
+            <artifactId>dozer-core</artifactId>
+            <version>${dozer.version}</version>
+        </dependency>
+
+
+        <!--
+             MAPSTRUCT CORE
+
+             Biblioteca moderna de mapeamento baseada em geração de código em tempo de compilação.
+        -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+
+
+        <!--
              DEVTOOLS
 
              Reinicia a aplicação automaticamente durante o
@@ -97,6 +193,7 @@
             <scope>test</scope>
         </dependency>
 
+
         <!--
              TESTCONTAINERS PARA POSTGRESQL
 
@@ -119,63 +216,6 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
-        </dependency>
-
-
-        <!--
-             SPRING DATA JPA
-
-             Fornece suporte para trabalhar com banco de dados usando JPA.
-
-             Inclui:
-             - Spring Data Repository
-             - JpaRepository
-             - Integração com Hibernate (implementação JPA padrão)
-             - Gerenciamento de entidades (@Entity)
-       -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-
-
-        <!--
-             POSTGRESQL DRIVER
-
-             Fornece o driver JDBC para comunicação
-             entre a aplicação Java e o banco PostgreSQL.
-
-             O scope runtime indica que ele é necessário
-             durante a execução da aplicação.
-       -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.dozermapper</groupId>
-            <artifactId>dozer-core</artifactId>
-            <version>${dozer.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-
-
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
-        </dependency>
-
-        <!-- MapStruct Core -->
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-            <version>1.5.5.Final</version>
         </dependency>
 
     </dependencies>
@@ -210,7 +250,7 @@
                         <path>
                             <groupId>org.mapstruct</groupId>
                             <artifactId>mapstruct-processor</artifactId>
-                            <version>1.5.5.Final</version>
+                            <version>${mapstruct.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

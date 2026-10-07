@@ -1,0 +1,70 @@
+/*
+ * ==============================================================================
+ * GUIA PRÁTICO: COMO REINICIALIZAR O BANCO DE DADOS PARA O CONTROLE DO FLYWAY
+ * ==============================================================================
+ *
+ * 📌 CONCEITO:
+ * Quando migramos de um cenário onde o Hibernate gerenciava o banco (ddl-auto=update)
+ * para um cenário profissional com Flyway (ddl-auto=none), a base de dados precisa
+ * ser totalmente limpa (resetada).
+ *
+ * Isso é necessário para que o Flyway possa criar do zero a sua tabela de histórico
+ * (flyway_schema_history) e executar todas as migrations (V1, V2, V3...) na ordem
+ * correta, garantindo que o banco nasça exatamente como planejado pelos scripts.
+ *
+ * ------------------------------------------------------------------------------
+ * COMANDOS SQL PARA LIMPEZA (DROP) NO POSTGRESQL:
+ * ------------------------------------------------------------------------------
+ * O comando CASCADE garante que se houver chaves estrangeiras ou dependências
+ * ligadas à tabela, elas também sejam removidas sem travar a execução.
+ */
+
+
+/*
+ * Apaga a tabela 'person' do banco de dados (caso ela já exista).
+ * O 'CASCADE' é fundamental aqui porque ele remove automaticamente qualquer
+ * dependência ou restrição ligada a essa tabela, evitando erros de bloqueio.
+ */
+DROP TABLE IF EXISTS public.person CASCADE;
+
+/*
+ * Apaga a tabela de controle interna do Flyway ('flyway_schema_history').
+ * Isso limpa o histórico de versões anteriores, permitindo que o Flyway
+ * execute todas as migrations (V1, V2, V3...) do zero como se fosse a primeira vez.
+ */
+DROP TABLE IF EXISTS public.flyway_schema_history CASCADE;
+
+/*
+ * ==============================================================================
+ * PRÓXIMO PASSO APÓS EXECUTAR O SCRIPT ACIMA:
+ * ==============================================================================
+ * 1. Certifique-se de que o ddl-auto está como 'none' no application.properties.
+ * 2. Salve todos os seus arquivos de migration (V1, V2, V3...) na pasta correta:
+ *    src/main/resources/db/migration/
+ * 3. Suba a aplicação (Run). O Flyway vai ler tudo e reconstruir o banco perfeitamente!
+ * ==============================================================================
+ */
+
+
+
+
+ Quando você configura spring.jpa.hibernate.ddl-auto=none, você está dizendo explicitamente ao Hibernate:
+
+ "Meu amigo Hibernate, tire as mãos do meu banco de dados! Você não vai mais criar tabelas,
+ alterar colunas e nem dar DROP em nada. Quem manda na estrutura física do banco agora é o Flyway."
+
+ Por que essa configuração é tão importante?
+ Se você deixasse o Hibernate gerenciar isso (com update ou create), ele tentaria alterar o banco por
+  conta própria toda vez que a aplicação subisse. Isso geraria dois grandes problemas:
+
+ Conflito de autoridade: O Hibernate e o Flyway entrariam em choque para ver quem decide como a tabela se parece, podendo corromper o banco ou gerar erros de inicialização.
+
+ Perda de controle: O Hibernate não cria um histórico versionado e auditável como o Flyway faz (flyway_schema_history).
+
+ Ao colocar none, você divide os papéis perfeitamente:
+
+ Flyway: É o engenheiro civil que constrói e reforma a estrutura do banco (V1, V2).
+
+ Hibernate: É o arquiteto de interiores que apenas lê e mapeia os objetos para transitar os dados entre o Java e o banco (Entities, Repositories).
+
+ Você captou a essência exata da separação de poderes em um projeto Spring Boot profissional! É por isso que tudo rodou em perfeita harmonia. 🚀

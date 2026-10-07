@@ -1,0 +1,88 @@
+/*
+ * ==============================================================================
+ * GUIA COMPLETO: PASSO A PASSO DA CRIAÇÃO DE MIGRATIONS NO FLYWAY
+ * ==============================================================================
+ *
+ * Este arquivo serve como referência documentada de todo o processo realizado
+ * para extrair, limpar, estruturar e evoluir migrações de banco de dados
+ * utilizando o Flyway em conjunto com o PostgreSQL e pgAdmin.
+ *
+ * ------------------------------------------------------------------------------
+ * PASSO 1: EXTRAÇÃO DOS DADOS EXISTENTES NO PGBADMIN (BACKUP)
+ * ------------------------------------------------------------------------------
+ * Objetivo: Exportar registros salvos em desenvolvimento para versão de código.
+ *
+ * 1. Abra o pgAdmin, clique com o botão direito no banco e selecione "Backup...".
+ * 2. Na aba General:
+ *    - Escolha o local e nome do arquivo terminando em .sql (ex: V2__...sql).
+ *    - Defina o parâmetro Format obrigatoriamente como "Plain" (texto puro).
+ * 3. Na aba Query options (ou opções de dados):
+ *    - Marque "Use INSERT" (gera comandos padrão INSERT INTO ... VALUES ...).
+ *    - Marque "Apenas dados" (Only data) para evitar recriar tabelas já existentes.
+ *    - Desmarque "BLOBs" (a menos que a tabela armazene arquivos binários pesados).
+ * 4. Clique em Backup para concluir a extração.
+ *
+ * ------------------------------------------------------------------------------
+ * PASSO 2: LIMPEZA E AJUSTE DO SCRIPT SQL
+ * ------------------------------------------------------------------------------
+ * Objetivo: Remover metadados gerados pelo utilitário do PostgreSQL (pg_dump)
+ * que costumam quebrar a execução automatizada do Flyway.
+ *
+ * - O que foi removido: Linhas de controle, comandos globais de configuração e TOC.
+ * - O que foi mantido/ajustado: O comando setval da sequence para evitar conflitos
+ *   de chave primária em novos cadastros feitos pela aplicação.
+ *
+ * ------------------------------------------------------------------------------
+ * PASSO 3: EXEMPLOS DE OUTROS COMANDOS ÚTEIS PARA MIGRATIONS
+ * ------------------------------------------------------------------------------
+ * Caso precise criar arquivos futuros (como V1, V3, etc.) com operações
+ * estruturais além de inserts, utilize os padrões abaixo:
+ */
+
+/*
+ * ------------------------------------------------------------------------------
+ * EXEMPLO A: Criação de Tabelas (CREATE TABLE) - Comum na migration V1
+ * ------------------------------------------------------------------------------
+ */
+/*
+CREATE TABLE public.person (
+    id SERIAL PRIMARY KEY,
+    first_name VARCHAR(80) NOT NULL,
+    last_name VARCHAR(80) NOT NULL,
+    address VARCHAR(100) NOT NULL,
+    gender VARCHAR(6) NOT NULL,
+    email VARCHAR(100),
+    cpf VARCHAR(14),
+    password VARCHAR(255),
+    role VARCHAR(20)
+);
+*/
+
+/*
+ * ------------------------------------------------------------------------------
+ * EXEMPLO B: Criação de Índices de Performance (CREATE INDEX)
+ * ------------------------------------------------------------------------------
+ */
+/*
+CREATE INDEX idx_person_email ON public.person(email);
+*/
+
+/*
+ * ------------------------------------------------------------------------------
+ * EXEMPLO C: Adição de Restrições de Unicidade (UNIQUE CONSTRAINT)
+ * ------------------------------------------------------------------------------
+ */
+/*
+ALTER TABLE public.person
+ADD CONSTRAINT uk_person_email UNIQUE (email);
+*/
+
+/*
+ * ------------------------------------------------------------------------------
+ * EXEMPLO D: Evolução de Schema em Versões Futuras (ALTER TABLE)
+ * ------------------------------------------------------------------------------
+ */
+/*
+ALTER TABLE public.person
+ADD COLUMN created_at TIMESTAMP;
+*/
