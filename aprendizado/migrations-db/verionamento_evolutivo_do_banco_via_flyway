@@ -1,0 +1,17 @@
+/*
+ * ======================================================================================
+ * REGRA DE OURO DO FLYWAY: EVOLUÇÃO E IMUTABILIDADE DO HISTÓRICO
+ * ======================================================================================
+ *
+ * - Imutabilidade do Histórico:
+ *   Qualquer alteração física na estrutura do banco de dados SGBD gerenciada pelo Flyway
+ *   deve obrigatoriamente ser feita através da criação de uma NOVA versão de migração
+ *   (ex: V3, V4, V5).
+ *
+ * - Proibição Absoluta:
+ *   NUNCA mexa, edite ou altere arquivos de migração que já foram executados e estão
+ *   rodando (ou já rodaram) em qualquer ambiente. Modificar arquivos passados altera o
+ *   checksum (assinatura digital) e quebra a integridade do histórico do Flyway,
+ *   impedindo que a aplicação suba.
+ * ======================================================================================
+ */

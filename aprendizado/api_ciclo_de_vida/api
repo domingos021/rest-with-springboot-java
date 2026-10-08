@@ -39,3 +39,17 @@
  *                       e aguardando requisições HTTP na porta configurada.
  * ==============================================================================
  */
+
+
+
+ Ver o historico de do flyway_schema_history no banco de dados PostgreSQL:
+ 1. Acesse o banco de dados PostgreSQL usando um cliente SQL (como psql, DBeaver, pgAdmin, etc.).
+ 2. Conecte-se ao banco de dados onde o Flyway está configurado para gerenciar as migrações.
+ 3. Execute a seguinte consulta SQL para visualizar o histórico de migrações aplicadas pelo Flyway:
+```sql
+SELECT * FROM flyway_schema_history ORDER BY installed_rank;
+
+SELECT * FROM flyway_schema_history;
+
+
+SELECT * FROM person

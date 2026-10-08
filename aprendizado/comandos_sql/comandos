@@ -1,0 +1,96 @@
+# 🛠️ Cheat Sheet: PostgreSQL & Flyway (Dia a Dia)
+
+📜 Histórico de Migrações (Flyway)
+-- Histórico completo ordenado por ordem de instalação
+SELECT * FROM flyway_schema_history ORDER BY installed_rank;
+
+-- Visualização simples
+SELECT * FROM flyway_schema_history;
+
+
+2. 🔍 Consultas e Manipulação de Dados (DML)
+
+-- Consultar dados (person-> conresponde a tabela no banco de dados)
+SELECT * FROM person;
+SELECT * FROM person WHERE id = 1;
+
+-- Insere um novo registro informando as colunas obrigatórias (first_name, last_name, address, gender)
+INSERT INTO person (first_name, last_name, address, gender)
+VALUES ('João', 'Silva', 'Brasília - DF', 'Male');
+
+-- Atualizar dados de um objeto específico (id = 1) na tabela person para uma informação diferente (first_name = 'Carlos') ou mais
+UPDATE person SET first_name = 'Carlos' WHERE id = 1; (apenas atualiza a coluna first_name)
+
+UPDATE public.person (mais de uma coluna)
+SET first_name = 'Carlos',
+    last_name = 'Oliveira',
+    address = 'Taguatinga - DF'
+WHERE id = 1;
+
+
+
+-- Deletar dados
+DELETE FROM person WHERE id = 1;
+
+3. 📋 Estrutura e Inspeção (DDL e Metadados)
+
+-- Listar todas as tabelas do schema público
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+
+-- Ver colunas e tipos de dados de uma tabela
+SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'person';
+
+4. 🔒 Controle de Transações
+
+-- Ciclo de transação seguro para testes manuais
+BEGIN;
+-- (Seus comandos UPDATE/DELETE aqui)
+COMMIT;   -- Salva em definitivo
+ROLLBACK; -- Desfaz em caso de erro
+
+=============================================================================CRUD=================================================
+1.
+🏗️ Criação da Tabela (DDL)
+CREATE TABLE IF NOT EXISTS public.person (
+    id SERIAL PRIMARY KEY,
+    first_name VARCHAR(80) NOT NULL,
+    last_name VARCHAR(80) NOT NULL,
+    address VARCHAR(100) NOT NULL,
+    gender VARCHAR(6) NOT NULL,
+    email VARCHAR(100),
+    cpf VARCHAR(14),
+    password VARCHAR(255),
+    role VARCHAR(20)
+);
+
+=================================================================================
+2. 📥 Inserção de Dados - CREATE (INSERT)
+
+-- Inserindo um novo registro na tabela person
+INSERT INTO public.person (first_name, last_name, address, gender, email, cpf, password, role)
+VALUES ('Diniz', 'Jovete', 'Brasília - DF', 'Male', 'diniz@email.com', '000.000.000-00', '$2a$10$exemploHashSenha', 'ADMIN');
+
+=================================================================================
+3. 🔍 Consulta de Dados - READ (SELECT)
+-- Buscar todos os registros
+SELECT * FROM public.person;
+
+-- Buscar por ID específico
+SELECT * FROM public.person WHERE id = 1;
+
+-- Buscar por e-mail ou nome
+SELECT id, first_name, email, role FROM public.person WHERE first_name ILIKE '%Diniz%';
+
+=================================================================================
+4. ✏️ Atualização de Dados - UPDATE
+-- Atualizar o endereço e o papel (role) de um registro específico
+UPDATE public.person
+SET first_name = 'FIlipe',
+    email = 'filipe@yahoo.com',
+    role = 'CLIENT'
+WHERE id = 8;
+
+=================================================================================
+5. 🗑️ Exclusão de Dados - DELETE
+-- Deletar um registro específico por ID
+DELETE FROM public.person WHERE id = 1;

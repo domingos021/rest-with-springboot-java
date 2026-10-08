@@ -52,3 +52,17 @@
  *   para a nossa API utilizar.
  * ==============================================================================
  */
+
+ Antes:
+ Hibernate
+    |
+    └── criava/alterava tabelas (ddl-auto)
+
+ Depois:
+ Flyway
+    |
+    └── controla migrations SQL
+
+ Hibernate
+    |
+    └── apenas mapeia entidades e consulta dado

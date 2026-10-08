@@ -1,0 +1,28 @@
+/*
+ * ======================================================================================
+ * ARQUITETURA DE PERSISTÊNCIA: A SINCRONIA ENTRE FLYWAY E ENTIDADES JPA
+ * ======================================================================================
+ *
+ * No desenvolvimento com Spring Boot, a gestão dos dados se divide em duas camadas
+ * complementares e independentes: a infraestrutura física e a camada lógica da aplicação.
+ *
+ * 1. O Flyway (A Infraestrutura Mecânica e Física):
+ *    - Atua como o alicerce estrutural do banco de dados PostgreSQL.
+ *    - De forma versionada através de scripts SQL, é o único responsável por criar,
+ *      alterar e garantir a integridade física das tabelas, colunas e restrições.
+ *    - Ele não lê código Java; o banco de dados gerecido por ele é a verdade absoluta.
+ *
+ * 2. A Entidade JPA / Person (A Camada Lógica e de Tradução):
+ *    - Atua como o contrato de mapeamento (ORM) entre os objetos Java e as tabelas relacionais.
+ *    - Suas anotações (@Column, nullable = false, length, etc.) não criam o banco
+ *      quando o Flyway está ativo, mas cumprem um papel vital na aplicação.
+ *    - Servem como a primeira linha de defesa (validação lógica), impedindo que dados
+ *      inconsistentes ou fora do padrão trafeguem do sistema para o banco.
+ *
+ * A REGRA DE OURO:
+ * Embora operem em mundos separados — onde o Flyway gerencia o "cofre físico" e a Entidade
+ * protege a "porta de entrada" —, ambas as pontas devem refletir exatamente as mesmas
+ * regras. Manter o script SQL do Flyway idêntico às anotações da Entidade Java garante
+ * uma API robusta, segura e totalmente livre de surpresas em tempo de execução.
+ * ======================================================================================
+ */
