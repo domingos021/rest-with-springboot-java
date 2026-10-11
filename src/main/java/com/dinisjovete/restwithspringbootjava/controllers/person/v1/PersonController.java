@@ -166,19 +166,43 @@ public class PersonController {
      * Endpoint:
      *      http://localhost:8080/person/v1/{id}
      *
-     * O ID vem pela URL (Path Variable) e os novos dados de entrada vêm pelo
-     * corpo da requisição utilizando o PersonUpdateDTO com @Valid.
+     * O ID da pessoa é recebido através da URL utilizando @PathVariable.
+     *
+     * Os novos dados são enviados no corpo da requisição (Request Body) em formato
+     * JSON e convertidos pelo Jackson para o objeto PersonUpdateDTO.
+     *
+     * O PersonUpdateDTO contém somente os campos permitidos para atualização.
+     *
+     * Campos como:
+     *
+     * - id
+     * - cpf
+     * - email
+     * - password
+     * - role
+     * - birthDate
+     *
+     * Não fazem parte desta operação, pois possuem regras específicas de alteração.
+     *
      *
      * ----------------------------------------------------------------------------
-     * EXEMPLO DE JSON PARA O POSTMAN (PUT http://localhost:8080/person/v1/1):
+     * EXEMPLO DE JSON PARA O POSTMAN
      * ----------------------------------------------------------------------------
+     *
+     * PUT:
+     *
+     * http://localhost:8080/person/v1/1
+     *
+     *
+     * Body:
+     *
      * {
      *   "firstName": "Ayrton",
      *   "lastName": "Senna da Silva",
      *   "address": "São Paulo - SP - Brasil",
-     *   "gender": "Male",
-     *   "role": "ADMIN"
+     *   "gender": "Male"
      * }
+     *
      * ============================================================================
      */
     @PutMapping(
@@ -187,9 +211,65 @@ public class PersonController {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public PersonDTO update(
+
+            /*
+             * =====================================================================
+             * PATH VARIABLE
+             * =====================================================================
+             *
+             * Recebe o ID da pessoa diretamente pela URL.
+             *
+             * Exemplo:
+             *
+             * PUT /person/v1/1
+             *
+             * O valor 1 será recebido neste parâmetro.
+             *
+             * Esse ID será utilizado pelo Service para localizar a entidade
+             * existente no banco de dados.
+             *
+             */
             @PathVariable("id") Long id,
+
+
+            /*
+             * =====================================================================
+             * REQUEST BODY
+             * =====================================================================
+             *
+             * Recebe o corpo JSON enviado pelo cliente.
+             *
+             * O Jackson converte automaticamente o JSON para um objeto
+             * PersonUpdateDTO.
+             *
+             * A anotação @Valid executa as validações definidas no DTO:
+             *
+             * - @NotBlank
+             * - @Size
+             * - outras regras de validação
+             *
+             * Após a validação, o DTO é enviado para o Service, onde fica a lógica
+             * de atualização da pessoa.
+             *
+             */
             @Valid @RequestBody PersonUpdateDTO personUpdate
+
     ) {
+
+        /*
+         * Envia para o Service:
+         *
+         * - ID da pessoa que será atualizada.
+         * - DTO contendo os novos valores permitidos.
+         *
+         * O Service executa a regra de negócio:
+         *
+         * - Busca a entidade.
+         * - Atualiza os campos permitidos.
+         * - Salva no banco.
+         * - Retorna a pessoa atualizada.
+         *
+         */
         return service.update(id, personUpdate);
     }
 

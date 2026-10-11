@@ -1,0 +1,47 @@
+/*
+ ==============================================================================
+ GUIA DE PADRÕES DE MERCADO: FORMATAÇÃO DE DATAS E TIPOS COM JACKSON
+ ==============================================================================
+
+ 1. O PROBLEMA PADRÃO DO JAVA COM DATAS
+ ------------------------------------------------------------------------------
+ Por padrão, quando o Jackson serializa um objeto do tipo 'LocalDate' ou
+ 'LocalDateTime', ele o transforma em um array numérico no formato ISO
+ (ex: `[2026, 10, 9]`), o que quebra qualquer contrato esperado pelo front-end
+ (que geralmente espera uma String formatada, como "09/10/2026" ou o padrão ISO-8601).
+
+
+ 2. A SOLUÇÃO PROFISSIONAL: ANOTAÇÃO @JsonFormat
+ ------------------------------------------------------------------------------
+ A anotação `@JsonFormat` resolve isso forçando o Jackson a tratar a data
+ estritamente como uma String formatada de acordo com o padrão desejado.
+
+ Exemplo prático de uso em um DTO:
+
+ @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+ private LocalDate birthDate;
+
+ @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+ private LocalDateTime createdAt;
+
+
+ 3. PADRÕES MAIS UTILIZADOS NO MERCADO:
+ ------------------------------------------------------------------------------
+ - Data Simples (Aniversários, Cadastros de Dia):
+   `pattern = "dd/MM/yyyy"` ou `pattern = "yyyy-MM-dd"` (Padrão ISO)
+ - Data e Hora Completa (Logs, Criação de Registros):
+   `pattern = "dd/MM/yyyy HH:mm:ss"` ou o padrão ISO completo
+   `pattern = "yyyy-MM-dd'T'HH:mm:ss"`
+
+
+ 4. FORMATAÇÃO DE OUTROS TIPOS (EX: MONETÁRIOS / BigDecimal)
+ ------------------------------------------------------------------------------
+ Para valores decimais ou monetários (`BigDecimal`), o mercado costuma usar
+ serializadores customizados (semelhantes aos que fizemos para o CPF) para
+ garantir casas decimais fixas ou símbolos de moeda, evitando problemas de
+ arredondamento de ponto flutuante do JavaScript:
+
+ @JsonSerialize(using = MoneySerializer.class)
+ private BigDecimal salary;
+ ==============================================================================
+ */

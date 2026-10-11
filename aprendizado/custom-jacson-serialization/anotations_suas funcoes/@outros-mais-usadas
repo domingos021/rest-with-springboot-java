@@ -1,0 +1,59 @@
+/*
+ ==============================================================================
+ GUIA CONCEITUAL: OUTRAS ANOTAÇÕES ESSENCIAIS DO JACKSON PARA APIS REST
+ ==============================================================================
+
+ 1. @JsonIgnore
+ ------------------------------------------------------------------------------
+ - O que é: Usada a nível de campo ou método para fazer o Jackson ignorar
+   totalmente aquela propriedade durante a serialização e desserialização.
+ - Objetivo: Evitar que dados sensíveis (como senhas, tokens ou flags internas de
+   controle) vazem para o cliente ou sejam aceitos indevidamente em payloads.
+ - Exemplo:
+   @JsonIgnore
+   private String password;
+
+
+ 2. @JsonProperty
+ ------------------------------------------------------------------------------
+ - O que é: Permite renomear explicitamente o nome de uma propriedade no JSON
+   em relação ao atributo Java, ou definir obrigatoriedade.
+ - Objetivo: Adaptar contratos de API para padrões diferentes (ex: camelCase para
+   snake_case) sem precisar alterar os nomes das variáveis na classe Java.
+ - Exemplo:
+   @JsonProperty("user_email")
+   private String email;
+
+
+ 3. @JsonFormat
+ ------------------------------------------------------------------------------
+ - O que é: Define regras de formatação estritas para tipos específicos,
+   especialmente datas (LocalDate, LocalDateTime) e números.
+ - Objetivo: Garantir que datas sempre sigam um padrão legível (ex: ISO-8601 ou
+   DD/MM/YYYY) independentemente do locale do servidor.
+ - Exemplo:
+   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+   private LocalDate birthDate;
+
+
+ 4. @JsonInclude
+ ------------------------------------------------------------------------------
+ - O que é: Controla quais campos devem ser incluídos no JSON com base no valor.
+ - Objetivo: Limpar o JSON removendo campos que estejam nulos ou vazios,
+   reduzindo o tráfego de dados na rede.
+ - Exemplo (a nível de classe):
+   @JsonInclude(JsonInclude.Include.NON_NULL) // Oculta campos com valor null
+   public class ResponseDTO { ... }
+
+
+ 5. @JsonDeserialize / @JsonSerialize
+ ------------------------------------------------------------------------------
+ - O que é: Permite associar classes customizadas de conversão para propriedades
+   específicas (como vimos para formatação de moedas ou CPFs).
+ - Objetivo: Criar regras de transformação complexas que vão além do comportamento
+   padrão do Jackson.
+ - Exemplo:
+   @JsonSerialize(using = ProdutoSerializer.class)
+   private BigDecimal preco;
+ ==============================================================================
+ */

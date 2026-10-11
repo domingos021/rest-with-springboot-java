@@ -1,0 +1,90 @@
+/*
+ ==============================================================================
+ GUIA CONCEITUAL: CUSTOM JACKSON SERIALIZATION (SERIALIZAÇÃO CUSTOMIZADA)
+ ==============================================================================
+
+ 1. O QUE É E PARA QUE SERVE?
+ ------------------------------------------------------------------------------
+ A serialização customizada no Jackson refere-se à capacidade de controlar
+ exatamente como um objeto ou valor Java é transformado em uma representação
+ textual (geralmente JSON).
+
+ Por padrão, o Jackson utiliza reflexão para inspecionar os campos de uma classe
+ e serializá-los automaticamente. No entanto, criamos uma serialização customizada
+ quando precisamos de regras específicas que o comportamento padrão não atende,
+ como formatações especiais, mascaramento de dados ou campos calculados.
+
+
+ 2. PRINCIPAIS CENÁRIOS DE USO:
+ ------------------------------------------------------------------------------
+ - Formatação de Dados: Alterar o formato de datas, números decimais
+   (arredondamento de moedas, adição de prefixos) ou strings.
+ - Mascaramento de Dados Sensíveis: Ocultar parte de CPFs, cartões de crédito
+   ou senhas diretamente na saída do JSON.
+ - Campos Calculados ou Condicionais: Incluir propriedades no JSON que não
+   existem diretamente na classe Java ou omitir campos com base no estado.
+ - Tratamento de Nulos: Controlar como valores nulos são representados
+   (ex: transformar null em string vazia "" ou lista vazia []).
+
+
+ 3. COMO IMPLEMENTAR:
+ ------------------------------------------------------------------------------
+ A implementação envolve duas etapas principais:
+ 1. Criar a classe de Serialização: Estender 'JsonSerializer<T>' do Jackson
+    e sobrescrever o método 'serialize'.
+ 2. Registrar o Serializador: Utilizar a anotação '@JsonSerialize(using = ...)'
+    diretamente no campo ou na classe Java.
+
+
+ 4. EXEMPLO PRÁTICO: FORMATAÇÃO DE PREÇO (BigDecimal)
+ ------------------------------------------------------------------------------
+
+ public class ProdutoSerializer extends JsonSerializer<BigDecimal> {
+     @Override
+     public void serialize(BigDecimal value, JsonGenerator gen,
+                           SerializerProvider serializers) throws IOException {
+         if (value == null) {
+             gen.writeNull();
+         } else {
+             // Formata o valor adicionando o símbolo de moeda e 2 casas decimais
+             String formatado = "R$ " + value.setScale(2, RoundingMode.HALF_UP);
+             gen.writeString(formatado);
+         }
+     }
+ }
+
+ Uso na entidade Java:
+ public class Produto {
+     private String nome;
+
+     @JsonSerialize(using = ProdutoSerializer.class)
+     private BigDecimal preco;
+ }
+
+
+ 5. EXEMPLO PRÁTICO: MASCARAMENTO DE DADOS (CPF)
+ ------------------------------------------------------------------------------
+
+ public class CpfSerializer extends JsonSerializer<String> {
+     @Override
+     public void serialize(String value, JsonGenerator gen,
+                           SerializerProvider serializers) throws IOException {
+         if (value == null || value.length() != 11) {
+             gen.writeString(value);
+         } else {
+             // Mascara os dígitos centrais do CPF: 123.456.789-01 -> 123.***.**9-01
+             String mascarado = value.substring(0, 3) + ".***.***-" + value.substring(9);
+             gen.writeString(mascarado);
+         }
+     }
+ }
+
+ Uso na entidade Java:
+ public class Usuario {
+     private String nome;
+
+     @JsonSerialize(using = CpfSerializer.class)
+     private String cpf;
+ }
+ ==============================================================================
+ */

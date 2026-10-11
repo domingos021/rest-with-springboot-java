@@ -1,5 +1,6 @@
 package com.dinisjovete.restwithspringbootjava.data.dto.person.v1;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -9,21 +10,45 @@ import java.io.Serializable;
 // ============================================================================
 // DATA TRANSFER OBJECT (DTO) LAYER - PERSON UPDATE INPUT CONTRACT
 // ============================================================================
-// Core Purpose:
-// Represents the incoming request body payload for updating existing persons (PUT /person/{id}).
 //
-// Key Differences from PersonInsertDTO (if applicable):
-// - Excludes 'id': The target person ID is provided via URL path variable (@PathVariable).
-// - Guarantees that mandatory fields are validated before updating the database record.
+// Este DTO representa o contrato de entrada utilizado para atualização dos dados
+// editáveis de uma pessoa (Versão 1).
+//
+// IMPORTANTE:
+// Nem todos os atributos existentes na entidade Person devem estar disponíveis
+// em uma operação de atualização.
+//
+// Um DTO de Update deve conter somente os campos que a regra de negócio permite
+// alterar através de uma operação comum.
+//
+// Dados de identidade ou segurança, como:
+// - id
+// - cpf
+// - email
+// - password
+// - role
+//
+// Não pertencem a este DTO, pois possuem regras específicas e não devem sofrer
+// alterações indevidas.
+//
 // ============================================================================
 
 /**
- * Data Transfer Object for receiving person update data payloads (HTTP PUT).
+ Data Transfer Object for receiving person update data payloads (HTTP PUT).
  */
+// Define apenas a ordem de apresentação dos campos no JSON de saída/entrada.
+@JsonPropertyOrder({"first_name", "last_name", "address", "gender"})
 public class PersonUpdateDTO implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
+
+    // ========================================================================
+    // DADOS DE PERFIL EDITÁVEIS
+    // ========================================================================
+    // Estes campos representam informações de perfil da pessoa que podem ser
+    // corrigidas ou alteradas ao longo do tempo.
+    // ========================================================================
 
     @NotBlank(message = "First name is required")
     @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
@@ -46,12 +71,12 @@ public class PersonUpdateDTO implements Serializable {
     }
 
     /**
-     * Parameterized Constructor.
+     Parameterized Constructor.
      *
-     * @param firstName Person First Name
-     * @param lastName  Person Last Name
-     * @param address   Person Address
-     * @param gender    Person Gender
+     @param firstName Person First Name
+     @param lastName  Person Last Name
+     @param address   Person Address
+     @param gender    Person Gender
      */
     public PersonUpdateDTO(String firstName, String lastName, String address, String gender) {
         this.firstName = firstName;
@@ -96,3 +121,18 @@ public class PersonUpdateDTO implements Serializable {
         this.gender = gender;
     }
 }
+
+/*
+ ============================================================================
+ EXEMPLO DE JSON ACEITO PELO PUT
+ ============================================================================
+
+ {
+     "firstName": "Diniz",
+     "lastName": "Jovete",
+     "address": "Rua Principal, 123",
+     "gender": "M"
+ }
+
+ ============================================================================
+*/

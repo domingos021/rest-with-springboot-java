@@ -1,0 +1,93 @@
+/*
+ ==============================================================================
+ GUIA CONCEITUAL: ANOTAÇÃO @JsonPropertyOrder DO JACKSON
+ ==============================================================================
+
+ 1. O QUE É E PARA QUE SERVE?
+ ------------------------------------------------------------------------------
+ A anotação `@JsonPropertyOrder` é utilizada para definir explicitamente a **ordem**
+ em que as propriedades (campos) de uma classe Java serão serializadas para o JSON.
+
+ Por padrão, o Jackson serializa os campos na ordem em que eles aparecem na classe
+ ou de forma imprevisível (dependendo da reflexão da JVM). Com essa anotação,
+ você garante que o JSON gerado siga um padrão visual ou de contrato de API estrito.
+
+
+ 2. OBJETIVO PRINCIPAL:
+ ------------------------------------------------------------------------------
+ - Organização e Padronização: Deixar o JSON limpo e estruturado de forma lógica
+   (ex: colocar o campo "id" primeiro, seguido de dados pessoais e contato).
+ - Contratos de API Estritos: Atender a requisitos de clientes front-end ou
+   sistemas legados que esperam as chaves do JSON em uma sequência exata.
+
+
+ 3. COMO USAR:
+ ------------------------------------------------------------------------------
+ Você coloca a anotação a nível de **classe**, passando um array com os nomes dos
+ atributos na ordem desejada:
+
+ @JsonPropertyOrder({"id", "firstName", "lastName", "cpf", "email", "address", "gender", "role"})
+ public class UserResponseDTO {
+     private Long id;
+     private String firstName;
+     private String lastName;
+     private String cpf;
+     private String email;
+     private String address;
+     private String gender;
+     private String role;
+
+     // Getters, Setters, Construtores...
+ }
+
+
+ 4. DICA ÚTIL (ORDENAÇÃO ALFABÉTICA):
+ ------------------------------------------------------------------------------
+ Se você não quiser digitar todos os campos manualmente, o Jackson também permite
+ ordenar todas as propriedades em ordem alfabética automaticamente usando:
+
+ @JsonPropertyOrder(alphabetic = true)
+ public class MinhaClasse { ... }
+ ==============================================================================
+ */
+
+
+ /*
+  ==============================================================================
+  ANÁLISE DE PADRÃO PROFISSIONAL: ORDEM DAS PROPRIEDADES NO @JsonPropertyOrder
+  ==============================================================================
+
+  A sua nova ordem:
+  @JsonPropertyOrder({"id", "firstName", "lastName", "email", "gender", "address", "cpf", "role"})
+
+  1. AVALIAÇÃO GERAL:
+  ------------------------------------------------------------------------------
+  SIM, esta ordem está excelente e segue um padrão muito profissional de design
+  de APIs REST. Ela organiza os dados de forma lógica e intuitiva para quem
+  consome o JSON (seja o front-end em React/Angular ou outro serviço backend).
+
+
+  2. POR QUE ESSA ORDEM É BOA? (O FLUXO LÓGICO)
+  ------------------------------------------------------------------------------
+  - Identificador Primeiro ("id"): A chave primária sempre deve vir no topo,
+    facilitando a leitura rápida e identificação do recurso.
+  - Dados Pessoais Básicos ("firstName", "lastName"): Logo em seguida, os dados
+    de identificação humana da pessoa.
+  - Meios de Contato ("email"): O canal principal de comunicação vem antes
+    de dados demográficos ou sensíveis.
+  - Atributos Demográficos e de Perfil ("gender", "address"): Informações de
+    contexto e localização agrupadas de forma limpa.
+  - Dados Sensíveis ou de Negócio Específicos ("cpf", "role"):
+    * O "cpf" (dado altamente sensível/pessoal) fica mais protegido ou agrupado
+      próximo ao fim junto com permissões.
+    * O "role" (papel/permissão de segurança do usuário) fecha o contrato,
+      sendo uma informação técnica/administrativa essencial.
+
+
+  3. COMPARAÇÃO COM O PADRÃO DE MERCADO:
+  ------------------------------------------------------------------------------
+  No mercado, o fluxo visual mais aceito em contratos JSON de usuários/clientes é:
+  [Identificador] -> [Nome/Identidade] -> [Contato] -> [Detalhes/Endereço] -> [Segurança/Função]
+  Sua estrutura cobre exatamente esse raciocínio!
+  ==============================================================================
+  */

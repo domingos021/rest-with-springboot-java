@@ -133,16 +133,18 @@ public class PersonControllerV2 {
      * ----------------------------------------------------------------------------
      * EXEMPLO DE JSON PARA O POSTMAN (POST http://localhost:8080/person/v2):
      * ----------------------------------------------------------------------------
-     * {
-     *   "firstName": "Elon",
-     *   "lastName": "Musk",
-     *   "cpf": "99988877766",
-     *   "email": "elon.musk@email.com",
-     *   "password": "123456",
-     *   "address": "Texas - EUA",
-     *   "gender": "Male",
-     *   "role": "CLIENT"
-     * }
+     {
+      "firstName": "Elon",
+      "lastName": "Musk",
+      "birthDate": "28/06/1971",
+      "cpf": "99988877766",
+      "phone": "+1 512 99999-9999",
+      "email": "elon.musk@email.com",
+      "password": "123456",
+      "address": "Texas - EUA",
+      "gender": "Male",
+      "role": "CLIENT"
+    }
      * ============================================================================
      */
     @PostMapping(

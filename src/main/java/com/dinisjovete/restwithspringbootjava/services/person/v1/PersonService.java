@@ -54,9 +54,9 @@ public class PersonService {
      */
 
     // Injeção de Dependência do Mapper ativo para centralizar as conversões da API
-   // private final PersonMapper mapper01;  // 1ª Alternativa: Mapper Manual (Foco em controle total)
+    // private final PersonMapper mapper01;  // 1ª Alternativa: Mapper Manual (Foco em controle total)
     // private final ObjectMapper mapper02;     // 2ª Alternativa: Dozer Mapper (Foco em reflexão/dinamismo)
-     private final PersonMapper_MapStruct mapper03; // 3ª Alternativa: MapStruct (Foco em performance em tempo de compilação)
+    private final PersonMapper_MapStruct mapper03; // 3ª Alternativa: MapStruct (Foco em performance em tempo de compilação)
 
     // Injeção de Dependência do PasswordEncoder para tratar a regra de negócio de segurança da senha
     private final PasswordEncoder passwordEncoder;
@@ -258,91 +258,169 @@ public class PersonService {
 
     /*
      * ============================================================================
-     * UPDATE - ATUALIZAÇÃO DE UMA PESSOA EXISTENTE
+     * MÉTODO UPDATE - ATUALIZAÇÃO DE UMA PESSOA EXISTENTE
      * ============================================================================
      *
-     * O cliente envia uma requisição PUT/PATCH contendo:
+     * Responsabilidade:
      *
-     * - ID da pessoa que será atualizada.
-     * - Novos valores através do PersonUpdateDTO.
+     * Realiza a atualização dos dados permitidos de uma pessoa já cadastrada no
+     * banco de dados.
      *
-     * O Service primeiro busca a entidade existente no banco.
-     *
-     * Caso encontre:
-     * - O Mapper copia os valores permitidos do DTO para a entidade existente.
-     * - O Repository salva a entidade alterada.
-     * - O Mapper converte a entidade atualizada em PersonDTO para resposta.
-     *
-     * Caso não encontre:
-     * - O Service lança ResourceNotFoundException.
-     * - O ControllerAdvice transforma a exceção em resposta HTTP 404.
-     *
+     * O método recebe o identificador da pessoa e um DTO contendo somente os
+     * campos autorizados para alteração.
      *
      * Fluxo:
      *
-     * Cliente
-     *    |
-     *    ▼
-     * Controller
-     *    |
-     *    ▼
-     * PersonService.update()
-     *    |
-     *    ▼
-     * repository.findById(id)
-     *    |
-     *    ▼
-     * Banco de Dados
-     *    |
-     *    ▼
-     * Person (entidade existente)
-     *    |
-     *    ▼
-     * PersonMapper.updateEntityFromDTO()
-     *    |
-     *    ▼
-     * Person modificada
-     *    |
-     *    ▼
-     * repository.save()
-     *    |
-     *    ▼
-     * Banco de Dados (UPDATE)
-     *    |
-     *    ▼
-     * PersonMapper.toDTO()
-     *    |
-     *    ▼
+     * - Localiza a entidade existente pelo ID.
+     * - Atualiza os campos permitidos através do Mapper.
+     * - Persiste a entidade modificada.
+     * - Converte a entidade atualizada para DTO de resposta.
+     *
+     *
+     * ENTRADA:
+     *
+     * Long id
+     *  -> Identificador único da pessoa que será atualizada.
+     *
+     *
+     * PersonUpdateDTO dto
+     *  -> Objeto contendo somente os campos permitidos para alteração.
+     *
+     *
+     * SAÍDA:
+     *
      * PersonDTO
-     *    |
-     *    ▼
-     * Resposta HTTP para o cliente
+     *  -> Representação da pessoa atualizada enviada como resposta da API.
      *
      * ============================================================================
      */
     public PersonDTO update(Long id, PersonUpdateDTO dto) {
 
-        logger.info("Updating one Person!"); // Registra no log que uma atualização será realizada.
+
+        /*
+         * =========================================================================
+         * REGISTRO DA OPERAÇÃO
+         * =========================================================================
+         *
+         * Registra no log que uma atualização de pessoa será executada.
+         *
+         * O log auxilia no acompanhamento e diagnóstico das operações realizadas
+         * pela aplicação.
+         *
+         * =========================================================================
+         */
+        logger.info("Updating one Person!");
 
 
-        // Busca a pessoa existente pelo ID informado.
-        // Se não encontrar, lança ResourceNotFoundException e retorna HTTP 404.
+
+        /*
+         * =========================================================================
+         * BUSCA DA ENTIDADE EXISTENTE NO BANCO
+         * =========================================================================
+         *
+         * Utiliza o ID recebido para localizar a pessoa persistida.
+         *
+         * O Service trabalha com a entidade existente porque a atualização deve
+         * ocorrer sobre um registro já cadastrado.
+         *
+         * Caso o ID não exista:
+         *
+         * - ResourceNotFoundException é lançada.
+         * - ControllerAdvice transforma a exceção em HTTP 404 Not Found.
+         *
+         * =========================================================================
+         */
         Person entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No record found for this ID!"));
 
 
-        // Recebe o DTO de atualização e altera somente os campos permitidos
-        // da entidade que foi carregada do banco.
+
+        /*
+         * =========================================================================
+         * ATUALIZAÇÃO DA ENTIDADE ATRAVÉS DO MAPPER
+         * =========================================================================
+         *
+         * Realiza a transferência dos dados recebidos no DTO para a entidade
+         * existente.
+         *
+         * O Mapper:
+         *
+         * - Não cria uma nova entidade.
+         * - Atualiza somente os campos presentes no PersonUpdateDTO.
+         * - Mantém os campos que não fazem parte da atualização.
+         *
+         * Exemplo:
+         *
+         * DTO recebido:
+         *
+         * {
+         *    "firstName": "Diniz",
+         *    "address": "Rua Nova"
+         * }
+         *
+         *
+         * Entidade existente:
+         *
+         * {
+         *    id: 10,
+         *    cpf: "12345678901",
+         *    email: "diniz@email.com",
+         *    firstName: "João",
+         *    address: "Rua Antiga"
+         * }
+         *
+         *
+         * Após o Mapper:
+         *
+         * {
+         *    id: 10,
+         *    cpf: "12345678901",
+         *    email: "diniz@email.com",
+         *    firstName: "Diniz",
+         *    address: "Rua Nova"
+         * }
+         *
+         * =========================================================================
+         */
         mapper03.updateEntityFromDTO(dto, entity);
 
 
-        // Salva a entidade modificada.
-        // Como a entidade possui ID, o JPA/Hibernate executa um UPDATE no banco.
+
+        /*
+         * =========================================================================
+         * PERSISTÊNCIA DA ENTIDADE ATUALIZADA
+         * =========================================================================
+         *
+         * Envia a entidade modificada para o Repository.
+         *
+         * Como a entidade possui um ID existente:
+         *
+         * - O JPA/Hibernate identifica que o registro já existe.
+         * - A operação realizada será um UPDATE, não um INSERT.
+         *
+         * O Hibernate executa a sincronização com o banco durante o flush da
+         * transação.
+         *
+         * =========================================================================
+         */
         Person updatedPerson = repository.save(entity);
 
 
-        // Converte a entidade atualizada em DTO de resposta,
-        // ocultando campos internos que não devem ser enviados ao cliente.
+
+        /*
+         * =========================================================================
+         * CONVERSÃO DA ENTIDADE PARA DTO DE RESPOSTA
+         * =========================================================================
+         *
+         * Converte a entidade atualizada em um objeto PersonDTO.
+         *
+         * O DTO representa o contrato de saída da API e controla quais informações
+         * serão enviadas ao cliente.
+         *
+         * Isso evita exposição de dados internos ou sensíveis da entidade.
+         *
+         * =========================================================================
+         */
         return mapper03.mapEntityToDto(updatedPerson);
     }
 

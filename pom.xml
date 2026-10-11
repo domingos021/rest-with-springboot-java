@@ -6,22 +6,7 @@
     <!-- 1ª - CONFIGURAÇÃO DO MODELO -->
     <modelVersion>4.0.0</modelVersion>
 
-
-    <!-- 2ª - PROPRIEDADES DO PROJETO (Centralizando versões) -->
-    <properties>
-        <java.version>21</java.version>
-        <dozer.version>7.0.0</dozer.version>
-        <mapstruct.version>1.5.5.Final</mapstruct.version>
-    </properties>
-
-
-    <!-- 3ª - SPRING BOOT PARENT
-
-         Fornece:
-         - Gerenciamento de dependências
-         - Configuração de plugins
-         - Versões padrão das bibliotecas
-    -->
+    <!-- 2ª - SPRING BOOT PARENT: Fornece o gerenciamento centralizado de versões, configurações padrão de plugins e compatibilidade de dependências para o Spring Boot -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -29,145 +14,104 @@
         <relativePath/>
     </parent>
 
-
-    <!-- 4ª - IDENTIFICAÇÃO DO PROJETO -->
+    <!-- 3ª - IDENTIFICAÇÃO DO PROJETO -->
     <groupId>com.dinisjovete</groupId>
-
     <artifactId>rest-with-springboot-java</artifactId>
-
     <version>0.0.1-SNAPSHOT</version>
-
     <name>rest-with-springboot-java</name>
-
     <description>
         Projeto de API REST desenvolvido com Spring Boot
     </description>
 
+    <!-- 4ª - PROPRIEDADES DO PROJETO: Centraliza as versões das tecnologias e ferramentas utilizadas no projeto -->
+    <properties>
+        <java.version>21</java.version>
+        <dozer.version>7.0.0</dozer.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+    </properties>
 
     <!-- 5ª - DEPENDÊNCIAS DO PROJETO -->
     <dependencies>
 
+        <!-- SPRING WEB: Fornece todo o ecossistema essencial para criar APIs REST e aplicações web robustas.
 
-        <!--
-             SPRING WEB
-
-             Fornece:
-             - Spring MVC
-             - Controllers para API REST
-             - Conversão de JSON com Jackson
-
-             Utilizado para criar aplicações web e APIs REST.
-        -->
+                O QUE ELA FAZ NA PRÁTICA:
+                - Spring MVC: Traz a arquitetura baseada em controladores (@RestController, @GetMapping, @PostMapping)
+                  para receber requisições HTTP e retornar respostas estruturadas.
+                - Servidor Embutido (Tomcat): Já inclui o Apache Tomcat embutido por padrão. Você não precisa instalar
+                  nenhum servidor externo na sua máquina para rodar a aplicação; ela sobe sozinha como um aplicativo Java comum.
+                - Conversão Automática (Jackson): Integra nativamente a biblioteca Jackson, que transforma automaticamente
+                  os objetos Java (DTOs/Entities) em JSON nas respostas da API, e converte JSON recebido nas requisições de volta para objetos Java.
+                - Tratamento de Requisições: Gerencia o DispatcherServlet, roteamento de URLs, parâmetros, cabeçalhos (headers)
+                  e códigos de status HTTP (como 200 OK, 201 Created, 404 Not Found, 400 Bad Request). -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- SPRING DATA JPA: Simplifica a camada de persistência com repositórios prontos (JpaRepository)
+                  e integração nativa com o ecossistema de banco de dados.
 
-        <!--
-             SPRING DATA JPA
-
-             Fornece suporte para trabalhar com banco de dados usando JPA.
-
-             Inclui:
-             - Spring Data Repository
-             - JpaRepository
-             - Integração com Hibernate (implementação JPA padrão)
-             - Gerenciamento de entidades (@Entity)
-       -->
+                  O QUE ELA FAZ NA PRÁTICA:
+                  - Traz o Hibernate por baixo do capô: É o motor (provedor JPA) que lê as anotações
+                    (como @Entity, @Table, @Id, @Column) e traduz tudo para comandos SQL automaticamente.
+                  - Fornece o Spring Data: Permite criar interfaces que estendem 'JpaRepository' para realizar
+                    operações de CRUD (salvar, buscar, deletar) sem precisar escrever nenhuma query SQL manual.
+                  - Gerenciamento de Transações: Configura o controle de transações (commit e rollback) de forma
+                    transparente para garantir a segurança dos dados.
+                  - Nota sobre anotações: As anotações em si pertencem à especificação Jakarta Persistence
+                    (jakarta.persistence.*), mas esta dependência traz toda a infraestrutura necessária para processá-las. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-
-        <!--
-             SPRING BOOT VALIDATION
-
-             Fornece suporte para validações baseadas em Bean Validation
-             (como @NotNull, @Size, @Email, etc.).
-        -->
+        <!-- SPRING BOOT VALIDATION: Fornece o suporte a validações baseadas em Bean Validation através de anotações (como @NotNull, @Size, @Email) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-
-        <!--
-             SPRING SECURITY CRYPTO
-
-             Fornece utilitários e algoritmos para criptografia
-             e hash de senhas (como BCryptPasswordEncoder).
-        -->
+        <!-- SPRING SECURITY CRYPTO: Disponibiliza ferramentas e algoritmos seguros para hash e criptografia de senhas (ex: BCryptPasswordEncoder) -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
-
-        <!--
-             POSTGRESQL DRIVER
-
-             Fornece o driver JDBC para comunicação
-             entre a aplicação Java e o banco PostgreSQL.
-
-             O scope runtime indica que ele é necessário
-             durante a execução da aplicação.
-       -->
+        <!-- POSTGRESQL DRIVER: Driver JDBC necessário para estabelecer a comunicação física entre a aplicação Java e o banco de dados PostgreSQL -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-
-        <!--
-             FLYWAY (Core e PostgreSQL)
-
-             Flyway Core: Responsável por gerenciar o versionamento e a aplicação automática das migrações do banco de dados (DDL/DML).
-             Flyway Database Support para PostgreSQL: Adaptador específico para o PostgreSQL.
-        -->
+        <!-- FLYWAY CORE: Biblioteca responsável pelo versionamento estruturado e execução controlada de migrações (scripts DDL/DML) no banco de dados -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
 
+        <!-- FLYWAY DATABASE POSTGRESQL: Módulo adaptador específico do Flyway para garantir total compatibilidade com os recursos do PostgreSQL -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
 
-
-        <!--
-             DOZER MAPPER
-
-             Biblioteca tradicional de mapeamento de objetos (Entity <-> DTO).
-        -->
+        <!-- DOZER MAPPER: Biblioteca baseada em reflexão em tempo de execução para mapeamento de dados entre Objetos de Domínio/Entities e DTOs -->
         <dependency>
             <groupId>com.github.dozermapper</groupId>
             <artifactId>dozer-core</artifactId>
             <version>${dozer.version}</version>
         </dependency>
 
-
-        <!--
-             MAPSTRUCT CORE
-
-             Biblioteca moderna de mapeamento baseada em geração de código em tempo de compilação.
-        -->
+        <!-- MAPSTRUCT CORE: Biblioteca de mapeamento de objetos de alta performance que gera código em tempo de compilação para converter Entities e DTOs -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${mapstruct.version}</version>
         </dependency>
 
-
-        <!--
-             DEVTOOLS
-
-             Reinicia a aplicação automaticamente durante o
-             desenvolvimento sempre que houver alterações no código.
-        -->
+        <!-- DEVTOOLS: Fornece o recurso de reinicialização automática (LiveReload / Restart) do servidor em ambiente de desenvolvimento ao alterar o código -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -175,43 +119,28 @@
             <optional>true</optional>
         </dependency>
 
-
-        <!--
-             SUPORTE A TESTES
-
-             Fornece:
-             - JUnit 5
-             - Mockito
-             - Spring Test
-             - MockMvc
-
-             Utilizado para criação de testes automatizados.
-        -->
+        <!-- SUPORTE A TESTES: Agrupa as principais ferramentas para testes automatizados, incluindo JUnit 5, Mockito, Spring Test e MockMvc -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-
-        <!--
-             TESTCONTAINERS PARA POSTGRESQL
-
-             Fornece suporte para subir um container Docker real do
-             PostgreSQL isolado para testes de integração e repositório.
-        -->
+        <!-- TESTCONTAINERS PARA POSTGRESQL (Auto-configuração): Integra o ecossistema do Spring Boot com o Testcontainers para gerenciar ciclos de vida de containers -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
 
+        <!-- TESTCONTAINERS JUNIT JUPITER: Fornece a extensão do JUnit 5 para inicializar e encerrar containers Docker de forma declarativa nos testes -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
 
+        <!-- TESTCONTAINERS POSTGRESQL: Fornece a imagem oficial do PostgreSQL encapsulada em container para a realização de testes de integração reais e isolados -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
@@ -226,21 +155,45 @@
 
         <plugins>
 
-            <!--
-                 Plugin oficial do Spring Boot para compilar,
-                 executar e empacotar a aplicação em um arquivo
-                 JAR executável.
-            -->
+            <!-- SPRING BOOT MAVEN PLUGIN: Responsável por empacotar a aplicação em um arquivo JAR executável completo, incluindo todas as dependências embutidas -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!--
-                 Plugin do Compilador Java configurado com o MapStruct Annotation Processor.
-                 Responsável por gerar as classes de implementação das interfaces do MapStruct
-                 em tempo de compilação.
-            -->
+            <!-- FLYWAY MAVEN PLUGIN: Permite executar comandos de migração do Flyway diretamente via Maven (como flyway:migrate, flyway:clean) -->
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <configuration>
+                    <url>jdbc:postgresql://localhost:5432/rest_with_springboot_java</url>
+                    <user>postgres</user>
+                    <password>1985</password>
+                </configuration>
+
+                <dependencies>
+                    <!-- Driver JDBC embutido no plugin para permitir a conexão com o banco durante a execução das tasks do Flyway via Maven -->
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>42.7.4</version>
+                        <scope>runtime</scope>
+
+                        <!-- EXCLUSÕES (EXCLUSIONS):
+                             Objetivo: Evitar conflitos de classpath, duplicação de bibliotecas (como conflitos de logs ou versões antigas)
+                             ou remover dependências transitivas desnecessárias que são puxadas automaticamente por uma biblioteca principal. -->
+                        <exclusions>
+                            <exclusion>
+                                <groupId>org.slf4j</groupId>
+                                <artifactId>slf4j-api</artifactId>
+                            </exclusion>
+                        </exclusions>
+                    </dependency>
+                </dependencies>
+
+            </plugin>
+
+            <!-- MAVEN COMPILER PLUGIN: Configurado com o MapStruct Annotation Processor para processar as anotações e gerar as classes de mapeamento em tempo de compilação -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

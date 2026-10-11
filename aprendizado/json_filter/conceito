@@ -1,0 +1,451 @@
+/*
+ ============================================================================
+ JACKSON FILTER (@JsonFilter) - CONCEITO COMPLETO
+ ============================================================================
+
+ O QUE É:
+ ----------------------------------------------------------------------------
+ O Jackson Filter é um mecanismo da biblioteca Jackson responsável por controlar
+ dinamicamente quais propriedades de um objeto Java serão enviadas na resposta
+ JSON.
+
+ Ele atua durante o processo chamado SERIALIZAÇÃO:
+
+     Objeto Java  ---------------->  JSON
+
+ Exemplo:
+
+     SensitiveData
+     {
+        id = 1,
+        name = "Diniz",
+        email = "diniz@email.com",
+        password = "123456"
+     }
+
+                     |
+                     v
+
+             Jackson Filter
+
+                     |
+                     v
+
+     JSON enviado ao cliente:
+
+     {
+        "id":1,
+        "name":"Diniz",
+        "email":"diniz@email.com"
+     }
+
+
+ O objeto original continua possuindo a propriedade password.
+ O filtro apenas impede que ela seja enviada na resposta.
+
+
+ ============================================================================
+ COMO FUNCIONA INTERNAMENTE
+ ============================================================================
+
+
+ 1) A classe informa qual filtro deve ser utilizado:
+
+
+ @JsonFilter("sensitiveDataFilter")
+ public class SensitiveData {
+
+     private String name;
+     private String password;
+
+ }
+
+
+ O nome "sensitiveDataFilter" funciona como um identificador.
+
+
+ -----------------------------------------------------------------------------
+
+
+ 2) O ObjectMapper registra esse filtro:
+
+
+ filtros.addFilter(
+        "sensitiveDataFilter",
+        SimpleBeanPropertyFilter.serializeAllExcept(
+                "password"
+        )
+ );
+
+
+ Aqui estamos dizendo:
+
+ "Use o filtro sensitiveDataFilter e serialize todos os campos,
+ exceto password."
+
+
+ -----------------------------------------------------------------------------
+
+
+ 3) Durante a resposta HTTP:
+
+
+ Controller
+      |
+      v
+ Retorna objeto Java
+      |
+      v
+ Jackson inicia serialização
+      |
+      v
+ Procura o filtro pelo nome
+      |
+      v
+ Remove propriedades configuradas
+      |
+      v
+ Gera JSON final
+
+
+ ============================================================================
+ QUANDO USAR JACKSON FILTER
+ ============================================================================
+
+
+ 1) RESPOSTAS DINÂMICAS
+
+ Cenário:
+
+ O mesmo objeto precisa ter diferentes respostas dependendo do usuário.
+
+
+ Exemplo:
+
+
+ Usuário comum:
+
+ {
+    "id":1,
+    "name":"Diniz",
+    "email":"diniz@email.com"
+ }
+
+
+ Administrador:
+
+ {
+    "id":1,
+    "name":"Diniz",
+    "email":"diniz@email.com",
+    "salary":5000
+ }
+
+
+ O objeto é o mesmo, mas a resposta muda conforme o contexto.
+
+
+ -----------------------------------------------------------------------------
+
+
+ 2) SISTEMAS LEGADOS
+
+ Cenário:
+
+ Uma aplicação antiga retorna entidades diretamente:
+
+
+ Controller
+
+     Entity
+       |
+       v
+     JSON
+
+
+ Criar DTOs para todo o sistema pode ser muito trabalhoso.
+
+
+ O filtro pode ser uma solução intermediária para esconder campos
+ sensíveis.
+
+
+ -----------------------------------------------------------------------------
+
+
+ 3) RELATÓRIOS E CONSULTAS ESPECÍFICAS
+
+
+ Exemplo:
+
+ Tela financeira:
+
+ {
+    "name":"Diniz",
+    "salary":5000
+ }
+
+
+ Tela pública:
+
+ {
+    "name":"Diniz"
+ }
+
+
+ O mesmo objeto pode possuir diferentes visões.
+
+
+ ============================================================================
+ QUANDO NÃO USAR JACKSON FILTER
+ ============================================================================
+
+
+ 1) APIs REST PROFISSIONAIS BASEADAS EM DTO
+
+
+ Exemplo:
+
+
+ Entity
+
+     Person
+       |
+       |
+       v
+
+ Mapper
+
+       |
+       |
+       v
+
+ DTO
+
+       |
+       |
+       v
+
+ JSON
+
+
+ Essa é normalmente a abordagem preferida.
+
+
+ Motivo:
+
+ O DTO define exatamente o contrato da API.
+
+
+ -----------------------------------------------------------------------------
+
+
+ 2) QUANDO EXISTEM VERSÕES DA API
+
+
+ Exemplo:
+
+
+ API V1:
+
+ PersonDTO
+
+
+ {
+    "first_name":"Diniz"
+ }
+
+
+ API V2:
+
+ PersonDTOV2
+
+
+ {
+    "name":"Diniz",
+    "birth_date":"1990-01-01"
+ }
+
+
+ Com DTO é simples manter contratos diferentes.
+
+
+ Com filtro, geralmente continua existindo o mesmo objeto.
+
+
+ -----------------------------------------------------------------------------
+
+
+ 3) QUANDO A SEGURANÇA É IMPORTANTE
+
+
+ DTO:
+
+
+ class PersonDTO {
+
+     private String name;
+     private String email;
+
+ }
+
+
+ A senha nem existe.
+
+
+ Filter:
+
+
+ class Person {
+
+     private String password;
+
+ }
+
+
+ A senha continua presente no objeto e depende de configuração correta
+ para nunca ser exposta.
+
+
+ ============================================================================
+ COMPARAÇÃO: DTO X JACKSON FILTER
+ ============================================================================
+
+
+ DTO:
+
+
+ Entity
+   |
+   v
+ Mapper
+   |
+   v
+ DTO
+   |
+   v
+ JSON
+
+
+ Controle acontece antes da serialização.
+
+
+ Vantagens:
+
+ - Separação de responsabilidades
+ - Contrato explícito
+ - Melhor para APIs REST
+ - Facilita versionamento
+ - Melhor integração com MapStruct/Dozer/Manual Mapper
+
+
+
+ -----------------------------------------------------------------------------
+
+
+ JACKSON FILTER:
+
+
+ Entity
+   |
+   v
+ Jackson Filter
+   |
+   v
+ JSON
+
+
+ Controle acontece durante a serialização.
+
+
+ Vantagens:
+
+ - Flexível
+ - Respostas dinâmicas
+ - Útil em sistemas legados
+ - Evita criar vários DTOs em alguns casos
+
+
+
+ ============================================================================
+ NO PROJETO RESTWITHSPRINGBOOTJAVA
+ ============================================================================
+
+
+ O uso profissional continua sendo:
+
+
+ Entity
+
+    Person
+
+
+       |
+
+       v
+
+
+ Mapper
+
+ (Manual / Dozer / MapStruct)
+
+
+       |
+
+       v
+
+
+ DTO
+
+ (PersonDTO / PersonDTOV2)
+
+
+       |
+
+       v
+
+
+ JSON
+
+
+ O Jackson Filter deve permanecer apenas como estudo:
+
+
+ apenas_estudo_filtro
+
+       |
+
+       +-- SensitiveData
+
+       |
+       +-- FilterController
+
+       |
+       +-- ObjectMapperConfig
+
+
+
+ ============================================================================
+ CONCLUSÃO
+ ============================================================================
+
+
+ Jackson Filter não substitui DTO.
+
+ Ele é uma ferramenta de controle de serialização.
+
+ DTO trabalha arquitetura e contrato da API.
+
+ Jackson Filter trabalha a forma como um objeto será transformado em JSON.
+
+
+ Em aplicações modernas:
+
+ DTO + Mapper = solução principal
+
+
+ Jackson Filter = ferramenta complementar para casos específicos.
+
+
+ ============================================================================
+*/

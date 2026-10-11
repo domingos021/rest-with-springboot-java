@@ -1,0 +1,53 @@
+/*
+ ==============================================================================
+ GUIA PRÁTICO: MASCARAR DADOS (EX: CPF) COM CUSTOM JACKSON SERIALIZATION
+ ==============================================================================
+
+ 1. COMO FUNCIONA O MASCARAMENTO NO JACKSON?
+ ------------------------------------------------------------------------------
+ Para mascarar um dado no JSON de resposta (como transformar "12345678901"
+ em "123.***.***-01") sem alterar o valor original que está salvo no banco de dados,
+ nós criamos um **Serializer Customizado** usando a anotação '@JsonSerialize'.
+
+
+ 2. PASSO 1: CRIAR A CLASSE SERIALIZADORA
+ ------------------------------------------------------------------------------
+
+ public class CpfMaskSerializer extends JsonSerializer<String> {
+     @Override
+     public void serialize(String value, JsonGenerator gen,
+                           SerializerProvider serializers) throws IOException {
+         if (value == null || value.length() < 11) {
+             gen.writeString(value); // Retorna original se for nulo ou inválido
+         } else {
+             // Aplica a máscara: 12345678901 -> 123.***.***-01
+             // (Assume que a string tem 11 dígitos limpos ou ajusta conforme necessário)
+             String mascarado = value.substring(0, 3) + ".***.***-" + value.substring(9, 11);
+             gen.writeString(mascarado);
+         }
+     }
+ }
+
+
+ 3. PASSO 2: APLICAR NO DTO DE RESPOSTA (PersonDTO)
+ ------------------------------------------------------------------------------
+ Você utiliza a anotação '@JsonSerialize' apontando para a classe que criamos
+ no atributo correspondente:
+
+ public class PersonDTO {
+     private Long id;
+     private String firstName;
+     private String lastName;
+
+     @JsonSerialize(using = CpfMaskSerializer.class)
+     private String cpf; // Será serializado já mascarado para o cliente!
+
+     private String email;
+     private String address;
+     private String gender;
+     private PersonRole role;
+
+     // Construtores, Getters e Setters...
+ }
+ ==============================================================================
+ */

@@ -1,0 +1,276 @@
+/*
+ * ============================================================================
+ * REGRAS DE ALTERAÇÃO DOS DADOS DA ENTIDADE PERSON
+ * ============================================================================
+ *
+ * Uma entidade Person representa uma pessoa dentro do sistema.
+ *
+ * Porém, nem todos os atributos de uma pessoa possuem a mesma natureza.
+ * Alguns dados representam a identidade da pessoa e não devem ser alterados,
+ * enquanto outros representam informações de perfil e podem ser atualizados.
+ *
+ * A separação desses campos evita alterações indevidas, protege a integridade
+ * dos dados e mantém as regras de negócio do sistema consistentes.
+ *
+ *
+ * ============================================================================
+ * 1 - DADOS QUE NUNCA DEVEM SER ALTERADOS DIRETAMENTE
+ * ============================================================================
+ *
+ * Estes campos representam a identidade ou a origem do registro.
+ * Uma alteração direta poderia causar inconsistência no histórico do sistema.
+ *
+ *
+ * --------------------------------------------------------------------------
+ * ID
+ * --------------------------------------------------------------------------
+ *
+ * Campo utilizado como identificador único dentro do banco de dados.
+ *
+ * Motivo para não alterar:
+ *
+ * - É a chave primária da tabela.
+ * - Relacionamentos com outras tabelas dependem desse valor.
+ * - Alterar o ID significaria trocar a identidade do registro.
+ *
+ * Exemplo:
+ *
+ * Pessoa:
+ * id = 10
+ *
+ * Esse registro sempre será a pessoa de ID 10.
+ *
+ *
+ * --------------------------------------------------------------------------
+ * CPF
+ * --------------------------------------------------------------------------
+ *
+ * O CPF representa um identificador civil único da pessoa.
+ *
+ * Motivo para não alterar:
+ *
+ * - Uma pessoa possui um único CPF.
+ * - O CPF não é uma informação de preferência ou cadastro comum.
+ * - Alterar o CPF poderia permitir troca de identidade dentro do sistema.
+ *
+ * Caso exista erro no cadastro:
+ *
+ * - Deve existir um processo específico de correção.
+ * - Deve haver validação e controle de permissão.
+ *
+ *
+ * --------------------------------------------------------------------------
+ * DATA DE NASCIMENTO (birthDate)
+ * --------------------------------------------------------------------------
+ *
+ * A data de nascimento representa uma característica permanente da pessoa.
+ *
+ * Motivo para não alterar normalmente:
+ *
+ * - A pessoa nasce apenas uma vez.
+ * - A idade é calculada a partir dessa data.
+ * - Pode ser usada para regras legais e validações.
+ *
+ * Exemplo:
+ *
+ * Data real:
+ * 15/05/1995
+ *
+ * Essa informação nunca muda.
+ *
+ * Caso tenha sido cadastrada incorretamente:
+ *
+ * - Não é uma alteração de dado pessoal.
+ * - É uma correção cadastral que deve possuir regras específicas.
+ *
+ *
+ * ============================================================================
+ * 2 - DADOS QUE PODEM SER ALTERADOS NORMALMENTE
+ * ============================================================================
+ *
+ * Estes dados representam informações de perfil da pessoa.
+ * Eles podem mudar durante a vida e não alteram sua identidade.
+ *
+ *
+ * --------------------------------------------------------------------------
+ * FIRST NAME / LAST NAME
+ * --------------------------------------------------------------------------
+ *
+ * Nome e sobrenome podem ser atualizados.
+ *
+ * Motivos:
+ *
+ * - Pode existir erro de digitação no cadastro.
+ * - A pessoa pode alterar legalmente seu nome.
+ * - Não representam a chave de identidade do sistema.
+ *
+ * Exemplo:
+ *
+ * Antes:
+ * João Silva
+ *
+ * Depois:
+ * João Souza Silva
+ *
+ *
+ * --------------------------------------------------------------------------
+ * ADDRESS
+ * --------------------------------------------------------------------------
+ *
+ * O endereço é uma informação de localização atual.
+ *
+ * Motivos para permitir alteração:
+ *
+ * - Pessoas mudam de residência.
+ * - O endereço não identifica permanentemente a pessoa.
+ * - É uma informação de perfil.
+ *
+ *
+ * --------------------------------------------------------------------------
+ * GENDER
+ * --------------------------------------------------------------------------
+ *
+ * O gênero pode ser tratado como dado de perfil.
+ *
+ * Motivos para permitir alteração:
+ *
+ * - Pode existir correção de cadastro.
+ * - Pode representar uma informação declarada pelo usuário.
+ *
+ * Observação:
+ *
+ * Dependendo do domínio da aplicação, pode possuir regras específicas.
+ *
+ *
+ * ============================================================================
+ * 3 - DADOS QUE PODEM SER ALTERADOS, MAS COM PROCESSOS ESPECIAIS
+ * ============================================================================
+ *
+ * Estes campos podem mudar, porém não devem ser alterados através de um PUT
+ * comum de atualização de perfil.
+ *
+ *
+ * --------------------------------------------------------------------------
+ * EMAIL
+ * --------------------------------------------------------------------------
+ *
+ * O email normalmente funciona como uma forma de identificação e comunicação.
+ *
+ * Motivos para possuir controle:
+ *
+ * - Pode ser utilizado para login.
+ * - Pode receber informações importantes.
+ * - Alteração pode permitir perda de acesso.
+ *
+ * Fluxo recomendado:
+ *
+ * Usuário solicita alteração
+ *          |
+ *          v
+ * Sistema confirma novo email
+ *          |
+ *          v
+ * Atualiza cadastro
+ *
+ *
+ * --------------------------------------------------------------------------
+ * PASSWORD
+ * --------------------------------------------------------------------------
+ *
+ * A senha nunca deve ser atualizada junto com os dados comuns da pessoa.
+ *
+ * Motivos:
+ *
+ * - É uma informação sensível.
+ * - Deve ser armazenada utilizando hash.
+ * - Precisa validar a senha atual antes da troca.
+ *
+ * Fluxo recomendado:
+ *
+ * Endpoint específico:
+ *
+ * PUT /person/{id}/password
+ *
+ *
+ * --------------------------------------------------------------------------
+ * ROLE
+ * --------------------------------------------------------------------------
+ *
+ * Representa o nível de permissão do usuário no sistema.
+ *
+ * Motivos para possuir controle:
+ *
+ * - Alterar uma role pode conceder privilégios.
+ * - Um usuário comum não deve promover a si mesmo para ADMIN.
+ *
+ * Exemplo:
+ *
+ * CLIENT  ---> acesso comum
+ *
+ * ADMIN   ---> acesso administrativo
+ *
+ *
+ * ============================================================================
+ * RESUMO DA ESTRUTURA DOS DTOS
+ * ============================================================================
+ *
+ *
+ * PersonInsertDTO
+ * ----------------
+ * firstName
+ * lastName
+ * cpf
+ * email
+ * password
+ * birthDate
+ * address
+ * gender
+ *
+ * Responsável pela criação inicial da pessoa.
+ *
+ *
+ * PersonUpdateDTO
+ * ----------------
+ * firstName
+ * lastName
+ * address
+ * gender
+ *
+ * Responsável por alterações comuns de perfil.
+ *
+ *
+ * PersonEmailUpdateDTO
+ * ---------------------
+ * email
+ *
+ * Alteração controlada de email.
+ *
+ *
+ * PersonPasswordUpdateDTO
+ * ------------------------
+ * oldPassword
+ * newPassword
+ *
+ * Alteração segura de senha.
+ *
+ *
+ * PersonRoleUpdateDTO
+ * --------------------
+ * role
+ *
+ * Alteração administrativa de permissões.
+ *
+ *
+ * ============================================================================
+ * CONCLUSÃO
+ * ============================================================================
+ *
+ * A existência de um atributo dentro de uma entidade não significa que ele
+ * deve estar disponível para alteração.
+ *
+ * DTOs de atualização existem justamente para controlar quais informações podem
+ * ser modificadas em cada operação, protegendo a integridade dos dados e
+ * aplicando corretamente as regras de negócio da aplicação.
+ *
+ * ============================================================================
+ */

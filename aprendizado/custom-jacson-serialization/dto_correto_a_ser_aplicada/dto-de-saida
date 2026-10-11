@@ -1,0 +1,95 @@
+/*
+ * ============================================================================
+ * LOCAL CORRETO DE USO DAS ANOTAÇÕES JACKSON (@JsonProperty / @JsonPropertyOrder)
+ * ============================================================================
+ *
+ * Estas anotações pertencem à camada de apresentação da aplicação (DTO),
+ * principalmente em objetos utilizados como resposta da API REST (Response DTO).
+ *
+ * Elas NÃO devem ser utilizadas para modificar a estrutura do banco de dados,
+ * nem alteram a entidade JPA, tabelas, colunas ou valores persistidos.
+ *
+ * Seu objetivo é controlar apenas a forma como os dados serão SERIALIZADOS,
+ * ou seja, como um objeto Java será convertido em JSON antes de ser enviado
+ * para o cliente que consumirá a API.
+ *
+ * Fluxo:
+ *
+ * Banco de Dados
+ *       |
+ *       v
+ * Entidade JPA (Person)
+ *       |
+ *       v
+ * Mapper
+ *       |
+ *       v
+ * DTO (PersonDTO)
+ *       |
+ *       v
+ * Jackson (@JsonProperty / @JsonPropertyOrder)
+ *       |
+ *       v
+ * JSON enviado ao usuário
+ *
+ *
+ * Exemplo:
+ *
+ * Sem @JsonProperty:
+ *
+ * Classe Java:
+ *
+ * private String firstName;
+ *
+ * JSON gerado:
+ *
+ * {
+ *     "firstName": "Diniz"
+ * }
+ *
+ *
+ * Com @JsonProperty:
+ *
+ * @JsonProperty("first_name")
+ * private String firstName;
+ *
+ * JSON gerado:
+ *
+ * {
+ *     "first_name": "Diniz"
+ * }
+ *
+ *
+ * Observe que o atributo continua sendo chamado firstName dentro do Java.
+ * Apenas a representação externa do JSON foi alterada para seguir outro padrão
+ * de nomenclatura (neste caso, snake_case).
+ *
+ *
+ * Da mesma forma, @JsonPropertyOrder apenas organiza a ordem visual das
+ * propriedades no JSON retornado, não alterando a estrutura interna do objeto.
+ *
+ * Exemplo:
+ *
+ * @JsonPropertyOrder({"id", "first_name", "last_name"})
+ *
+ * Resultado:
+ *
+ * {
+ *     "id": 1,
+ *     "first_name": "Diniz",
+ *     "last_name": "Jovete"
+ * }
+ *
+ *
+ * Resumo:
+ *
+ * - Entity JPA  -> representa o modelo persistido no banco.
+ * - DTO         -> representa o contrato de comunicação da API.
+ * - Jackson     -> controla como o DTO será convertido em JSON.
+ *
+ * Portanto, estas anotações são utilizadas para fins de DESIGN e organização
+ * do contrato da API, definindo como os dados serão apresentados ao usuário,
+ * sem interferir na lógica de negócio ou na estrutura física do banco de dados.
+ *
+ * ============================================================================
+ */
