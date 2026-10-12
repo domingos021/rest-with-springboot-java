@@ -1,0 +1,176 @@
+/*
+ * ============================================================================
+ * CONTENT NEGOTIATION (NEGOCIAÇÃO DE CONTEÚDO)
+ * ============================================================================
+ *
+ * CONCEITO
+ * ----------------------------------------------------------------------------
+ * Content Negotiation é um mecanismo do protocolo HTTP utilizado pelo Spring
+ * para decidir em qual formato os dados serão enviados ao cliente ou recebidos
+ * do cliente.
+ *
+ * Em vez de criar endpoints diferentes para JSON, XML ou outros formatos,
+ * o mesmo endpoint pode atender vários tipos de representação do recurso.
+ *
+ * Exemplo:
+ *
+ *      GET /person/v1/1
+ *
+ * O recurso continua sendo o mesmo (Pessoa de ID 1).
+ * O que muda é apenas a forma como ele será representado.
+ *
+ * ============================================================================
+ * COMO FUNCIONA
+ * ============================================================================
+ *
+ * 1) O cliente envia uma requisição HTTP.
+ *
+ * 2) No Header "Accept", informa o formato desejado da resposta.
+ *
+ *      Accept: application/json
+ *
+ * ou
+ *
+ *      Accept: application/xml
+ *
+ * 3) O Spring verifica se existe um HttpMessageConverter capaz de produzir
+ *    aquele formato.
+ *
+ * 4) Se existir, o objeto Java (DTO) é convertido para o formato solicitado.
+ *
+ * 5) O servidor responde utilizando o Content-Type correspondente.
+ *
+ * ============================================================================
+ * FLUXO
+ * ============================================================================
+ *
+ * Cliente
+ *     │
+ *     │ GET /person/v1/1
+ *     │ Accept: application/json
+ *     ▼
+ *
+ * Controller
+ *     │
+ *     ▼
+ *
+ * PersonDTO
+ *     │
+ *     ▼
+ *
+ * HttpMessageConverter
+ *     │
+ *     ▼
+ *
+ * JSON
+ *     │
+ *     ▼
+ *
+ * Cliente recebe:
+ *
+ * Content-Type: application/json
+ *
+ * ============================================================================
+ * ACCEPT x CONTENT-TYPE
+ * ============================================================================
+ *
+ * ACCEPT
+ * ---------------------------------------------------------------------------
+ * Informa ao servidor qual formato o cliente deseja RECEBER.
+ *
+ * Exemplo:
+ *
+ *      Accept: application/json
+ *
+ * Significado:
+ *
+ *      "Quero receber a resposta em JSON."
+ *
+ * ---------------------------------------------------------------------------
+ *
+ * CONTENT-TYPE
+ * ---------------------------------------------------------------------------
+ * Informa qual é o formato do corpo da requisição enviada pelo cliente
+ * ou da resposta enviada pelo servidor.
+ *
+ * Exemplo de requisição:
+ *
+ *      Content-Type: application/json
+ *
+ * Significado:
+ *
+ *      "Estou enviando dados em JSON."
+ *
+ * ============================================================================
+ * NO SPRING BOOT
+ * ============================================================================
+ *
+ * O Controller retorna apenas um objeto Java (DTO).
+ *
+ * Exemplo:
+ *
+ *      return personDTO;
+ *
+ * O Spring utiliza automaticamente um HttpMessageConverter para transformar
+ * esse objeto em JSON, XML ou outro formato suportado.
+ *
+ * O desenvolvedor não precisa converter manualmente o objeto.
+ *
+ * ============================================================================
+ * PRODUCES
+ * ============================================================================
+ *
+ * Podemos informar quais formatos o endpoint suporta.
+ *
+ * Exemplo:
+ *
+ *      @GetMapping(
+ *          produces = {
+ *              MediaType.APPLICATION_JSON_VALUE,
+ *              MediaType.APPLICATION_XML_VALUE
+ *          }
+ *      )
+ *
+ * O Spring escolherá o formato de acordo com o Header "Accept" enviado
+ * pelo cliente.
+ *
+ * ============================================================================
+ * QUANDO UTILIZAR
+ * ============================================================================
+ *
+ * Quando diferentes clientes precisam consumir o mesmo recurso utilizando
+ * formatos diferentes.
+ *
+ * Exemplos:
+ *
+ * - Aplicativos Mobile
+ * - Sistemas Legados
+ * - Integrações entre APIs
+ * - Microsserviços
+ * - APIs Públicas
+ *
+ * ============================================================================
+ * CONTENT NEGOTIATION x VERSIONAMENTO
+ * ============================================================================
+ *
+ * Content Negotiation:
+ *      Escolhe a REPRESENTAÇÃO do recurso (JSON, XML, etc.).
+ *
+ * Versionamento:
+ *      Escolhe o CONTRATO da API (v1, v2, v3...).
+ *
+ * Exemplo:
+ *
+ *      /person/v1
+ *      /person/v2
+ *
+ * Cada versão pode responder em JSON ou XML utilizando Content Negotiation.
+ *
+ * Portanto:
+ *
+ *      Versionamento define QUAL API será utilizada.
+ *
+ *      Content Negotiation define EM QUAL FORMATO ela será enviada.
+ *
+ * ============================================================================
+ */

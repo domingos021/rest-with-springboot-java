@@ -1,4 +1,4 @@
-package com.dinisjovete.restwithspringbootjava.config;
+package com.dinisjovete.restwithspringbootjava.config.somente_estudo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;

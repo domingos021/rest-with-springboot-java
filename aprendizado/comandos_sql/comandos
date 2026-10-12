@@ -90,6 +90,11 @@ SET first_name = 'FIlipe',
     role = 'CLIENT'
 WHERE id = 8;
 
+
+UPDATE public.person
+SET gender = 'Male'
+WHERE id = 3;
+
 =================================================================================
 5. 🗑️ Exclusão de Dados - DELETE
 -- Deletar um registro específico por ID

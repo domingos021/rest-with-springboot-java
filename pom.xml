@@ -49,6 +49,44 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- ===================================================================== -->
+        <!-- JACKSON XML                                                            -->
+        <!-- ===================================================================== -->
+        <!--
+             Adiciona suporte à serialização e desserialização de objetos Java
+             no formato XML.
+
+             O Spring Boot utiliza automaticamente esta biblioteca através do
+             HttpMessageConverter durante o Content Negotiation.
+
+             Sem esta dependência:
+                 ✔ JSON funciona normalmente.
+                 ✘ XML não é suportado.
+
+             Com esta dependência:
+                 ✔ JSON continua funcionando.
+                 ✔ XML passa a ser suportado automaticamente.
+
+             Exemplo:
+
+                 Accept: application/xml
+
+             Resposta:
+
+                 <PersonDTO>
+                     ...
+                 </PersonDTO>
+        -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+
         <!-- SPRING DATA JPA: Simplifica a camada de persistência com repositórios prontos (JpaRepository)
                   e integração nativa com o ecossistema de banco de dados.
 

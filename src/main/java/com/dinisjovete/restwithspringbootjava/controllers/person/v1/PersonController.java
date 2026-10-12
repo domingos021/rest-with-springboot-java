@@ -1,5 +1,6 @@
 package com.dinisjovete.restwithspringbootjava.controllers.person.v1;
 
+import com.dinisjovete.restwithspringbootjava.config.mediatypes.CustomMediaType;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonInsertDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonUpdateDTO;
@@ -14,17 +15,25 @@ import java.util.List;
 
 @RestController
 /*
- * ============================================================================
- * @RequestMapping
- * ============================================================================
- * Define o caminho base (Base URL) deste Controller.
+- ============================================================================
+
+- @RequestMapping
+
+- ============================================================================
+
+- Define o caminho base (Base URL) deste Controller.
+
  *
- * Todas as requisições para este Controller começarão com:
+- Todas as requisições para este Controller começarão com:
+
  *
- *      http://localhost:8080/person/v1
+-      http://localhost:8080/person/v1
+
  *
- * Assim, todos os métodos desta classe herdam esse caminho base.
- * ============================================================================
+- Assim, todos os métodos desta classe herdam esse caminho base.
+
+- ============================================================================
+
  */
 @RequestMapping("/person/v1")
 public class PersonController {
@@ -48,63 +57,103 @@ public class PersonController {
     }
 
     /*
-     * =========================================================================
-     * ENDPOINT HTTP
-     * =========================================================================
-     * Retorna uma pessoa a partir do seu ID, repassando o DTO retornado pelo service.
+- =========================================================================
+
+- ENDPOINT HTTP
+
+- =========================================================================
+
+- Retorna uma pessoa a partir do seu ID, repassando o DTO retornado pelo service.
+
      *
-     * Método HTTP:
-     *      GET
+- Método HTTP:
+
+-      GET
+
      *
-     * Endpoint:
-     *      http://localhost:8080/person/v1/{id}
+- Endpoint:
+
+-      http://localhost:8080/person/v1/{id}
+
      *
-     * Exemplo:
-     *      http://localhost:8080/person/v1/1
+- Exemplos:
+
+-      http://localhost:8080/person/v1/4?mediaType=json
+
+-      http://localhost:8080/person/v1/4?mediaType=xml
+
      *
-     * Onde:
-     *      /person/v1 -> recurso (Resource)
-     *      /1         -> Path Parameter (ID da pessoa)
+- Onde:
+
+-      /person/v1 -> recurso (Resource)
+
+-      /4         -> Path Parameter (ID da pessoa)
+
      *
-     * O valor informado na URL será recebido pelo parâmetro "id".
-     * =========================================================================
+- O valor informado na URL será recebido pelo parâmetro "id".
+
+- =========================================================================
+
      */
     @GetMapping(
             // Caminho relativo ao @RequestMapping da classe.
             // "{id}" representa um Path Parameter.
             value = "/{id}",
 
-            // Define que a resposta será enviada no formato JSON
-            produces = MediaType.APPLICATION_JSON_VALUE
+            // Define que a resposta será enviada no formato JSON/XML/YAML
+            produces = {
+                    MediaType.APPLICATION_JSON_VALUE,
+                    MediaType.APPLICATION_XML_VALUE,
+                    CustomMediaType.APPLICATION_YAML_VALUE
+            }
     )
     public PersonDTO findById(@PathVariable("id") Long id) {
         // solicita ao Service o PersonDTO correspondente ao ID informado.
         /*
-         * Fluxo da requisição:
+- Fluxo da requisição:
+
          *
-         * Controller
-         *      ↓
-         * Aciona o método findById() do Service.
+- Controller
+
+-      ↓
+
+- Aciona o método findById() do Service.
+
          *
-         * Service
-         *      ↓
-         * Aciona o método findById() do Repository.
+- Service
+
+-      ↓
+
+- Aciona o método findById() do Repository.
+
          *
-         * Repository
-         *      ↓
-         * Consulta o banco de dados utilizando o ID informado.
+- Repository
+
+-      ↓
+
+- Consulta o banco de dados utilizando o ID informado.
+
          *
-         * Banco de Dados
-         *      ↓
-         * Retorna a Entity encontrada.
+- Banco de Dados
+
+-      ↓
+
+- Retorna a Entity encontrada.
+
          *
-         * Service
-         *      ↓
-         * Converte a Entity em PersonDTO.
+- Service
+
+-      ↓
+
+- Converte a Entity em PersonDTO.
+
          *
-         * Controller
-         *      ↓
-         * Retorna o PersonDTO como resposta da API.
+- Controller
+
+-      ↓
+
+- Retorna o PersonDTO como resposta da API.
+
          */
         return service.findById(id);
 
@@ -113,7 +162,11 @@ public class PersonController {
     // GET http://localhost:8080/person/v1
     @GetMapping(
             value = "",
-            produces = MediaType.APPLICATION_JSON_VALUE
+            produces = {
+                    MediaType.APPLICATION_JSON_VALUE,
+                    MediaType.APPLICATION_XML_VALUE,
+                    CustomMediaType.APPLICATION_YAML_VALUE
+            }
     )
     public List<PersonDTO> findAll() {
         // Retorna a lista de PersonDTO já mapeada pelo service
@@ -122,32 +175,76 @@ public class PersonController {
 
 
     /*
-     * ============================================================================
-     * CREATE - CRIAR UMA NOVA PESSOA
-     * ============================================================================
-     * Utiliza o PersonInsertDTO no corpo da requisição (@RequestBody) validado
-     * pelas regras da anotação @Valid. Retorna o PersonDTO de saída fornecido pelo service
-     * com o status HTTP 201 (Created).
+- ============================================================================
+
+- CREATE - CRIAR UMA NOVA PESSOA
+
+- ============================================================================
+
+- Utiliza o PersonInsertDTO no corpo da requisição (@RequestBody) validado
+
+- pelas regras da anotação @Valid. Retorna o PersonDTO de saída fornecido pelo service
+
+- com o status HTTP 201 (Created).
+
      *
-     * ----------------------------------------------------------------------------
-     * EXEMPLO DE JSON PARA O POSTMAN (POST http://localhost:8080/person/v1):
-     * ----------------------------------------------------------------------------
-     * {
-     *   "firstName": "Elon",
-     *   "lastName": "Musk",
-     *   "cpf": "99988877766",
-     *   "email": "elon.musk@email.com",
-     *   "password": "123456",
-     *   "address": "Texas - EUA",
-     *   "gender": "Male",
-     *   "role": "CLIENT"
-     * }
-     * ============================================================================
+- ----------------------------------------------------------------------------
+
+- EXEMPLO DE JSON PARA O POSTMAN (POST http://localhost:8080/person/v1):
+
+- ----------------------------------------------------------------------------
+
+- {
+
+-   "firstName": "Elon",
+
+-   "lastName": "Musk",
+
+-   "cpf": "99988877766",
+
+-   "email": "elon.musk@email.com",
+
+-   "password": "123456",
+
+-   "address": "Texas - EUA",
+
+-   "gender": "Male",
+
+-   "role": "CLIENT"
+
+- }
+
+- ----------------------------------------------------------------------------
+- EXEMPLO DE XML PARA O POSTMAN (POST http://localhost:8080/person/v1):
+- ----------------------------------------------------------------------------
+
+- <PersonVO>
+-   <id>null</id>
+-   <firstName>Elon</firstName>
+-   <lastName>Musk</lastName>
+-   <cpf>99988877766</cpf>
+-   <email>elon.musk@email.com</email>
+-   <password>123456</password>
+-   <address>Texas - EUA</address>
+-   <gender>Male</gender>
+-   <role>CLIENT</role>
+- </PersonVO>
+
+- ============================================================================
+
      */
     @PostMapping(
             value = "",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
+            consumes = {
+                    MediaType.APPLICATION_JSON_VALUE,
+                    MediaType.APPLICATION_XML_VALUE,
+                    CustomMediaType.APPLICATION_YAML_VALUE
+            },
+            produces = {
+                    MediaType.APPLICATION_JSON_VALUE,
+                    MediaType.APPLICATION_XML_VALUE,
+                    CustomMediaType.APPLICATION_YAML_VALUE
+            }
     )
     public ResponseEntity<PersonDTO> create(@Valid @RequestBody PersonInsertDTO personDTO) {
         PersonDTO createdPerson = service.create(personDTO);
@@ -156,100 +253,172 @@ public class PersonController {
 
 
     /*
-     * ============================================================================
-     * UPDATE - ALTERAR UMA PESSOA
-     * ============================================================================
+- ============================================================================
+
+- UPDATE - ALTERAR UMA PESSOA
+
+- ============================================================================
+
      *
-     * Método HTTP:
-     *      PUT
+- Método HTTP:
+
+-      PUT
+
      *
-     * Endpoint:
-     *      http://localhost:8080/person/v1/{id}
+- Endpoint:
+
+-      http://localhost:8080/person/v1/{id}
+
      *
-     * O ID da pessoa é recebido através da URL utilizando @PathVariable.
+- O ID da pessoa é recebido através da URL utilizando @PathVariable.
+
      *
-     * Os novos dados são enviados no corpo da requisição (Request Body) em formato
-     * JSON e convertidos pelo Jackson para o objeto PersonUpdateDTO.
+- Os novos dados são enviados no corpo da requisição (Request Body) em formato
+
+- JSON e convertidos pelo Jackson para o objeto PersonUpdateDTO.
+
      *
-     * O PersonUpdateDTO contém somente os campos permitidos para atualização.
+- O PersonUpdateDTO contém somente os campos permitidos para atualização.
+
      *
-     * Campos como:
+- Campos como:
+
      *
-     * - id
-     * - cpf
-     * - email
-     * - password
-     * - role
-     * - birthDate
+- id
+
+- cpf
+
+- email
+
+- password
+
+- role
+
+- birthDate
+
      *
-     * Não fazem parte desta operação, pois possuem regras específicas de alteração.
-     *
-     *
-     * ----------------------------------------------------------------------------
-     * EXEMPLO DE JSON PARA O POSTMAN
-     * ----------------------------------------------------------------------------
-     *
-     * PUT:
-     *
-     * http://localhost:8080/person/v1/1
+- Não fazem parte desta operação, pois possuem regras específicas de alteração.
+
      *
      *
-     * Body:
+- ----------------------------------------------------------------------------
+
+- EXEMPLO DE JSON PARA O POSTMAN
+
+- ----------------------------------------------------------------------------
+
      *
-     * {
-     *   "firstName": "Ayrton",
-     *   "lastName": "Senna da Silva",
-     *   "address": "São Paulo - SP - Brasil",
-     *   "gender": "Male"
-     * }
+- PUT:
+
      *
-     * ============================================================================
+- http://localhost:8080/person/v1/1
+
+     *
+     *
+- Body (JSON):
+
+     *
+- {
+
+-   "firstName": "Ayrton",
+
+-   "lastName": "Senna da Silva",
+
+-   "address": "São Paulo - SP - Brasil",
+
+-   "gender": "Male"
+
+- }
+
+     *
+- ----------------------------------------------------------------------------
+- EXEMPLO DE XML PARA O POSTMAN (PUT http://localhost:8080/person/v1/1):
+- ----------------------------------------------------------------------------
+
+- <PersonVO>
+-   <firstName>Ayrton</firstName>
+-   <lastName>Senna da Silva</lastName>
+-   <address>São Paulo - SP - Brasil</address>
+-   <gender>Male</gender>
+- </PersonVO>
+
+- ============================================================================
+
      */
     @PutMapping(
             value = "/{id}",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
+            consumes = {
+                    MediaType.APPLICATION_JSON_VALUE,
+                    MediaType.APPLICATION_XML_VALUE,
+                    CustomMediaType.APPLICATION_YAML_VALUE
+            },
+            produces = {
+                    MediaType.APPLICATION_JSON_VALUE,
+                    MediaType.APPLICATION_XML_VALUE,
+                    CustomMediaType.APPLICATION_YAML_VALUE
+            }
     )
     public PersonDTO update(
 
             /*
-             * =====================================================================
-             * PATH VARIABLE
-             * =====================================================================
+- =====================================================================
+
+- PATH VARIABLE
+
+- =====================================================================
+
              *
-             * Recebe o ID da pessoa diretamente pela URL.
+- Recebe o ID da pessoa diretamente pela URL.
+
              *
-             * Exemplo:
+- Exemplo:
+
              *
-             * PUT /person/v1/1
+- PUT /person/v1/1
+
              *
-             * O valor 1 será recebido neste parâmetro.
+- O valor 1 será recebido neste parâmetro.
+
              *
-             * Esse ID será utilizado pelo Service para localizar a entidade
-             * existente no banco de dados.
+- Esse ID será utilizado pelo Service para localizar a entidade
+
+- existente no banco de dados.
+
              *
              */
             @PathVariable("id") Long id,
 
 
             /*
-             * =====================================================================
-             * REQUEST BODY
-             * =====================================================================
+- =====================================================================
+
+- REQUEST BODY
+
+- =====================================================================
+
              *
-             * Recebe o corpo JSON enviado pelo cliente.
+- Recebe o corpo JSON enviado pelo cliente.
+
              *
-             * O Jackson converte automaticamente o JSON para um objeto
-             * PersonUpdateDTO.
+- O Jackson converte automaticamente o JSON para um objeto
+
+- PersonUpdateDTO.
+
              *
-             * A anotação @Valid executa as validações definidas no DTO:
+- A anotação @Valid executa as validações definidas no DTO:
+
              *
-             * - @NotBlank
-             * - @Size
-             * - outras regras de validação
+- @NotBlank
+
+- @Size
+
+- outras regras de validação
+
              *
-             * Após a validação, o DTO é enviado para o Service, onde fica a lógica
-             * de atualização da pessoa.
+- Após a validação, o DTO é enviado para o Service, onde fica a lógica
+
+- de atualização da pessoa.
+
              *
              */
             @Valid @RequestBody PersonUpdateDTO personUpdate
@@ -257,17 +426,25 @@ public class PersonController {
     ) {
 
         /*
-         * Envia para o Service:
+- Envia para o Service:
+
          *
-         * - ID da pessoa que será atualizada.
-         * - DTO contendo os novos valores permitidos.
+- ID da pessoa que será atualizada.
+
+- DTO contendo os novos valores permitidos.
+
          *
-         * O Service executa a regra de negócio:
+- O Service executa a regra de negócio:
+
          *
-         * - Busca a entidade.
-         * - Atualiza os campos permitidos.
-         * - Salva no banco.
-         * - Retorna a pessoa atualizada.
+- Busca a entidade.
+
+- Atualiza os campos permitidos.
+
+- Salva no banco.
+
+- Retorna a pessoa atualizada.
+
          *
          */
         return service.update(id, personUpdate);
@@ -275,19 +452,28 @@ public class PersonController {
 
 
     /*
-     * ============================================================================
-     * DELETE - REMOVER UMA PESSOA
-     * ============================================================================
+- ============================================================================
+
+- DELETE - REMOVER UMA PESSOA
+
+- ============================================================================
+
      *
-     * Método HTTP:
-     *      DELETE
+- Método HTTP:
+
+-      DELETE
+
      *
-     * Endpoint:
-     *      http://localhost:8080/person/v1/{id}
+- Endpoint:
+
+-      http://localhost:8080/person/v1/{id}
+
      *
-     * O ID da pessoa que será removida é enviado pela URL.
+- O ID da pessoa que será removida é enviado pela URL.
+
      *
-     * ============================================================================
+- ============================================================================
+
      */
     @DeleteMapping(
             value = "/{id}"

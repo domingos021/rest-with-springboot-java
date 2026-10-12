@@ -1,0 +1,148 @@
+/*
+ * ============================================================================
+ * FORMATOS DE RESPOSTA SUPORTADOS PELA API
+ * ============================================================================
+ *
+ * A mesma representação de um recurso pode ser retornada em diferentes
+ * formatos dependendo do Header HTTP "Accept" enviado pelo cliente.
+ *
+ * O Spring utiliza o mecanismo de Content Negotiation para escolher o
+ * HttpMessageConverter adequado.
+ *
+ *
+ * ============================================================================
+ * 1) RESPOSTA EM JSON
+ * ============================================================================
+ *
+ * Requisição:
+ *
+ *      GET http://localhost:8080/person/v2/3
+ *
+ *      Header:
+ *          Accept: application/json
+ *
+ *
+ * Resposta:
+ *
+ * {
+ *      "id": 3,
+ *      "firstName": "Ada",
+ *      "lastName": "Diniz",
+ *      "email": "ad***@email.com",
+ *      "cpf": "333.***.***-66",
+ *      "gender": "M",
+ *      "address": "Rua Principal, 123",
+ *      "role": "CLIENT"
+ * }
+ *
+ *
+ * ============================================================================
+ * 2) RESPOSTA EM XML
+ * ============================================================================
+ *
+ * Requisição:
+ *
+ *      GET http://localhost:8080/person/v2/3
+ *
+ *      Header:
+ *          Accept: application/xml
+ *
+ *
+ * Resposta:
+ *
+ * <PersonDTO>
+ *      <id>3</id>
+ *      <firstName>Ada</firstName>
+ *      <lastName>Diniz</lastName>
+ *      <email>ad***@email.com</email>
+ *      <cpf>333.***.***-66</cpf>
+ *      <gender>M</gender>
+ *      <address>Rua Principal, 123</address>
+ *      <role>CLIENT</role>
+ * </PersonDTO>
+ *
+ *
+ * ============================================================================
+ * 3) RESPOSTA EM YAML
+ * ============================================================================
+ *
+ * Requisição:
+ *
+ *      GET http://localhost:8080/person/v2/3
+ *
+ *      Header:
+ *          Accept: application/yaml
+ *
+ *
+ * Resposta:
+ *
+ * ID_usuário: 3
+ * Nome: "Ada Diniz"
+ * Sobrenome: "Jovete"
+ * Email: "ad***@email.com"
+ * CPF: "333.***.***-66"
+ * Género: "M"
+ * Endereço: "Rua Principal, 123"
+ * Perfil: "CLIENT"
+ *
+ *
+ * ============================================================================
+ * OBSERVAÇÃO SOBRE LISTAS
+ * ============================================================================
+ *
+ * Quando o endpoint retorna uma lista:
+ *
+ *      List<PersonDTOV2>
+ *
+ * o YAML representa cada elemento como uma sequência utilizando "-".
+ *
+ * Exemplo:
+ *
+ * - ID_usuário: 1
+ *   Nome: "Nikola"
+ *
+ * - ID_usuário: 2
+ *   Nome: "Albert"
+ *
+ *
+ * Portanto, o formato da resposta depende da combinação:
+ *
+ *      Objeto retornado pelo Controller
+ *                 +
+ *      Header HTTP "Accept"
+ *                 +
+ *      HttpMessageConverter disponível
+ *
+ * ============================================================================
+ */
+
+ Cliente (Postman)
+         |
+         | Header:
+         | Accept: application/json
+         | Accept: application/xml
+         | Accept: application/yaml
+         |
+         v
+ Spring MVC
+         |
+         | Analisa o MediaType solicitado
+         |
+         v
+ Escolhe o HttpMessageConverter adequado
+         |
+         +-------------------------------+
+         |                               |
+         v                               v
+ JSON Converter                    XML Converter
+
+         |
+         v
+
+ YamlJackson2HttpMessageConverter
+         |
+         v
+ YAMLMapper
+         |
+         v
+ Resposta YAML
