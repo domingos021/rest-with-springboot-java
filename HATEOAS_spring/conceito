@@ -1,0 +1,174 @@
+```java
+/*
+ * ============================================================================
+ * HATEOAS (Hypermedia As The Engine Of Application State)
+ * ============================================================================
+ *
+ * CONCEITO
+ * ----------------------------------------------------------------------------
+ *
+ * HATEOAS é um princípio da arquitetura REST onde a própria resposta da API
+ * informa quais ações o cliente pode executar em seguida.
+ *
+ * Em vez de o cliente conhecer todos os endpoints da aplicação, ele recebe
+ * links junto com os dados retornados.
+ *
+ * Em outras palavras:
+ *
+ *      A API não entrega apenas informações.
+ *      Ela também entrega "caminhos" para navegar pela própria API.
+ *
+ * Pense como um site da internet:
+ *
+ *      Você entra em uma página.
+ *      ↓
+ *      Existem vários links.
+ *      ↓
+ *      Você clica neles para navegar.
+ *
+ * O HATEOAS faz exatamente isso, porém utilizando JSON.
+ *
+ * ============================================================================
+ * SEM HATEOAS
+ * ============================================================================
+ *
+ * O cliente recebe apenas os dados.
+ *
+ * Exemplo:
+ *
+ * GET /person/1
+ *
+ * Resposta:
+ *
+ * {
+ *      "id": 1,
+ *      "firstName": "Nikola",
+ *      "lastName": "Tesla"
+ * }
+ *
+ * Problema:
+ *
+ * O cliente precisa conhecer previamente todos os endpoints:
+ *
+ *      GET    /person
+ *      GET    /person/1
+ *      PUT    /person/1
+ *      DELETE /person/1
+ *
+ * Toda essa lógica fica "gravada" no cliente.
+ *
+ * ============================================================================
+ * COM HATEOAS
+ * ============================================================================
+ *
+ * A resposta contém os dados e também os links disponíveis.
+ *
+ * GET /person/1
+ *
+ * Resposta:
+ *
+ * {
+ *      "id": 1,
+ *      "firstName": "Nikola",
+ *      "lastName": "Tesla",
+ *
+ *      "_links": {
+ *
+ *          "self": {
+ *              "href": "/person/v1/1"
+ *          },
+ *
+ *          "update": {
+ *              "href": "/person/v1/1"
+ *          },
+ *
+ *          "delete": {
+ *              "href": "/person/v1/1"
+ *          },
+ *
+ *          "allPersons": {
+ *              "href": "/person/v1"
+ *          }
+ *      }
+ * }
+ *
+ * Agora o cliente não precisa decorar os endpoints.
+ *
+ * Basta seguir os links enviados pela própria API.
+ *
+ * ============================================================================
+ * COMO O SPRING IMPLEMENTA
+ * ============================================================================
+ *
+ * O Spring possui o módulo:
+ *
+ *      spring-boot-starter-hateoas
+ *
+ * Ele adiciona automaticamente suporte para inserir links dentro dos DTOs.
+ *
+ * Normalmente os DTOs passam a herdar:
+ *
+ *      RepresentationModel<T>
+ *
+ * Exemplo:
+ *
+ * public class PersonDTO extends RepresentationModel<PersonDTO> {
+ *
+ *      private Long id;
+ *      private String firstName;
+ *      ...
+ * }
+ *
+ * Depois podemos adicionar links:
+ *
+ * person.add(
+ *      linkTo(
+ *          methodOn(PersonController.class)
+ *              .findById(id)
+ *      ).withSelfRel()
+ * );
+ *
+ * ============================================================================
+ * PRINCIPAIS LINKS
+ * ============================================================================
+ *
+ * withSelfRel()
+ *
+ *      Link para o próprio recurso.
+ *
+ * Exemplo:
+ *
+ *      /person/v1/10
+ *
+ * --------------------------------------------------------------------------
+ *
+ * withRel("update")
+ *
+ *      Link personalizado para atualização.
+ *
+ * --------------------------------------------------------------------------
+ *
+ * withRel("delete")
+ *
+ *      Link personalizado para exclusão.
+ *
+ * --------------------------------------------------------------------------
+ *
+ * withRel("allPersons")
+ *
+ *      Link para listar todos os registros.
+ *
+ * ============================================================================
+ * VANTAGENS
+ * ============================================================================
+ *
+ * ✓ API mais intuitiva.
+ *
+ * ✓ Cliente descobre automaticamente os próximos passos.
+ *
+ * ✓ Menor acoplamento entre cliente e servidor.
+ *
+ * ✓ Facilita evolução da API.
+ *
+ * ✓ Segue mais fielmente os princípi*
+```

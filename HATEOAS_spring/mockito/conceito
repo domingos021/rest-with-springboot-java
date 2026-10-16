@@ -1,0 +1,160 @@
+/*
+ * =============================================================================
+ * CONCEITO DE MOCKITO
+ * =============================================================================
+ *
+ * Mockito é um framework de testes utilizado para criar objetos simulados
+ * (Mocks) durante a execução dos testes.
+ *
+ * A principal finalidade do Mockito é testar uma classe de forma isolada,
+ * sem depender da implementação real de outras classes, banco de dados,
+ * APIs externas ou qualquer outro recurso que possa tornar o teste mais
+ * lento ou difícil de controlar.
+ *
+ * -----------------------------------------------------------------------------
+ * O que é um Mock?
+ * -----------------------------------------------------------------------------
+ *
+ * Um Mock é um objeto "falso" que substitui um objeto real apenas durante
+ * o teste.
+ *
+ * Esse objeto não executa a lógica verdadeira da classe original.
+ * Em vez disso, o desenvolvedor define antecipadamente qual será o seu
+ * comportamento.
+ *
+ * Exemplo:
+ *
+ * Sem Mockito:
+ *
+ *      PersonService
+ *             |
+ *             v
+ *      PersonRepository
+ *             |
+ *             v
+ *      Banco de Dados
+ *
+ * O teste depende do banco existir, estar funcionando e possuir dados.
+ *
+ *
+ * Com Mockito:
+ *
+ *      PersonService
+ *             |
+ *             v
+ *      Mock PersonRepository
+ *
+ * O banco de dados deixa de ser necessário, pois o Mock devolve exatamente
+ * os dados definidos pelo teste.
+ *
+ * -----------------------------------------------------------------------------
+ * Por que utilizar Mockito?
+ * -----------------------------------------------------------------------------
+ *
+ * • Testar apenas a classe desejada.
+ *
+ * • Evitar acesso ao banco de dados.
+ *
+ * • Evitar chamadas para APIs externas.
+ *
+ * • Executar testes muito mais rápidos.
+ *
+ * • Controlar completamente os dados retornados.
+ *
+ * • Simular situações de sucesso, erro ou exceções.
+ *
+ * -----------------------------------------------------------------------------
+ * Exemplo prático
+ * -----------------------------------------------------------------------------
+ *
+ * Imagine o método:
+ *
+ *      PersonService.findById(1)
+ *
+ * Internamente ele chama:
+ *
+ *      repository.findById(1)
+ *
+ * Em um teste com Mockito podemos dizer:
+ *
+ *      "Quando alguém chamar repository.findById(1),
+ *       devolva a Pessoa João."
+ *
+ * Dessa forma o PersonService acredita estar conversando com o repositório
+ * verdadeiro, quando na realidade está utilizando um objeto simulado.
+ *
+ * -----------------------------------------------------------------------------
+ * Fluxo do teste
+ * -----------------------------------------------------------------------------
+ *
+ *          Teste
+ *             |
+ *             v
+ *      PersonService
+ *             |
+ *             v
+ *      Mock PersonRepository
+ *             |
+ *             v
+ *      Dados simulados
+ *
+ * Nenhum acesso ao banco acontece.
+ *
+ * -----------------------------------------------------------------------------
+ * Métodos comuns do Mockito
+ * -----------------------------------------------------------------------------
+ *
+ * when(...)
+ *      Define o comportamento esperado do Mock.
+ *
+ * thenReturn(...)
+ *      Define qual objeto será retornado.
+ *
+ * thenThrow(...)
+ *      Simula uma exceção.
+ *
+ * verify(...)
+ *      Verifica se determinado método foi chamado.
+ *
+ * times(...)
+ *      Verifica quantas vezes um método foi executado.
+ *
+ * never()
+ *      Verifica que um método nunca foi chamado.
+ *
+ * -----------------------------------------------------------------------------
+ * Relação com Spring Boot
+ * -----------------------------------------------------------------------------
+ *
+ * Em projetos Spring Boot é comum utilizar Mockito para testar Services,
+ * Controllers e outras classes sem depender de componentes reais.
+ *
+ * Exemplo:
+ *
+ *      Controller
+ *            |
+ *            v
+ *      Service (Mock)
+ *
+ * ou
+ *
+ *      Service
+ *            |
+ *            v
+ *      Repository (Mock)
+ *
+ * Cada camada pode ser testada separadamente, garantindo que apenas sua
+ * própria lógica esteja sendo avaliada.
+ *
+ * -----------------------------------------------------------------------------
+ * Resumo
+ * -----------------------------------------------------------------------------
+ *
+ * Mockito é uma biblioteca de testes que cria objetos simulados (Mocks)
+ * para substituir dependências reais durante os testes.
+ *
+ * Seu principal objetivo é permitir testes rápidos, isolados e previsíveis,
+ * verificando apenas a lógica da classe que está sendo testada, sem acessar
+ * banco de dados, APIs ou outros recursos externos.
+ * =============================================================================
+ */

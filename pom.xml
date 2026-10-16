@@ -49,6 +49,22 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+
+        <!-- =========================================================================
+             SPRING HATEOAS
+             =========================================================================
+             Adiciona suporte ao padrão HATEOAS (Hypermedia As The Engine Of
+             Application State), permitindo incluir links de navegação nas respostas
+             da API REST.
+        ============================================================================= -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-hateoas</artifactId>
+        </dependency>
+
+
+
         <!-- ===================================================================== -->
         <!-- JACKSON XML                                                            -->
         <!-- ===================================================================== -->

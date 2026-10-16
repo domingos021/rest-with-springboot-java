@@ -1,0 +1,667 @@
+/*
+===============================================================================
+                 MODELAGEM DE DADOS COM UML
+       PARTE 5 - IMPLEMENTAÇÃO SQL E JPA DOS RELACIONAMENTOS
+===============================================================================
+
+
+===============================================================================
+1. RELACIONAMENTO 1:N (UM PARA MUITOS)
+===============================================================================
+
+
+Exemplo:
+
+Uma Pessoa possui vários Carros.
+
+Um Carro pertence a uma Pessoa.
+
+
+UML:
+
+
++-------------+              +-------------+
+| Pessoa      | 1 -------- N | Carro       |
++-------------+              +-------------+
+
+
+
+Leitura:
+
+Pessoa:
+
+"Eu tenho vários carros."
+
+
+Carro:
+
+"Eu pertenço a uma pessoa."
+
+
+
+===============================================================================
+SQL
+===============================================================================
+
+
+Criamos primeiro a tabela do lado 1:
+
+
+CREATE TABLE pessoa (
+
+    id BIGSERIAL PRIMARY KEY,
+
+    nome VARCHAR(100)
+
+);
+
+
+
+Depois criamos a tabela do lado N:
+
+
+
+CREATE TABLE carro (
+
+    id BIGSERIAL PRIMARY KEY,
+
+    modelo VARCHAR(100),
+
+    pessoa_id BIGINT,
+
+    CONSTRAINT fk_carro_pessoa
+
+        FOREIGN KEY (pessoa_id)
+
+        REFERENCES pessoa(id)
+
+);
+
+
+
+Observe:
+
+
+
+CARRO possui:
+
+pessoa_id
+
+
+
+Por quê?
+
+
+
+Porque muitos carros precisam apontar para uma pessoa.
+
+
+
+Resultado:
+
+
+
+Pessoa:
+
+
+id | nome
+
+1  | João
+
+
+
+Carro:
+
+
+id | modelo  | pessoa_id
+
+1  | Civic   | 1
+
+2  | Corolla | 1
+
+3  | Gol     | 1
+
+
+
+===============================================================================
+JAVA + JPA
+===============================================================================
+
+
+Classe Pessoa:
+
+
+@OneToMany(mappedBy = "pessoa")
+private List<Carro> carros;
+
+
+
+Significado:
+
+
+"Uma Pessoa possui vários Carros."
+
+
+
+---------------------------------------------------------------
+
+
+Classe Carro:
+
+
+@ManyToOne
+@JoinColumn(name = "pessoa_id")
+private Pessoa pessoa;
+
+
+
+Significado:
+
+
+"Vários Carros pertencem a uma Pessoa."
+
+
+
+===============================================================================
+OBSERVAÇÃO IMPORTANTE
+===============================================================================
+
+
+No banco:
+
+
+A chave estrangeira está em Carro.
+
+
+
+Então Carro é quem realmente guarda a ligação.
+
+
+
+Por isso geralmente o lado:
+
+
+@ManyToOne
+
+
+é chamado de lado proprietário.
+
+
+
+===============================================================================
+2. RELACIONAMENTO 1:1
+===============================================================================
+
+
+Exemplo:
+
+
+Usuário possui um Perfil.
+
+
+UML:
+
+
+
++-------------+       +-------------+
+| Usuário     | 1--1  | Perfil      |
++-------------+       +-------------+
+
+
+
+===============================================================================
+SQL
+===============================================================================
+
+
+
+Tabela usuário:
+
+
+CREATE TABLE usuario (
+
+    id BIGSERIAL PRIMARY KEY,
+
+    nome VARCHAR(100)
+
+);
+
+
+
+Tabela perfil:
+
+
+CREATE TABLE perfil (
+
+    id BIGSERIAL PRIMARY KEY,
+
+    descricao VARCHAR(200),
+
+    usuario_id BIGINT UNIQUE,
+
+
+    FOREIGN KEY(usuario_id)
+
+        REFERENCES usuario(id)
+
+);
+
+
+
+Por que UNIQUE?
+
+
+Porque precisamos garantir:
+
+
+
+Um usuário somente pode ter um perfil.
+
+
+
+Sem UNIQUE:
+
+
+Usuário 1
+
+Perfil A
+
+Perfil B
+
+
+
+Isso quebraria a regra 1:1.
+
+
+
+===============================================================================
+JAVA + JPA
+===============================================================================
+
+
+Usuário:
+
+
+
+@OneToOne(mappedBy = "usuario")
+private Perfil perfil;
+
+
+
+Perfil:
+
+
+
+@OneToOne
+@JoinColumn(name = "usuario_id")
+private Usuario usuario;
+
+
+
+===============================================================================
+3. RELACIONAMENTO N:N
+===============================================================================
+
+
+Exemplo:
+
+
+Aluno faz Curso.
+
+
+
+UML:
+
+
+
++-------------+        +-------------+
+| Aluno       | N -- N | Curso       |
++-------------+        +-------------+
+
+
+
+===============================================================================
+PROBLEMA
+===============================================================================
+
+
+Não criamos:
+
+
+
+CREATE TABLE aluno (
+
+curso_id
+
+)
+
+
+
+Nem:
+
+
+
+CREATE TABLE curso (
+
+aluno_id
+
+)
+
+
+
+Porque os dois lados possuem vários registros.
+
+
+
+Precisamos de uma tabela intermediária.
+
+
+
+===============================================================================
+SOLUÇÃO SQL
+===============================================================================
+
+
+
+Tabela aluno:
+
+
+
+CREATE TABLE aluno (
+
+    id BIGSERIAL PRIMARY KEY,
+
+    nome VARCHAR(100)
+
+);
+
+
+
+Tabela curso:
+
+
+
+CREATE TABLE curso (
+
+    id BIGSERIAL PRIMARY KEY,
+
+    nome VARCHAR(100)
+
+);
+
+
+
+Tabela intermediária:
+
+
+
+CREATE TABLE matricula (
+
+
+    aluno_id BIGINT,
+
+
+    curso_id BIGINT,
+
+
+    data_matricula DATE,
+
+
+    PRIMARY KEY(aluno_id, curso_id),
+
+
+    FOREIGN KEY(aluno_id)
+
+        REFERENCES aluno(id),
+
+
+    FOREIGN KEY(curso_id)
+
+        REFERENCES curso(id)
+
+);
+
+
+
+Agora:
+
+
+Aluno 1
+
+pode aparecer várias vezes em matrícula.
+
+
+
+Curso 1
+
+pode aparecer várias vezes em matrícula.
+
+
+
+===============================================================================
+JAVA + JPA
+===============================================================================
+
+
+Forma direta:
+
+
+Aluno:
+
+
+@ManyToMany
+@JoinTable(
+
+    name = "matricula",
+
+    joinColumns = @JoinColumn(name = "aluno_id"),
+
+    inverseJoinColumns = @JoinColumn(name = "curso_id")
+
+)
+
+private List<Curso> cursos;
+
+
+
+Curso:
+
+
+@ManyToMany(mappedBy = "cursos")
+
+private List<Aluno> alunos;
+
+
+
+===============================================================================
+ATENÇÃO SOBRE MANYTOMANY
+===============================================================================
+
+
+Apesar de existir:
+
+
+@ManyToMany
+
+
+
+Muitas vezes é melhor criar uma entidade:
+
+
+Matricula
+
+
+
+Porque a relação possui dados:
+
+
+
+Matricula:
+
+
+- data
+
+- nota
+
+- situação
+
+
+
+Nesse caso:
+
+
+Não usamos ManyToMany.
+
+
+
+Usamos:
+
+
+Aluno 1 -------- N Matricula
+
+
+Curso 1 -------- N Matricula
+
+
+
+===============================================================================
+4. COMPARAÇÃO FINAL
+===============================================================================
+
+
+
+1:N
+
+
+
+UML:
+
+
+Pessoa 1 ---- N Carro
+
+
+
+SQL:
+
+
+Carro possui FK pessoa_id
+
+
+
+Java:
+
+
+@OneToMany
+
+@ManyToOne
+
+
+
+---------------------------------------------------------------
+
+
+
+1:1
+
+
+
+UML:
+
+
+Usuário 1 ---- 1 Perfil
+
+
+
+SQL:
+
+
+Perfil possui FK usuario_id + UNIQUE
+
+
+
+Java:
+
+
+@OneToOne
+
+
+
+---------------------------------------------------------------
+
+
+
+N:N
+
+
+
+UML:
+
+
+Aluno N ---- N Curso
+
+
+
+SQL:
+
+
+Tabela intermediária
+
+
+
+Java:
+
+
+@ManyToMany
+
+
+ou
+
+
+Entidade associativa
+
+
+
+===============================================================================
+REGRA DE OURO
+===============================================================================
+
+
+Nunca comece pela anotação:
+
+
+
+"Vou usar @OneToMany"
+
+
+
+Comece:
+
+
+1) Qual é a regra do negócio?
+
+
+2) Qual é a cardinalidade?
+
+
+3) Como o banco representa isso?
+
+
+4) Qual anotação representa essa decisão?
+
+
+
+===============================================================================
+FIM DA PARTE 5
+===============================================================================
+
+Próxima parte:
+
+- Owning Side (lado proprietário)
+- mappedBy explicado profundamente
+- Cascade
+- Fetch LAZY e EAGER
+- Erros comuns no Hibernate
+
+===============================================================================
+
+*/

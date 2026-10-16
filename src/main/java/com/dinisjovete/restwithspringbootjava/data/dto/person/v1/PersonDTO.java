@@ -1,5 +1,6 @@
 package com.dinisjovete.restwithspringbootjava.data.dto.person.v1;
 
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonDTOV2;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.springframework.hateoas.RepresentationModel;
 
 import java.io.IOException;
 
@@ -36,8 +38,19 @@ import java.util.Objects;
 // Mantém o contrato da API mais limpo evitando propriedades vazias.
 @JsonInclude(JsonInclude.Include.NON_NULL)
 //garante que a ordem das propriedades no JSON seja consistente
-@JsonPropertyOrder({"ID_usuário", "Nome", "Sobrenome", "Email", "CPF", "Género", "Endereço", "Perfil"})
-public class PersonDTO implements Serializable {
+@JsonPropertyOrder(
+        {
+                "ID_usuário",
+                "Nome", "Sobrenome",
+                "Email",
+                "CPF",
+                "Género",
+                "Endereço",
+                "Perfil"
+        }
+)
+//RepresentationModel -> da suporte ao  hateoas para essa dto
+public class PersonDTO extends RepresentationModel<PersonDTO> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

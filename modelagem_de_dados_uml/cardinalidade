@@ -1,0 +1,972 @@
+/*
+===============================================================================
+                 MODELAGEM DE DADOS COM UML
+          PARTE 2 - CARDINALIDADE E RELACIONAMENTOS
+===============================================================================
+
+
+===============================================================================
+1. O QUE É CARDINALIDADE?
+===============================================================================
+
+
+Cardinalidade representa:
+
+"Quantas instâncias de um conceito podem se relacionar com instâncias
+de outro conceito."
+
+
+Em outras palavras:
+
+
+Ela responde:
+
+
+"Quantos objetos de um lado podem estar ligados a quantos objetos do outro lado?"
+
+
+
+Os principais tipos são:
+
+
+1:1  -> Um para Um
+
+1:N  -> Um para Muitos
+
+N:N  -> Muitos para Muitos
+
+
+
+Antes de pensar em código, banco ou JPA, o modelador deve responder:
+
+
+- Quantos elementos existem de cada lado?
+- A relação é obrigatória ou opcional?
+- Existe dependência entre os objetos?
+- Existe informação própria nessa relação?
+
+
+
+===============================================================================
+2. COMO DESCOBRIR UMA CARDINALIDADE?
+===============================================================================
+
+
+O modelador deve analisar sempre os dois lados.
+
+
+
+Exemplo:
+
+
+Pessoa -------- Carro
+
+
+
+Perguntas:
+
+
+
+Lado Pessoa:
+
+
+Uma Pessoa pode ter quantos Carros?
+
+
+Resposta:
+
+
+Pode ter vários.
+
+
+
+Então:
+
+
+Pessoa -> Carro
+
+
+1:N
+
+
+
+Agora analisamos o outro lado:
+
+
+Um Carro pode pertencer a quantas Pessoas?
+
+
+Resposta:
+
+
+Apenas uma.
+
+
+
+Então:
+
+
+Carro -> Pessoa
+
+
+N:1
+
+
+
+Juntando:
+
+
+Pessoa 1 -------- N Carro
+
+
+
+===============================================================================
+3. RELACIONAMENTO 1:1 (UM PARA UM)
+===============================================================================
+
+
+
+===============================================================================
+CONCEITO GERAL
+===============================================================================
+
+
+Um relacionamento 1:1 acontece quando:
+
+
+Cada elemento de uma entidade está relacionado com exatamente um elemento
+da outra entidade.
+
+
+
+Representação:
+
+
++-------------+        +-------------+
+| Pessoa      | 1 --- 1| CPF         |
++-------------+        +-------------+
+
+
+
+Significa:
+
+
+Uma Pessoa possui um CPF.
+
+Um CPF pertence a uma Pessoa.
+
+
+
+===============================================================================
+COMO O MODELADOR DESCOBRE UM 1:1?
+===============================================================================
+
+
+
+Perguntas:
+
+
+1) Um objeto pode possuir vários objetos do outro lado?
+
+
+Exemplo:
+
+
+Uma pessoa pode ter vários CPFs?
+
+
+Não.
+
+
+
+2) O outro lado pode pertencer a vários objetos?
+
+
+Um CPF pode pertencer a várias pessoas?
+
+
+Não.
+
+
+
+3) Existe exclusividade dos dois lados?
+
+
+Sim.
+
+
+
+Resultado:
+
+
+Pessoa 1 -------- 1 CPF
+
+
+
+===============================================================================
+EXEMPLOS DE 1:1
+===============================================================================
+
+
+EXEMPLO 1:
+
+Pessoa e CPF
+
+
+Pessoa
+
++ nome
++ cpf
+
+
+
+Nesse caso o CPF normalmente pode ser apenas um atributo.
+
+
+Por quê?
+
+
+Porque ele é uma característica da pessoa.
+
+
+Não possui comportamento próprio.
+
+
+---------------------------------------------------------------
+
+
+EXEMPLO 2:
+
+
+Usuário e Perfil
+
+
+Um sistema pode ter:
+
+
+Usuário
+
+Perfil
+
+
+Regra:
+
+
+Cada usuário possui um único perfil.
+
+Cada perfil pertence a um único usuário.
+
+
+
+Diagrama:
+
+
++-------------+
+| Usuário     |
++-------------+
+      |
+      | 1:1
+      |
++-------------+
+| Perfil      |
++-------------+
+
+
+
+Aqui pode fazer sentido separar porque:
+
+
+Perfil possui informações próprias:
+
+
+- permissões
+- configurações
+- preferências
+
+
+
+===============================================================================
+ATENÇÃO SOBRE 1:1
+===============================================================================
+
+
+Nem toda relação 1:1 precisa virar uma classe separada.
+
+
+
+Exemplo:
+
+
+Pessoa
+
+
+Não necessariamente:
+
+
+Pessoa -------- CPF
+
+
+
+Pode ser:
+
+
+Pessoa
+
++ nome
++ cpf
+
+
+
+Pergunta principal:
+
+
+"Esse conceito possui comportamento e informações próprias?"
+
+
+
+Se não:
+
+
+Pode ser atributo.
+
+
+
+Se sim:
+
+
+Pode ser uma entidade separada.
+
+
+
+===============================================================================
+4. RELACIONAMENTO 1:N (UM PARA MUITOS)
+===============================================================================
+
+
+
+===============================================================================
+CONCEITO GERAL
+===============================================================================
+
+
+É o relacionamento mais comum em sistemas.
+
+
+
+Significa:
+
+
+Um objeto possui vários objetos relacionados.
+
+
+Mas cada objeto do lado muitos pertence a apenas um objeto do lado um.
+
+
+
+Exemplo:
+
+
+Pessoa -------- Carro
+
+
+
+Representação:
+
+
++-------------+
+| Pessoa      |
++-------------+
+      |
+      | 1
+      |
+      |
+      | N
++-------------+
+| Carro       |
++-------------+
+
+
+
+Leitura:
+
+
+Uma Pessoa possui muitos Carros.
+
+
+Um Carro possui uma Pessoa.
+
+
+
+===============================================================================
+COMO DESCOBRIR UM 1:N?
+===============================================================================
+
+
+Perguntas:
+
+
+Lado A:
+
+
+Uma pessoa pode ter quantos carros?
+
+
+Resposta:
+
+
+Vários.
+
+
+
+Lado B:
+
+
+Um carro pode ter quantos donos?
+
+
+Resposta:
+
+
+Um.
+
+
+
+Resultado:
+
+
+Pessoa 1 -------- N Carro
+
+
+
+===============================================================================
+EXEMPLOS DE 1:N
+===============================================================================
+
+
+
+EXEMPLO 1:
+
+
+Cliente e Pedido
+
+
+
+Perguntas:
+
+
+Um cliente pode fazer vários pedidos?
+
+
+Sim.
+
+
+
+Um pedido pertence a vários clientes?
+
+
+Não.
+
+
+
+Resultado:
+
+
+Cliente 1 -------- N Pedido
+
+
+
+Diagrama:
+
+
++-------------+
+| Cliente     |
++-------------+
+      |
+      |
+      |
++-------------+
+| Pedido      |
++-------------+
+
+
+
+---------------------------------------------------------------
+
+
+EXEMPLO 2:
+
+
+Pedido e ItemPedido
+
+
+
+Perguntas:
+
+
+Um pedido possui vários itens?
+
+
+Sim.
+
+
+
+Um item pertence a vários pedidos?
+
+
+Não.
+
+
+
+Resultado:
+
+
+Pedido 1 -------- N ItemPedido
+
+
+
+===============================================================================
+REGRA IMPORTANTE DO 1:N
+===============================================================================
+
+
+Quando temos 1:N:
+
+
+O lado "N" depende do lado "1".
+
+
+Exemplo:
+
+
+Pedido
+
+
+1
+
+
+|
+
+N
+
+
+ItemPedido
+
+
+
+Um ItemPedido precisa saber de qual Pedido faz parte.
+
+
+
+===============================================================================
+5. RELACIONAMENTO N:N (MUITOS PARA MUITOS)
+===============================================================================
+
+
+
+===============================================================================
+CONCEITO GERAL
+===============================================================================
+
+
+N:N significa:
+
+
+Muitos elementos de um lado podem se relacionar com muitos elementos do outro.
+
+
+
+Exemplo:
+
+
+Aluno -------- Curso
+
+
+
+Perguntas:
+
+
+Um aluno pode fazer vários cursos?
+
+
+Sim.
+
+
+
+Um curso pode possuir vários alunos?
+
+
+Sim.
+
+
+
+Resultado:
+
+
+Aluno N -------- N Curso
+
+
+
+===============================================================================
+EXEMPLO VISUAL
+===============================================================================
+
+
+
+Aluno:
+
+
+João
+
+
+faz:
+
+
+Java
+
+UML
+
+Banco de Dados
+
+
+
+Representação:
+
+
+       Java
+        |
+        |
+João ---+---- UML
+        |
+        |
+   Banco de Dados
+
+
+
+Agora o outro lado:
+
+
+Curso Java:
+
+
+João
+
+Maria
+
+Pedro
+
+
+
+Então:
+
+
+Curso também possui vários alunos.
+
+
+
+===============================================================================
+O PROBLEMA DO N:N
+===============================================================================
+
+
+No mundo real é simples:
+
+
+Aluno faz Curso.
+
+
+
+Mas no banco relacional precisamos representar isso.
+
+
+
+Não podemos fazer:
+
+
+Aluno
+
+
+id
+
+nome
+
+curso1
+
+curso2
+
+curso3
+
+
+
+Porque uma coluna não deve guardar vários valores.
+
+
+
+===============================================================================
+SOLUÇÃO: ENTIDADE ASSOCIATIVA
+===============================================================================
+
+
+Criamos um conceito intermediário.
+
+
+
+Antes:
+
+
+Aluno N -------- N Curso
+
+
+
+Depois:
+
+
+Aluno 1 -------- N Matrícula N -------- 1 Curso
+
+
+
+Diagrama:
+
+
++-------------+
+| Aluno       |
++-------------+
+      |
+      |
+      N
++-------------+
+| Matrícula   |
++-------------+
+      |
+      |
+      N
++-------------+
+| Curso       |
++-------------+
+
+
+
+A matrícula representa a relação.
+
+
+
+===============================================================================
+POR QUE A MATRÍCULA EXISTE?
+===============================================================================
+
+
+Porque a relação possui informações próprias.
+
+
+
+Exemplo:
+
+
+Matrícula:
+
+
++----------------+
+| Matrícula      |
++----------------+
+| data           |
+| nota           |
+| situação       |
+| semestre       |
++----------------+
+
+
+
+Ela deixou de ser apenas uma ligação.
+
+
+
+Ela virou um conceito do sistema.
+
+
+
+===============================================================================
+EXEMPLO DE LOJA
+===============================================================================
+
+
+Cliente -------- Produto
+
+
+
+Um cliente compra vários produtos.
+
+
+Um produto é comprado por vários clientes.
+
+
+
+N:N.
+
+
+
+Mas existe:
+
+
+Compra:
+
+
+- quantidade
+- preço pago
+- data
+- desconto
+
+
+
+Então:
+
+
+Cliente
+
+
+   |
+
+
+Compra
+
+
+   |
+
+
+Produto
+
+
+
+===============================================================================
+COMO O MODELADOR DECIDE SE PRECISA DE ENTIDADE ASSOCIATIVA?
+===============================================================================
+
+
+Perguntas:
+
+
+1) A relação possui informações próprias?
+
+
+Exemplo:
+
+
+Data da compra.
+
+
+Sim.
+
+
+Criar entidade.
+
+
+---------------------------------------------------------------
+
+
+2) A relação possui regras próprias?
+
+
+Exemplo:
+
+
+Uma matrícula pode ser cancelada.
+
+
+Sim.
+
+
+Criar entidade.
+
+
+---------------------------------------------------------------
+
+
+3) A relação possui comportamento?
+
+
+Exemplo:
+
+
+Calcular desconto da compra.
+
+
+Sim.
+
+
+Criar entidade.
+
+
+
+===============================================================================
+RESUMO FINAL DA CARDINALIDADE
+===============================================================================
+
+
+1:1
+
+
+Um objeto se relaciona com apenas um outro.
+
+
+Exemplo:
+
+
+Pessoa ---- CPF
+
+
+
+---------------------------------------------------------------
+
+
+1:N
+
+
+Um objeto possui vários objetos.
+
+
+Exemplo:
+
+
+Pessoa ---- Carro
+
+
+
+---------------------------------------------------------------
+
+
+N:N
+
+
+Muitos objetos de ambos os lados.
+
+
+Exemplo:
+
+
+Aluno ---- Curso
+
+
+
+Normalmente vira:
+
+
+1:N + N:1
+
+
+através de uma entidade intermediária.
+
+
+
+===============================================================================
+FIM DA PARTE 2
+===============================================================================
+
+
+Próxima parte:
+
+- Como transformar esses diagramas UML em tabelas SQL
+- Onde ficam as chaves estrangeiras
+- Como o ORM/JPA representa cada relacionamento
+- Diferença entre modelo conceitual, lógico e físico
+
+===============================================================================
+
+*/

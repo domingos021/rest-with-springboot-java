@@ -1,0 +1,855 @@
+/*
+===============================================================================
+                 MODELAGEM DE DADOS COM UML
+     PARTE 3 - TRANSFORMANDO MODELOS UML EM BANCO DE DADOS RELACIONAL
+===============================================================================
+
+
+===============================================================================
+1. DO MODELO CONCEITUAL PARA O BANCO DE DADOS
+===============================================================================
+
+
+Até agora pensamos como analistas:
+
+"Quais são os conceitos do sistema?"
+
+
+Exemplo:
+
+
+Pessoa
+
+Carro
+
+
+Depois:
+
+
+Qual é o relacionamento?
+
+
+Pessoa 1 -------- N Carro
+
+
+
+Esse é o modelo conceitual.
+
+
+Ele representa o mundo real.
+
+
+Agora precisamos transformar isso em tabelas.
+
+
+O banco de dados não entende:
+
+
+- objetos
+- classes
+- associação
+- composição
+
+
+Ele trabalha com:
+
+
+- tabelas
+- linhas
+- colunas
+- chaves
+
+
+Então fazemos uma transformação:
+
+
+
+MODELO CONCEITUAL (UML)
+
+          ↓
+
+MODELO LÓGICO (Tabelas)
+
+          ↓
+
+MODELO FÍSICO (SQL)
+
+
+
+===============================================================================
+2. ENTIDADE UML NORMALMENTE VIRA TABELA
+===============================================================================
+
+
+Regra inicial:
+
+
+Uma entidade UML geralmente representa uma tabela.
+
+
+Exemplo UML:
+
+
+
++-------------+
+| Pessoa      |
++-------------+
+| id          |
+| nome        |
+| cpf         |
++-------------+
+
+
+
+Banco:
+
+
+
+CREATE TABLE pessoa (
+
+    id BIGINT,
+
+    nome VARCHAR(100),
+
+    cpf VARCHAR(14)
+
+);
+
+
+
+A classe virou uma tabela.
+
+
+===============================================================================
+3. RELACIONAMENTO 1:N NO BANCO
+===============================================================================
+
+
+
+Vamos voltar ao exemplo:
+
+
+Pessoa 1 -------- N Carro
+
+
+
+Regra:
+
+
+Uma pessoa possui vários carros.
+
+Um carro pertence a uma pessoa.
+
+
+
+Pergunta do modelador:
+
+
+Onde fica a referência?
+
+
+Resposta:
+
+
+No lado N.
+
+
+
+Por quê?
+
+
+Porque cada carro precisa saber quem é o dono.
+
+
+---------------------------------------------------------------
+
+
+Modelo UML:
+
+
++-------------+
+| Pessoa      |
++-------------+
+| id          |
+| nome        |
++-------------+
+
+        1
+
+        |
+
+        |
+
+        N
+
+
++-------------+
+| Carro       |
++-------------+
+| id          |
+| modelo      |
++-------------+
+
+
+
+---------------------------------------------------------------
+
+
+Modelo relacional:
+
+
+
+Tabela Pessoa:
+
+
+Pessoa
+
+-----------------
+
+id
+
+nome
+
+
+
+Tabela Carro:
+
+
+Carro
+
+-----------------
+
+id
+
+modelo
+
+id_pessoa
+
+
+
+O campo:
+
+
+id_pessoa
+
+
+é a referência para Pessoa.
+
+
+
+===============================================================================
+4. POR QUE NÃO COLOCAR CARROS DENTRO DE PESSOA?
+===============================================================================
+
+
+Um erro comum:
+
+
+Pessoa:
+
+
+id
+
+nome
+
+carro1
+
+carro2
+
+carro3
+
+
+
+Isso viola o modelo relacional.
+
+
+Porque:
+
+
+Uma coluna deve representar um único valor.
+
+
+
+Errado:
+
+
+Pessoa
+
+
+João | Gol, Civic, Corolla
+
+
+
+Correto:
+
+
+Pessoa:
+
+
+1 | João
+
+
+
+Carro:
+
+
+1 | Gol | 1
+
+2 | Civic | 1
+
+3 | Corolla | 1
+
+
+
+===============================================================================
+5. RELACIONAMENTO 1:1 NO BANCO
+===============================================================================
+
+
+
+Exemplo:
+
+
+Pessoa 1 -------- 1 Perfil
+
+
+
+Regra:
+
+
+Uma pessoa possui um perfil.
+
+Um perfil pertence a uma pessoa.
+
+
+
+Temos duas possibilidades.
+
+
+
+===============================================================================
+CASO 1 - MESMA TABELA
+===============================================================================
+
+
+Quando é apenas uma característica:
+
+
+
+Pessoa:
+
+
+id
+
+nome
+
+cpf
+
+data_nascimento
+
+
+
+Não precisa criar outra tabela.
+
+
+
+Exemplo:
+
+
+CPF normalmente:
+
+
+Pessoa
+
+|
+
+cpf
+
+
+
+===============================================================================
+CASO 2 - TABELAS SEPARADAS
+===============================================================================
+
+
+Quando existe um conceito próprio.
+
+
+
+Exemplo:
+
+
+Usuário
+
+
+Perfil
+
+
+
+Tabela usuário:
+
+
+id
+
+nome
+
+
+
+Tabela perfil:
+
+
+id
+
+descricao
+
+id_usuario
+
+
+
+Existe uma ligação exclusiva.
+
+
+
+===============================================================================
+COMO DECIDIR?
+===============================================================================
+
+
+Pergunte:
+
+
+
+1) Esse conceito possui informações próprias?
+
+
+Sim:
+
+
+Pode ser uma tabela.
+
+
+
+2) Ele possui comportamento?
+
+
+Sim:
+
+
+Pode ser uma entidade.
+
+
+
+3) Ele existe sozinho?
+
+
+Se sim:
+
+
+Maior chance de ser separado.
+
+
+
+===============================================================================
+6. RELACIONAMENTO N:N NO BANCO
+===============================================================================
+
+
+
+Esse é o ponto mais importante.
+
+
+
+UML:
+
+
+Aluno N -------- N Curso
+
+
+
+Problema:
+
+
+Banco relacional não representa N:N diretamente.
+
+
+
+Então criamos uma tabela intermediária.
+
+
+
+Antes:
+
+
+Aluno -------- Curso
+
+
+
+Depois:
+
+
+
+Aluno
+
+   |
+
+   |
+
+Matrícula
+
+   |
+
+   |
+
+Curso
+
+
+
+===============================================================================
+MODELO RELACIONAL
+===============================================================================
+
+
+Tabela aluno:
+
+
+id
+
+nome
+
+
+
+Tabela curso:
+
+
+id
+
+nome
+
+
+
+Tabela matricula:
+
+
+id
+
+id_aluno
+
+id_curso
+
+
+
+Agora temos:
+
+
+
+Aluno 1 -------- N Matrícula
+
+
+Curso 1 -------- N Matrícula
+
+
+
+O N:N foi quebrado em dois 1:N.
+
+
+
+===============================================================================
+7. A ENTIDADE ASSOCIATIVA
+===============================================================================
+
+
+A tabela intermediária pode ser muito mais que uma ponte.
+
+
+
+Exemplo:
+
+
+Compra:
+
+
+Cliente -------- Produto
+
+
+
+Criamos:
+
+
+
+Cliente
+
+    |
+
+    |
+
+Compra
+
+    |
+
+    |
+
+Produto
+
+
+
+Mas Compra possui:
+
+
+
+- quantidade
+
+- preço
+
+- data
+
+
+
+Então:
+
+
+Compra é uma entidade real do sistema.
+
+
+
+===============================================================================
+8. MODELO CONCEITUAL X MODELO LÓGICO
+===============================================================================
+
+
+
+MODELO CONCEITUAL:
+
+
+Pensamento do negócio.
+
+
+
+Exemplo:
+
+
+Cliente compra Produto.
+
+
+
+MODELO LÓGICO:
+
+
+Pensamento do banco.
+
+
+
+Exemplo:
+
+
+Cliente
+
+
+Compra
+
+
+Produto
+
+
+
+MODELO FÍSICO:
+
+
+Implementação real.
+
+
+
+Exemplo:
+
+
+CREATE TABLE cliente;
+
+
+CREATE TABLE compra;
+
+
+CREATE TABLE produto;
+
+
+
+===============================================================================
+9. PERGUNTAS QUE UM MODELADOR DEVE FAZER ANTES DO BANCO
+===============================================================================
+
+
+
+Antes de criar tabelas:
+
+
+1) Quais são as entidades principais?
+
+
+
+2) Quais são apenas atributos?
+
+
+
+3) Quais objetos possuem vida própria?
+
+
+
+4) Qual é a cardinalidade?
+
+
+1:1?
+
+1:N?
+
+N:N?
+
+
+
+5) Existe dependência de ciclo de vida?
+
+
+Associação?
+
+Agregação?
+
+Composição?
+
+
+
+6) Essa relação possui informações próprias?
+
+
+Se sim:
+
+
+Criar entidade associativa.
+
+
+
+===============================================================================
+10. ERROS COMUNS DE INICIANTES
+===============================================================================
+
+
+
+ERRO 1:
+
+
+Começar pelo código.
+
+
+
+Pensamento errado:
+
+
+"Qual anotação JPA uso?"
+
+
+
+Pensamento correto:
+
+
+"Qual é a regra de negócio?"
+
+
+
+---------------------------------------------------------------
+
+
+ERRO 2:
+
+
+Transformar tudo em classe.
+
+
+
+Nem tudo precisa virar entidade.
+
+
+
+Exemplo:
+
+
+CPF pode ser apenas atributo.
+
+
+
+---------------------------------------------------------------
+
+
+ERRO 3:
+
+
+Usar N:N sem entender.
+
+
+Muitos sistemas acabam criando uma entidade intermediária.
+
+
+
+---------------------------------------------------------------
+
+
+ERRO 4:
+
+
+Confundir composição com qualquer relacionamento.
+
+
+
+Ter um objeto dentro de outro não significa composição.
+
+
+
+===============================================================================
+RESUMO MENTAL
+===============================================================================
+
+
+
+1) Descubra os conceitos do domínio.
+
+
+2) Descubra os relacionamentos.
+
+
+3) Descubra a cardinalidade.
+
+
+4) Decida:
+
+- atributo?
+- entidade?
+- associação?
+- agregação?
+- composição?
+
+
+
+5) Transforme em tabelas.
+
+
+6) Só depois use ORM.
+
+
+
+===============================================================================
+FIM DA PARTE 3
+===============================================================================
+
+
+Próxima parte:
+
+MAPEAMENTO OBJETO-RELACIONAL (ORM)
+
+- Por que existe ORM
+- Diferença entre objeto Java e tabela SQL
+- Como JPA tenta resolver essa diferença
+- O significado real de:
+    @OneToOne
+    @OneToMany
+    @ManyToOne
+    @ManyToMany
+
+
+===============================================================================
+
+*/

@@ -1,0 +1,209 @@
+/*
+ * ============================================================================
+ * 6) IMPORTANTE - ALTERAÇÃO APÓS ADICIONAR CONTENT NEGOTIATION
+ * ============================================================================
+ *
+ * Após adicionar suporte para múltiplos formatos (JSON, XML e YAML), as
+ * requisições que enviam dados para a API precisam informar explicitamente o
+ * formato do corpo enviado através do Header "Content-Type".
+ *
+ * Isso se aplica principalmente aos métodos:
+ *
+ *      POST  -> criação de recursos
+ *      PUT   -> atualização de recursos
+ *      PATCH -> atualização parcial de recursos
+ *
+ *
+ * Antes:
+ *
+ *      O cliente enviava normalmente JSON e o Spring utilizava o converter
+ *      padrão para interpretar o corpo da requisição.
+ *
+ *
+ * Agora:
+ *
+ *      O cliente precisa informar qual formato está enviando.
+ *
+ *
+ * Exemplo criando uma pessoa enviando JSON:
+ *
+ *      POST http://localhost:8080/person/v2
+ *
+ * Headers:
+ *
+ *      Content-Type: application/json
+ *      Accept: application/json
+ *
+ *
+ * Exemplo criando uma pessoa enviando YAML:
+ *
+ *      POST http://localhost:8080/person/v2
+ *
+ * Headers:
+ *
+ *      Content-Type: application/yaml
+ *      Accept: application/yaml
+ *
+ * se o cliente enviar JSON, mas não informar o Content-Type, o Spring não saberá como interpretar o corpo da requisição e retornará um erro 415 Unsupported Media Type.
+ * neste caso, o cliente deve corrigir a requisição e enviar o Content-Type correto.
+ * mas se no corpo da requisição estiver em JSON, mas o Content-Type estiver como application/yaml, o Spring tentará interpretar o corpo como YAML e retornará um erro 400 Bad Request.
+ * nesse caso ele pode setar o conteudo no corpo como texto, e definir com as seguinte configuração:
+
+* no cabeçalho da requisição:
+         Content-Type: application/yaml
+         Accept: application/yaml
+ *
+ * Exemplo atualizando uma pessoa enviando JSON:
+ *
+ *      PUT http://localhost:8080/person/v2/3
+ *
+ * Headers:
+ *
+ *      Content-Type: application/json
+ *      Accept: application/json
+ *
+ *
+ * ============================================================================
+ * MOTIVO
+ * ============================================================================
+ *
+ * O Header Content-Type informa ao Spring qual HttpMessageConverter deve ser
+ * utilizado para converter os dados recebidos.
+ *
+ *
+ * Exemplo:
+ *
+ *      Content-Type: application/json
+ *
+ *              |
+ *              v
+ *
+ *      MappingJackson2HttpMessageConverter
+ *
+ *              |
+ *              v
+ *
+ *      PersonInsertDTOV2 / PersonUpdateDTOV2
+ *
+ *
+ *
+ *      Content-Type: application/yaml
+ *
+ *              |
+ *              v
+ *
+ *      YamlJackson2HttpMessageConverter
+ *
+ *              |
+ *              v
+ *
+ *      PersonInsertDTOV2 / PersonUpdateDTOV2
+ *
+ *
+ * ============================================================================
+ * REGRA PRÁTICA
+ * ============================================================================
+ *
+ * Para operações de leitura:
+ *
+ *      GET
+ *
+ * O cliente normalmente define apenas:
+ *
+ *      Accept: formato desejado
+ *
+ *
+ * Para operações que enviam dados:
+ *
+ *      POST / PUT / PATCH
+ *
+ * O cliente deve informar:
+ *
+ *      Content-Type -> formato enviado
+ *
+ *      Accept       -> formato esperado na resposta
+ *
+ *
+ * Exemplo completo:
+ *
+ *      Content-Type: application/json
+ *      Accept: application/yaml
+ *
+ *
+ * Significa:
+ *
+ * "Estou enviando JSON para a API, processe esse conteúdo como JSON,
+ * mas quero receber a resposta em YAML."
+ *
+ * ============================================================================
+ */
+
+
+ Usuário
+    |
+    | Preenche formulário:
+    |
+    | Nome: João
+    | Email: joao@email.com
+    |
+    v
+ Front-end (Angular, React, Mobile...)
+    |
+    | Decide automaticamente:
+    |
+    | Content-Type: application/json
+    | Accept: application/json
+    |
+    v
+ API Spring Boot
+    |
+    | Converte JSON
+    |
+    v
+ DTO
+    |
+    v
+ Service
+    |
+    v
+ Banco de Dados
+
+
+
+ ===============================================================================
+           REQUISIÇÃO
+
+ Cliente
+    |
+    | Content-Type: application/json
+    |
+    v
+
+ Spring recebe JSON
+    |
+    v
+
+ Converte para objeto Java (DTO)
+    |
+    v
+
+ Service processa
+    |
+    v
+
+ Objeto Java
+
+
+           RESPOSTA
+
+ Objeto Java
+    |
+    | Accept: application/yaml
+    |
+    v
+
+ Spring escolhe o converter
+    |
+    v
+
+ Resposta YAML

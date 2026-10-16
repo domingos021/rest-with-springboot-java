@@ -1,0 +1,507 @@
+/*
+ * ============================================================================
+ * ONDE CONFIGURAR O HATEOAS NA ARQUITETURA SPRING BOOT
+ * ============================================================================
+ *
+ * Estrutura utilizada:
+ *
+ *      Controller
+ *          ↓
+ *      Service
+ *          ↓
+ *      Mapper
+ *          ↓
+ *      Repository
+ *
+ *
+ * O HATEOAS deve ser configurado preferencialmente no Controller.
+ *
+ * Motivo:
+ *
+ * O HATEOAS pertence à camada de apresentação da API REST.
+ *
+ * Ele não altera a regra de negócio e nem a estrutura dos dados.
+ * Ele apenas adiciona links de navegação na resposta HTTP.
+ *
+ *
+ * ============================================================================
+ * FLUXO DA REQUISIÇÃO
+ * ============================================================================
+ *
+ *
+ * Requisição HTTP
+ *        │
+ *        ▼
+ * +----------------------+
+ * |     Controller       |  ← Adiciona os links HATEOAS
+ * +----------------------+
+ *          │
+ *          ▼
+ * +----------------------+
+ * |      Service         |  ← Regras de negócio
+ * +----------------------+
+ *          │
+ *          ▼
+ * +----------------------+
+ * |      Mapper          |  ← Entity ⇄ DTO
+ * +----------------------+
+ *          │
+ *          ▼
+ * +----------------------+
+ * |      Repository      |  ← Acesso ao banco de dados
+ * +----------------------+
+ *
+ *
+ * ============================================================================
+ * RESPONSABILIDADE DE CADA CAMADA
+ * ============================================================================
+ *
+ *
+ * +--------------------------------------------------------------------------+
+ * | CONTROLLER                                                               |
+ * +--------------------------------------------------------------------------+
+ *
+ * Responsável por:
+ *
+ *      ✓ Receber requisições HTTP.
+ *      ✓ Chamar o Service.
+ *      ✓ Montar a resposta HTTP.
+ *      ✓ Adicionar links HATEOAS.
+ *
+ *
+ * Fluxo:
+ *
+ *      Cliente
+ *        |
+ *        ▼
+ *      Controller
+ *        |
+ *        ▼
+ *      DTO + Links HATEOAS
+ *        |
+ *        ▼
+ *      Resposta HTTP
+ *
+ *
+ * O Controller é o local correto porque ele conhece:
+ *
+ *      - Endpoints.
+ *      - URLs.
+ *      - Recursos disponíveis.
+ *      - Navegação da API.
+ *
+ *
+ * ============================================================================
+ * POR QUE NÃO USAR NO SERVICE?
+ * ============================================================================
+ *
+ * O Service possui responsabilidade de negócio.
+ *
+ * Exemplos:
+ *
+ *      ✓ Cadastrar pessoa.
+ *      ✓ Atualizar pessoa.
+ *      ✓ Validar regras.
+ *      ✓ Buscar informações.
+ *
+ *
+ * O Service NÃO deve conhecer:
+ *
+ *      - HTTP.
+ *      - URLs.
+ *      - Endpoints REST.
+ *      - Links de navegação.
+ *
+ *
+ * Exemplo de problema:
+ *
+ *
+ * +----------------------+
+ * |      Service         |
+ * +----------------------+
+ *          |
+ *          |
+ *          ▼
+ *
+ *      Cria link:
+ *
+ *      "/person/v1/10"
+ *
+ *
+ * Agora o Service depende da camada Web.
+ *
+ * Resultado:
+ *
+ *      Maior acoplamento.
+ *
+ *      Menor separação de responsabilidades.
+ *
+ *
+ * ============================================================================
+ * POR QUE NÃO USAR NO MAPPER?
+ * ============================================================================
+ *
+ * O Mapper tem uma função específica:
+ *
+ *
+ *      Entity
+ *        |
+ *        ▼
+ *      DTO
+ *
+ *
+ * Exemplo:
+ *
+ *      PersonEntity
+ *             |
+ *             ▼
+ *      PersonDTO
+ *
+ *
+ * O Mapper deve apenas converter objetos.
+ *
+ *
+ * NÃO deve fazer:
+ *
+ *      Entity
+ *        |
+ *        ▼
+ *      DTO + Links HATEOAS
+ *
+ *
+ * Porque agora o Mapper precisa conhecer:
+ *
+ *      - Controller.
+ *      - URLs.
+ *      - Endpoints.
+ *      - Regras de navegação da API.
+ *
+ *
+ * Isso quebra o princípio da responsabilidade única.
+ *
+ *
+ * ============================================================================
+ * POR QUE NÃO USAR NO REPOSITORY?
+ * ============================================================================
+ *
+ * Repository trabalha com persistência.
+ *
+ * Responsabilidades:
+ *
+ *      ✓ Consultar banco.
+ *      ✓ Salvar dados.
+ *      ✓ Atualizar registros.
+ *
+ *
+ * O banco de dados não conhece:
+ *
+ *      - API REST.
+ *      - JSON.
+ *      - XML.
+ *      - YAML.
+ *      - HATEOAS.
+ *
+ *
+ * Portanto essa camada nunca deve criar links.
+ *
+ *
+ * ============================================================================
+ * VISÃO COMPLETA DA ARQUITETURA
+ * ============================================================================
+ *
+ *
+ *                         CLIENTE
+ *                            │
+ *                            │
+ *                            ▼
+ *
+ *                  Requisição HTTP
+ *                            │
+ *                            ▼
+ *
+ *              +----------------------+
+ *              |     Controller       |
+ *              |                      |
+ *              |  DTO + HATEOAS       |
+ *              +----------------------+
+ *                            │
+ *                            ▼
+ *
+ *              +----------------------+
+ *              |      Service         |
+ *              |                      |
+ *              |  Regras negócio      |
+ *              +----------------------+
+ *                            │
+ *                            ▼
+ *
+ *              +----------------------+
+ *              |      Mapper          |
+ *              |                      |
+ *              |  Entity ⇄ DTO        |
+ *              +----------------------+
+ *                            │
+ *                            ▼
+ *
+ *              +----------------------+
+ *              |     Repository      |
+ *              |                      |
+ *              | Banco de dados       |
+ *              +----------------------+
+ *
+ *
+ * ============================================================================
+ * REGRA DE OURO
+ * ============================================================================
+ *
+ * Mapper:
+ *
+ *      "Eu transformo objetos."
+ *
+ *
+ * Service:
+ *
+ *      "Eu aplico regras de negócio."
+ *
+ *
+ * Repository:
+ *
+ *      "Eu converso com o banco."
+ *
+ *
+ * Controller:
+ *
+ *      "Eu recebo e devolvo informações HTTP."
+ *
+ *
+ * Como HATEOAS altera a resposta HTTP,
+ * ele pertence ao Controller.
+ *
+ * ============================================================================
+ */
+
+
+ /*
+  * ============================================================================
+  * HATEOAS X CONTENT NEGOTIATION
+  * ============================================================================
+  *
+  *
+  * Ambos atuam na camada HTTP/API.
+  *
+  *
+  *                         CLIENTE
+  *                            │
+  *                            │
+  *                            ▼
+  *
+  *                  +----------------+
+  *                  |   Controller   |
+  *                  +----------------+
+  *                         │
+  *                         │
+  *              Camada de apresentação
+  *
+  *
+  * ============================================================================
+  *
+  *
+  * CONTENT NEGOTIATION
+  * ============================================================================
+  *
+  * Responsável por:
+  *
+  *      "Como os dados serão apresentados?"
+  *
+  *
+  * Exemplo:
+  *
+  * O mesmo recurso:
+  *
+  *      PersonDTO
+  *
+  *
+  * Pode ser retornado como:
+  *
+  *      JSON
+  *
+  *      {
+  *          "id": 1,
+  *          "name": "Nikola"
+  *      }
+  *
+  *
+  *      XML
+  *
+  *      <person>
+  *          <id>1</id>
+  *          <name>Nikola</name>
+  *      </person>
+  *
+  *
+  *      YAML
+  *
+  *      id: 1
+  *      name: Nikola
+  *
+  *
+  * A informação é a mesma.
+  *
+  * Apenas muda o formato de apresentação.
+  *
+  *
+  * ============================================================================
+  *
+  *
+  * HATEOAS
+  * ============================================================================
+  *
+  * Responsável por:
+  *
+  *      "Como o cliente pode navegar pela API?"
+  *
+  *
+  * Exemplo:
+  *
+  * Antes:
+  *
+  *      {
+  *          "id": 1,
+  *          "name": "Nikola"
+  *      }
+  *
+  *
+  * Depois:
+  *
+  *      {
+  *          "id": 1,
+  *          "name": "Nikola",
+  *
+  *          "_links": {
+  *              "self": {
+  *                  "href": "/person/v1/1"
+  *              }
+  *          }
+  *      }
+  *
+  *
+  * Os dados continuam iguais.
+  *
+  * Apenas foi adicionada uma informação de navegação.
+  *
+  *
+  * ============================================================================
+  * POR QUE NÃO ALTERA A REGRA DE NEGÓCIO?
+  * ============================================================================
+  *
+  * Porque o fluxo continua o mesmo:
+  *
+  *
+  * Requisição HTTP
+  *        │
+  *        ▼
+  * +----------------------+
+  * |     Controller       |
+  * |                      |
+  * | HATEOAS              |
+  * | Content Negotiation  |
+  * +----------------------+
+  *        │
+  *        ▼
+  * +----------------------+
+  * |      Service         |
+  * |                      |
+  * | Regras de negócio    |
+  * +----------------------+
+  *        │
+  *        ▼
+  * +----------------------+
+  * |      Mapper          |
+  * |                      |
+  * | Entity ⇄ DTO         |
+  * +----------------------+
+  *        │
+  *        ▼
+  * +----------------------+
+  * |    Repository        |
+  * |                      |
+  * | Banco de dados       |
+  * +----------------------+
+  *
+  *
+  * O Service continua sem saber:
+  *
+  *      - Se a resposta será JSON, XML ou YAML.
+  *      - Quais links HATEOAS serão enviados.
+  *      - Como o cliente navega na API.
+  *
+  *
+  * ============================================================================
+  * REGRA DE OURO
+  * ============================================================================
+  *
+  * Regra de negócio:
+  *
+  *      "Uma pessoa não pode ser cadastrada sem CPF."
+  *
+  *      "Senha deve ser criptografada."
+  *
+  *      "Usuário recebe papel CLIENT por padrão."
+  *
+  *
+  * Apresentação:
+  *
+  *      "Retornar JSON ou XML."
+  *
+  *      "Adicionar links HATEOAS."
+  *
+  *      "Definir formato da resposta."
+  *
+  *
+  * A apresentação pode evoluir sem quebrar a lógica do sistema.
+  *
+  * ============================================================================
+  */
+
+
+  +------------------------------------------------+
+  | Camada de apresentação                         |
+  +------------------------------------------------+
+
+          Controller
+               |
+               |
+               +----------------------+
+               |                      |
+               ▼                      ▼
+     ContentNegotiation        HateoasAssembler
+     (formato resposta)        (links da API)
+
+               |
+               ▼
+
+          Response DTO
+
+
+          com.dinisjovete.restwithspringbootjava
+
+          ├── controllers
+          │       └── person
+          │             └── PersonControllerV2
+          │
+          ├── config
+          │       ├── mediatypes
+          │       │       └── CustomMediaType
+          │       │
+          │       ├── WebConfig
+          │       │       └── YAML Converter
+          │       │
+          │       └── hateoas
+          │               └── PersonHateoasAssembler
+          │
+          ├── services
+          │
+          ├── mappers
+          │
+          └── data
+                  └── dto

@@ -1,16 +1,20 @@
 package com.dinisjovete.restwithspringbootjava.controllers.person.v2;
 
 
+import com.dinisjovete.restwithspringbootjava.config.hateoas.v2.PersonHateoasAssemblerV2;
 import com.dinisjovete.restwithspringbootjava.config.mediatypes.CustomMediaType;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonInsertDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonUpdateDTOV2;
 import com.dinisjovete.restwithspringbootjava.services.person.v2.PersonServiceV2;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 import java.util.List;
 
@@ -46,6 +50,7 @@ public class PersonControllerV2 {
     // construção do objeto, tornando a classe mais segura e imutável.
     // =========================================================================
     private final PersonServiceV2 service;
+    private final PersonHateoasAssemblerV2 assemblerV2; // Configuration HATEOAS
 
     // =========================================================================
     // Construtor utilizado pelo Spring para realizar a Injeção de Dependência.
@@ -53,8 +58,9 @@ public class PersonControllerV2 {
     // A partir do Spring Boot 3.x, quando existe apenas um construtor,
     // a anotação @Autowired não é mais necessária.
     // =========================================================================
-    public PersonControllerV2(PersonServiceV2 personService) {
+    public PersonControllerV2(PersonServiceV2 personService, PersonHateoasAssemblerV2 personHateoasAssembler) {
         this.service = personService;
+        this.assemblerV2 = personHateoasAssembler;
     }
 
     /*
@@ -233,7 +239,10 @@ public class PersonControllerV2 {
 - Retorna o PersonDTO como resposta da API.
 
          */
-        return service.findById(id);
+
+
+        PersonDTOV2 person = service.findById(id);
+        return assemblerV2.addLinks(person); // Adiciona links HATEOAS ao PersonDTO antes de retornar
 
     }
 
@@ -249,9 +258,36 @@ public class PersonControllerV2 {
                     CustomMediaType.APPLICATION_YAML_VALUE
             }
     )
-    public List<PersonDTOV2> findAll() {
-        // Retorna a lista de PersonDTOV2 já mapeada pelo service V2
-        return service.findAll();
+
+    /**
+     * Retorna todos os registros de pessoas com suporte completo a HATEOAS.
+     *
+     * POR QUE FAZEMOS ISSO?
+     * - Para transformar uma listagem comum em uma API HATEOAS (Hypermedia as the Engine of Application State),
+     *   permitindo que o cliente navegue pela API através de links dinâmicos e auto-descritivos,
+     *   tanto para os itens individuais quanto para a coleção como um todo.
+     */
+    public CollectionModel<PersonDTOV2> findAll() {
+
+        // 1º Passo: Acessa o banco via service para buscar os dados brutos (DTOs)
+        // Motivo: O service/repository gerencia a persistência, retornando uma lista comum do Java.
+        List<PersonDTOV2> persons = service.findAll();
+
+        // 2º Passo: Adiciona os links HATEOAS individuais em cada objeto da lista
+        // Motivo: Cada item da lista precisa expor seus próprios links (ex: link de detalhes/self),
+        // e o 'assemblerV2' encapsula essa regra de negócio para evitar código duplicado.
+        persons.forEach(assemblerV2::addLinks);
+
+        // 3º Passo: Empacota a lista em um CollectionModel e adiciona o link global da rota
+        // Motivo: O Spring HATEOAS exige um 'CollectionModel' para conseguir anexar links
+        // referentes à coleção inteira (como o link 'self' da listagem).
+        return CollectionModel.of(persons,
+                linkTo(
+                        methodOn(PersonControllerV2.class)
+                                .findAll()
+                )
+                        .withSelfRel() //adiciona o link global da rota (selfRel)
+        );
     }
 
 
@@ -329,7 +365,8 @@ public class PersonControllerV2 {
     )
     public ResponseEntity<PersonDTOV2> create(@Valid @RequestBody PersonInsertDTOV2 personDTO) {
         PersonDTOV2 createdPerson = service.create(personDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdPerson);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(createdPerson);
     }
 
 
@@ -408,7 +445,9 @@ public class PersonControllerV2 {
             @PathVariable("id") Long id,
             @Valid @RequestBody PersonUpdateDTOV2 personUpdate
     ) {
-        return service.update(id, personUpdate);
+        return assemblerV2.addLinks(
+            service.update(id, personUpdate)
+        );
     }
 
 

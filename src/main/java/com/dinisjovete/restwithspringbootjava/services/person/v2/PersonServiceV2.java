@@ -20,6 +20,7 @@ import java.util.List;
 @Service // Marca a classe como um Bean gerenciado pelo Spring (Injeção de Dependência)
 public class PersonServiceV2 {
 
+
     // Registry logs (mensagens de erro, avisos e informações) no console da aplicação
     private static final Logger logger = LoggerFactory.getLogger(PersonServiceV2.class.getName());
 
@@ -129,6 +130,7 @@ public class PersonServiceV2 {
     }
 
     //método que retorna uma lista do tipo personDto
+    //como vai vai trabalhar com hateoas vamos trocar para collectionModel lista do próprio Hateoas
     public List<PersonDTOV2> findAll() {
 
         logger.info("Finding all Persons!");

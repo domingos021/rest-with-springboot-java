@@ -1,0 +1,534 @@
+/*
+================================================================================
+                 MODELAGEM DE DADOS COM UML
+        CONCEITOS FUNDAMENTAIS DE RELACIONAMENTOS ENTRE OBJETOS
+================================================================================
+
+
+===============================================================================
+1. O QUE É MODELAGEM DE DADOS?
+===============================================================================
+
+Modelagem de dados é o processo de transformar uma realidade de negócio em uma
+representação organizada que possa ser entendida por pessoas e implementada
+por sistemas.
+
+Antes de criar:
+
+- Classes Java
+- Tabelas SQL
+- Entidades JPA
+- Anotações Hibernate
+
+o desenvolvedor precisa entender:
+
+"Quais são os conceitos existentes no problema?"
+"Como esses conceitos se relacionam?"
+"Qual é a regra de negócio existente entre eles?"
+
+
+Um erro comum de iniciantes é começar pensando:
+
+"Qual anotação JPA eu uso?"
+
+O pensamento correto é:
+
+"Qual é a relação existente no mundo real?"
+
+
+Exemplo:
+
+Problema:
+
+Uma empresa precisa controlar clientes e pedidos.
+
+
+Primeiro identificamos os conceitos:
+
+                +-----------+
+                | Cliente   |
+                +-----------+
+
+                +-----------+
+                | Pedido    |
+                +-----------+
+
+
+Agora fazemos perguntas:
+
+- Um cliente pode ter pedidos?
+- Um pedido pertence a quem?
+- Um pedido pode existir sem cliente?
+- Existe informação própria dessa relação?
+
+
+Somente depois transformamos isso em:
+
+UML
+
+↓
+
+Classes
+
+↓
+
+Banco de dados
+
+↓
+
+ORM
+
+
+===============================================================================
+2. COMO UM MODELADOR PENSA?
+===============================================================================
+
+
+Um bom modelador sempre começa fazendo perguntas.
+
+
+PERGUNTAS GERAIS:
+
+
+1) Esse conceito realmente existe no domínio?
+
+
+Exemplo:
+
+Pessoa
+
+Produto
+
+Pedido
+
+
+São conceitos reais dentro do sistema.
+
+
+---------------------------------------------------------------
+
+
+2) Isso é uma entidade ou apenas uma característica?
+
+
+Exemplo:
+
+
+Pessoa:
+
+nome
+idade
+CPF
+
+
+O CPF é:
+
+- Uma entidade independente?
+- Ou apenas uma informação da pessoa?
+
+
+Em muitos sistemas:
+
+Pessoa
+
++ nome
++ cpf
+
+
+é suficiente.
+
+
+---------------------------------------------------------------
+
+
+3) Existe relacionamento entre esses conceitos?
+
+
+Exemplo:
+
+
+Pessoa -------- Carro
+
+
+Perguntas:
+
+Uma pessoa pode ter carros?
+
+Um carro pertence a uma pessoa?
+
+Quantos de cada lado?
+
+
+Essa análise gera a cardinalidade.
+
+
+===============================================================================
+3. RELACIONAMENTO HAS-A
+===============================================================================
+
+
+"Has-a" significa:
+
+"Tem um"
+
+
+Quando um objeto possui outro objeto ou se relaciona com outro conceito.
+
+
+Exemplo:
+
+
+Pessoa
+
+tem
+
+Carro
+
+
+
+Representação:
+
+
+        +---------+
+        | Pessoa  |
+        +---------+
+             |
+             |
+             |
+        +---------+
+        | Carro   |
+        +---------+
+
+
+
+Pessoa NÃO é um carro.
+
+Ela possui uma relação com carro.
+
+
+Errado:
+
+Pessoa IS-A Carro
+
+
+Correto:
+
+Pessoa HAS-A Carro
+
+
+
+===============================================================================
+4. ASSOCIAÇÃO
+===============================================================================
+
+
+ASSOCIAÇÃO é uma relação onde dois objetos possuem uma ligação,
+mas não existe necessariamente dependência de vida.
+
+
+Exemplo:
+
+
+Pessoa -------- Carro
+
+
+
+Perguntas que o modelador deve fazer:
+
+
+1) Os dois conceitos existem separadamente?
+
+
+Pessoa existe sem carro?
+
+Sim.
+
+
+Carro existe sem essa pessoa?
+
+Sim.
+
+
+Então existe associação.
+
+
+---------------------------------------------------------------
+
+
+Exemplo:
+
+
+João possui um carro.
+
+
+Depois João vende o carro para Maria.
+
+
+O carro continua existindo.
+
+
+Então:
+
+
+Pessoa
+
+não controla
+
+a existência do carro.
+
+
+
+Diagrama:
+
+
++---------+              +---------+
+| Pessoa  |--------------| Carro   |
++---------+              +---------+
+
+
+
+===============================================================================
+5. AGREGAÇÃO
+===============================================================================
+
+
+Agregação é uma associação mais forte.
+
+Existe uma ideia de:
+
+"Um objeto é formado por outros objetos"
+
+porém as partes ainda possuem vida própria.
+
+
+
+Exemplo:
+
+
+Universidade
+
+possui
+
+Professores
+
+
+
+Diagrama:
+
+
++----------------+
+| Universidade   |
++----------------+
+        |
+        |
+        o
+        |
++----------------+
+| Professor      |
++----------------+
+
+
+
+O professor trabalha na universidade.
+
+
+Mas:
+
+
+Se a universidade fechar:
+
+O professor continua existindo.
+
+Ele pode trabalhar em outra universidade.
+
+
+
+Perguntas:
+
+
+1) O objeto parte consegue existir sozinho?
+
+Sim.
+
+
+2) Ele pode pertencer a outro objeto depois?
+
+
+Sim.
+
+
+Então pode ser uma agregação.
+
+
+
+===============================================================================
+6. COMPOSIÇÃO
+===============================================================================
+
+
+Composição é uma relação forte.
+
+
+Existe dependência de ciclo de vida.
+
+
+Pergunta principal:
+
+
+"Se o objeto principal desaparecer, a parte ainda faz sentido?"
+
+
+
+Exemplo clássico:
+
+
+Pedido
+
+possui
+
+ItemPedido
+
+
+
+Diagrama:
+
+
++-------------+
+| Pedido      |
++-------------+
+      |
+      | composição
+      |
+     ◆
+      |
++-------------+
+| ItemPedido  |
++-------------+
+
+
+
+Um ItemPedido não existe sozinho.
+
+
+Exemplo:
+
+
+Pedido:
+
+Notebook
+Mouse
+Teclado
+
+
+O item:
+
+"Notebook do pedido 100"
+
+
+não possui significado sem aquele pedido.
+
+
+
+Perguntas para descobrir composição:
+
+
+1) A parte depende do todo?
+
+
+Sim.
+
+
+2) A parte tem significado fora do todo?
+
+
+Não.
+
+
+3) Quando o todo é excluído, a parte deve desaparecer?
+
+
+Sim.
+
+
+Então é composição.
+
+
+
+===============================================================================
+RESUMO: ASSOCIAÇÃO X AGREGAÇÃO X COMPOSIÇÃO
+===============================================================================
+
+
+ASSOCIAÇÃO:
+
+
+Existe ligação.
+
+Mas cada objeto possui vida própria.
+
+
+
+Exemplo:
+
+Pessoa -------- Carro
+
+
+
+---------------------------------------------------------------
+
+
+AGREGAÇÃO:
+
+
+Existe uma relação "possui".
+
+Mas a parte continua existindo.
+
+
+
+Exemplo:
+
+
+Universidade
+
+   |
+   |
+Professor
+
+
+
+---------------------------------------------------------------
+
+
+COMPOSIÇÃO:
+
+
+Existe dependência forte.
+
+
+Exemplo:
+
+
+Pedido
+
+   |
+   |
+ItemPedido
+
+
+
+===============================================================================
+FIM DA PARTE 1
+===============================================================================
+
+Na próxima parte:
+
+- Cardinalidade
+- 1 para 1
+- 1 para muitos
+- muitos para muitos
+- Como o modelador descobre cada uma
+- Diagramas UML completos
+- Erros comuns de modelagem
+
+*/

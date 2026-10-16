@@ -1,0 +1,76 @@
+/*
+ * =============================================================================
+ * <<oid>> (Object Identifier)
+ * =============================================================================
+ *
+ * O estereótipo <<oid>> é utilizado para indicar que um atributo é o
+ * IDENTIFICADOR ÚNICO de uma classe.
+ *
+ * Em outras palavras, ele identifica cada objeto de forma exclusiva,
+ * ou seja, não podem existir dois objetos diferentes com o mesmo valor
+ * para esse atributo.
+ *
+ * Exemplo em UML (Modelio):
+ *
+ *      -------------------------
+ *             Cliente
+ *      -------------------------
+ *      <<oid>>
+ *      id : Integer
+ *      nome : String
+ *      email : String
+ *      -------------------------
+ *
+ * Interpretação:
+ *
+ *      - id é o identificador único do Cliente.
+ *      - nome e email são apenas atributos comuns.
+ *      - Dois clientes podem ter o mesmo nome,
+ *        mas nunca o mesmo id.
+ *
+ * Exemplo de objetos:
+ *
+ *      Cliente A
+ *          id = 1
+ *          nome = João
+ *
+ *      Cliente B
+ *          id = 2
+ *          nome = João
+ *
+ * Embora ambos tenham o mesmo nome, eles representam pessoas diferentes,
+ * pois o identificador (id) é diferente.
+ *
+ * Relação com Banco de Dados:
+ *
+ *      CREATE TABLE cliente (
+ *          id INTEGER PRIMARY KEY,
+ *          nome VARCHAR(100),
+ *          email VARCHAR(100)
+ *      );
+ *
+ * O atributo marcado com <<oid>> normalmente se torna a PRIMARY KEY
+ * (chave primária) da tabela.
+ *
+ * Relação com Java + JPA:
+ *
+ *      @Entity
+ *      public class Cliente {
+ *
+ *          @Id
+ *          @GeneratedValue(strategy = GenerationType.IDENTITY)
+ *          private Integer id;
+ *
+ *          private String nome;
+ *      }
+ *
+ * O @Id desempenha o mesmo papel do <<oid>> no diagrama UML:
+ * identificar unicamente cada objeto da entidade.
+ *
+ * Observação:
+ *
+ * O estereótipo <<oid>> não faz parte da especificação oficial da UML.
+ * Ele é um estereótipo fornecido por ferramentas como o Modelio para
+ * representar explicitamente o identificador do objeto.
+ * =============================================================================
+ */

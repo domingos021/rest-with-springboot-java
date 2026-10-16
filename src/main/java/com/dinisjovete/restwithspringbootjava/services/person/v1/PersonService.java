@@ -17,6 +17,26 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+                                            /*
+                                              Controller
+                                                |
+                                                | recebe requisição
+                                                v
+                                            Service
+                                                |
+                                                | coordena regras
+                                                |
+                                                +------ Mapper
+                                                |          |
+                                                |          v
+                                                |       DTO <-> Entity
+                                                |
+                                                +------ Repository
+                                                           |
+                                                           v
+                                                         Banco de Dados
+                                             */
+
 @Service // Marca a classe como um Bean gerenciado pelo Spring (Injeção de Dependência)
 public class PersonService {
 

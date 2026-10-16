@@ -1,4 +1,4 @@
-package com.dinisjovete.restwithspringbootjava.config;
+package com.dinisjovete.restwithspringbootjava.config.web_config;
 
 import com.dinisjovete.restwithspringbootjava.config.mediatypes.CustomMediaType;
 import org.springframework.context.annotation.Configuration;

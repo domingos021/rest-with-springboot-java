@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.springframework.hateoas.RepresentationModel;
 
 import java.io.IOException;
 import java.io.Serial;
@@ -32,18 +33,21 @@ import java.util.Objects;
 // Campos com valor null não serão enviados no JSON de resposta.
 // Mantém o contrato da API mais limpo evitando propriedades vazias.
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "ID_usuário",
-        "Nome",
-        "Sobrenome",
-        "Data_nascimento",
-        "CPF",
-        "Telefone",
-        "Email",
-        "Endereço",
-        "Perfil"
-})
-public class PersonDTOV2 implements Serializable {
+@JsonPropertyOrder(
+        {
+                "ID_usuário",
+                "Nome",
+                "Sobrenome",
+                "Data_nascimento",
+                "CPF",
+                "Telefone",
+                "Email",
+                "Endereço",
+                "Perfil"
+        }
+)
+//RepresentationModel -> da suporte ao  hateoas para essa dto, a configuração e feita no controller
+public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -78,7 +82,6 @@ public class PersonDTOV2 implements Serializable {
     //private String sensitiveData;
 
 
-
     // ========================================================================
     // @JsonFormat & Mapeamento JSON
     // ========================================================================
@@ -95,22 +98,18 @@ public class PersonDTOV2 implements Serializable {
     private LocalDate birthDate;
 
 
-
     @JsonProperty("CPF")
     @JsonSerialize(using = CpfMaskSerializer.class)
     private String cpf; // Sai mascarado no JSON (ex: 123.***.***-01)
-
 
 
     @JsonProperty("Telefone")
     private String phone;
 
 
-
     @JsonProperty("Email")
     @JsonSerialize(using = EmailMaskSerializer.class)
     private String email; // Sai mascarado no JSON (ex: di***@gmail.com)
-
 
 
     @JsonProperty("Endereço")
@@ -124,11 +123,9 @@ public class PersonDTOV2 implements Serializable {
     private PersonRole role;
 
 
-
     // Default Constructor
     public PersonDTOV2() {
     }
-
 
 
     // Parameterized Constructor
@@ -250,7 +247,6 @@ public class PersonDTOV2 implements Serializable {
     }
 
 
-
     // ========================================================================
     // EQUALS AND HASHCODE (Baseados no ID único)
     // ========================================================================
@@ -267,7 +263,6 @@ public class PersonDTOV2 implements Serializable {
     public int hashCode() {
         return Objects.hash(id);
     }
-
 
 
     // ========================================================================
@@ -292,7 +287,6 @@ public class PersonDTOV2 implements Serializable {
             }
         }
     }
-
 
 
     // ========================================================================
@@ -327,7 +321,6 @@ public class PersonDTOV2 implements Serializable {
             }
         }
     }
-
 
 
     // ========================================================================

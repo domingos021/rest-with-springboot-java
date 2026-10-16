@@ -1,0 +1,144 @@
+package com.dinisjovete.restwithspringbootjava.services.person.v2;
+
+import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
+import com.dinisjovete.restwithspringbootjava.user_test.dozer.unittetests.mapper.mocks.v1.MockPerson;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+/*
+ * @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+ *
+ * Define o ciclo de vida da classe de teste.
+ *
+ * PER_CLASS:
+ *     Apenas uma única instância da classe de teste é criada e reutilizada
+ *     para executar todos os métodos anotados com @Test.
+ *
+ * Vantagem:
+ *     Permite compartilhar atributos entre os testes e utilizar métodos
+ *     @BeforeAll e @AfterAll sem que eles precisem ser static.
+ */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+
+/*
+ * @ExtendWith(MockitoExtension.class)
+ *
+ * Integra o Mockito ao JUnit 5.
+ *
+ * Essa extensão faz com que o Mockito inicialize automaticamente todos os
+ * objetos anotados com @Mock, @Spy, @Captor e @InjectMocks antes da
+ * execução dos testes.
+ *
+ * Sem essa anotação seria necessário inicializar o Mockito manualmente.
+ */
+@ExtendWith(MockitoExtension.class)
+class PersonServiceV2Test {
+
+    MockPerson input;
+   // Classe responsável por fornecer dados de teste (massa de dados falsa)
+
+    /*
+     * @InjectMocks
+     *
+     * Indica ao Mockito que essa classe deve receber automaticamente
+     * as dependências marcadas com @Mock.
+     *
+     * O Mockito cria uma instância real do PersonServiceV2 e injeta
+     * dentro dela os objetos simulados necessários, como o PersonRepository.
+     *
+     * Essa é a classe principal que será testada, pois contém as regras
+     * de negócio da aplicação.
+     *
+     * Durante o teste, o service executa sua lógica real, mas suas
+     * dependências externas são substituídas por mocks controlados.
+     */
+    @InjectMocks
+    private PersonServiceV2 personService;
+
+    /*
+     * @Mock
+     *
+     * Identifica esse objeto como uma simulação criada pelo Mockito.
+     *
+     * O Mockito cria uma implementação falsa do PersonRepository,
+     * permitindo controlar o comportamento do repositório durante os testes.
+     *
+     * Esse mock representa a camada de acesso ao banco de dados,
+     * porém não realiza nenhuma comunicação real com o PostgreSQL.
+     *
+     * Permite testar apenas a lógica do PersonServiceV2 de forma isolada,
+     * definindo retornos e comportamentos esperados nos testes.
+     */
+    @Mock
+    PersonRepository repository;
+
+    @BeforeEach
+    void setUp() {
+        /*
+         * Cria uma instância da classe MockPerson.
+         *
+         * Essa classe é responsável por fornecer dados falsos (massa de teste)
+         * utilizados durante a execução dos testes unitários.
+         *
+         * O objeto criado permite gerar entidades e DTOs com valores previsíveis,
+         * evitando a criação manual de dados dentro de cada método de teste.
+         *
+         * Diferente do Mockito, esse mock não simula comportamento de uma
+         * dependência. Ele apenas fornece objetos de exemplo para entrada dos testes.
+         */
+        input = new MockPerson();
+        /*
+         * MockitoAnnotations.openMocks(this)
+         *
+         * Inicializa manualmente o Mockito dentro da classe de teste.
+         *
+         * O método percorre a classe atual (representada pelo "this"),
+         * identifica as anotações do Mockito como:
+         *
+         * @Mock
+         * @InjectMocks
+         * @Spy
+         * @Captor
+         *
+         * e cria/inicializa os objetos necessários para a execução dos testes.
+         *
+         * Essa abordagem é utilizada quando o Mockito não está sendo
+         * inicializado automaticamente pelo JUnit.
+         *
+         * Observação:
+         * Quando utilizamos:
+         *
+         * @ExtendWith(MockitoExtension.class)
+         *
+         * o JUnit 5 já inicializa o Mockito automaticamente, tornando
+         * desnecessário chamar openMocks(this) manualmente.
+         */
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void findById() {
+    }
+
+    @Test
+    void create() {
+    }
+
+    @Test
+    void update() {
+    }
+
+    @Test
+    void delete() {
+    }
+
+    @Test
+    void findAll() {
+    }
+}

@@ -18,7 +18,7 @@ import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonInsertDTO
 import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.v1.PersonMapper_MapStruct;
-import com.dinisjovete.restwithspringbootjava.user_test.dozer.unittetests.mapper.mocks.MockPerson;
+import com.dinisjovete.restwithspringbootjava.user_test.dozer.unittetests.mapper.mocks.v1.MockPerson;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;

@@ -1,0 +1,60 @@
+/*
+ * ============================================================================
+ * VALIDAÇÃO ESPECÍFICA DE HATEOAS
+ * ============================================================================
+ *
+ * Essa validação deve ser realizada na camada Controller utilizando MockMvc.
+ *
+ * O Service é responsável pela regra de negócio e transformação dos dados.
+ *
+ * O Controller é responsável pela representação HTTP da resposta, incluindo:
+ *
+ * - Status HTTP.
+ * - Headers.
+ * - Media Type.
+ * - Links HATEOAS.
+ *
+ * ============================================================================
+ */
+
+
+// A coleção de links HATEOAS deve existir
+Assertions.assertNotNull(result.getLinks());
+
+
+// O DTO deve possuir pelo menos um link HATEOAS
+Assertions.assertTrue(result.hasLinks());
+
+
+
+/*
+ * Verifica se existe um link chamado "self"
+ *
+ * O link self representa o próprio recurso retornado.
+ *
+ * Exemplo:
+ *
+ * GET /person/v2/1
+ *
+ * Retorno:
+ *
+ * {
+ *     "id": 1,
+ *     "firstName": "Diniz",
+ *     "_links": {
+ *          "self": {
+ *              "href": "/person/v2/1"
+ *          }
+ *     }
+ * }
+ *
+ */
+Assertions.assertTrue(
+        result.getLinks()
+                .stream()
+                .anyMatch(link ->
+                        "self".equals(link.getRel().value())
+                                &&
+                        link.getHref().contains("/person/v2/1")
+                )
+);

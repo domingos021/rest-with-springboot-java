@@ -1,0 +1,322 @@
+/*
+ * ============================================================================
+ * GUIA GERAL - PASSO A PASSO PARA CRIAÇÃO DE TESTES
+ * ============================================================================
+ *
+ * OBJETIVO:
+ *
+ * Um teste tem como objetivo verificar se determinado comportamento do sistema
+ * está funcionando conforme o esperado.
+ *
+ * Antes de escrever qualquer teste, devemos entender:
+ *
+ * - O que está sendo testado;
+ * - Qual responsabilidade essa classe possui;
+ * - Quais entradas ela recebe;
+ * - Qual resultado ela deve produzir;
+ * - Quais dependências participam desse comportamento.
+ *
+ *
+ * ============================================================================
+ * 1 - IDENTIFICAR A UNIDADE QUE SERÁ TESTADA
+ * ============================================================================
+ *
+ * Primeiro devemos definir qual classe ou componente será validado.
+ *
+ * Exemplos:
+ *
+ * - Controller;
+ * - Service;
+ * - Repository;
+ * - Mapper;
+ * - Component;
+ * - Classe utilitária;
+ * - Métodos isolados.
+ *
+ *
+ * O teste deve possuir um foco específico.
+ *
+ * Exemplo:
+ *
+ * Se estamos testando um Service, não devemos validar o funcionamento interno
+ * do banco de dados ou do Mapper no mesmo teste.
+ *
+ * Cada teste deve validar a responsabilidade da unidade escolhida.
+ *
+ *
+ * ============================================================================
+ * 2 - ENTENDER O COMPORTAMENTO ESPERADO
+ * ============================================================================
+ *
+ * Antes de escrever código, devemos analisar o que a classe deve fazer.
+ *
+ * Perguntas importantes:
+ *
+ * - Qual é a entrada esperada?
+ * - Qual resultado deve ser retornado?
+ * - Existe alguma regra de negócio?
+ * - Existem cenários de erro?
+ * - Quais condições devem ser satisfeitas?
+ *
+ *
+ * Exemplo:
+ *
+ * Método:
+ *
+ * buscarUsuarioPorId(1)
+ *
+ * Esperado:
+ *
+ * - Retornar usuário existente;
+ * - Retornar dados corretos;
+ * - Não retornar valor nulo.
+ *
+ *
+ * ============================================================================
+ * 3 - ANALISAR AS DEPENDÊNCIAS DA CLASSE
+ * ============================================================================
+ *
+ * Devemos identificar quais objetos externos a classe utiliza.
+ *
+ * Exemplos:
+ *
+ * Uma classe pode depender de:
+ *
+ * - Repository;
+ * - Mapper;
+ * - Serviço externo;
+ * - Cliente HTTP;
+ * - Banco de dados;
+ * - Arquivos;
+ * - Mensageria.
+ *
+ *
+ * Essas dependências precisam ser avaliadas.
+ *
+ * Pergunta:
+ *
+ * "Eu quero testar essa dependência ou apenas a classe atual?"
+ *
+ *
+ * ============================================================================
+ * 4 - DEFINIR O TIPO DE TESTE ADEQUADO
+ * ============================================================================
+ *
+ * Dependendo do objetivo, escolhemos o tipo de teste.
+ *
+ *
+ * TESTE UNITÁRIO:
+ *
+ * Testa uma pequena unidade isoladamente.
+ *
+ * Normalmente utiliza Mocks para substituir dependências externas.
+ *
+ *
+ * TESTE DE INTEGRAÇÃO:
+ *
+ * Testa a comunicação entre componentes reais.
+ *
+ * Exemplo:
+ *
+ * Service + Repository + Banco de dados de teste.
+ *
+ *
+ * TESTE DE SISTEMA / END-TO-END:
+ *
+ * Testa o fluxo completo da aplicação.
+ *
+ * Exemplo:
+ *
+ * Requisição HTTP até persistência dos dados.
+ *
+ *
+ * ============================================================================
+ * 5 - CRIAR OS DADOS DE TESTE (MASSA DE DADOS)
+ * ============================================================================
+ *
+ * Como os testes precisam ser previsíveis, devemos criar dados controlados.
+ *
+ *
+ * Esses dados podem representar:
+ *
+ * - Entidades;
+ * - DTOs;
+ * - Respostas externas;
+ * - Parâmetros;
+ * - Objetos de entrada.
+ *
+ *
+ * Os dados devem ser:
+ *
+ * - Simples;
+ * - Consistentes;
+ * - Suficientes para validar o cenário.
+ *
+ *
+ * Não é necessário utilizar dados reais de produção.
+ *
+ *
+ * ============================================================================
+ * 6 - UTILIZAR MOCK QUANDO NECESSÁRIO
+ * ============================================================================
+ *
+ * Mock é um objeto falso criado para substituir uma dependência real durante
+ * o teste.
+ *
+ *
+ * Ele é utilizado quando não queremos depender de recursos externos.
+ *
+ *
+ * Exemplos:
+ *
+ * Banco de dados:
+ *
+ * Repository real
+ *       |
+ *       v
+ * Repository Mock
+ *
+ *
+ * API externa:
+ *
+ * Cliente HTTP real
+ *       |
+ *       v
+ * Cliente Mock
+ *
+ *
+ * O Mock permite controlar:
+ *
+ * - O retorno esperado;
+ * - O comportamento da dependência;
+ * - Cenários de sucesso;
+ * - Cenários de erro.
+ *
+ *
+ * ============================================================================
+ * 7 - PREPARAR O CENÁRIO DO TESTE (ARRANGE)
+ * ============================================================================
+ *
+ * Nesta etapa configuramos tudo que será necessário:
+ *
+ * - Criamos objetos;
+ * - Configuramos mocks;
+ * - Definimos parâmetros;
+ * - Prepararmos condições iniciais.
+ *
+ *
+ * Exemplo:
+ *
+ * when(dependencia.metodo())
+ *      .thenReturn(resultadoEsperado);
+ *
+ *
+ * ============================================================================
+ * 8 - EXECUTAR O COMPORTAMENTO TESTADO (ACT)
+ * ============================================================================
+ *
+ * Nesta etapa chamamos o método ou ação que queremos validar.
+ *
+ *
+ * Exemplo:
+ *
+ * var resultado = objetoTestado.executar();
+ *
+ *
+ * O ideal é que exista uma execução principal por teste.
+ *
+ *
+ * ============================================================================
+ * 9 - VALIDAR O RESULTADO (ASSERT)
+ * ============================================================================
+ *
+ * Depois da execução verificamos se o comportamento foi correto.
+ *
+ *
+ * Podemos validar:
+ *
+ * - Valores retornados;
+ * - Estados dos objetos;
+ * - Exceções lançadas;
+ * - Chamadas realizadas;
+ * - Quantidade de interações.
+ *
+ *
+ * Exemplos:
+ *
+ * Assertions.assertNotNull(resultado);
+ *
+ * Assertions.assertEquals(valorEsperado, resultado);
+ *
+ *
+ * ============================================================================
+ * 10 - VALIDAR CENÁRIOS DIFERENTES
+ * ============================================================================
+ *
+ * Uma aplicação possui vários comportamentos possíveis.
+ *
+ * Devemos testar:
+ *
+ * - Caminho de sucesso;
+ * - Dados inválidos;
+ * - Valores nulos;
+ * - Exceções;
+ * - Limites;
+ * - Regras específicas.
+ *
+ *
+ * ============================================================================
+ * RESUMO DO PROCESSO DE TESTE
+ * ============================================================================
+ *
+ *
+ * 1 - Entender o que será testado
+ *
+ *          |
+ *          v
+ *
+ * 2 - Conhecer a responsabilidade da classe
+ *
+ *          |
+ *          v
+ *
+ * 3 - Identificar dependências
+ *
+ *          |
+ *          v
+ *
+ * 4 - Escolher o tipo de teste adequado
+ *
+ *          |
+ *          v
+ *
+ * 5 - Criar dados controlados
+ *
+ *          |
+ *          v
+ *
+ * 6 - Criar Mocks quando necessário
+ *
+ *          |
+ *          v
+ *
+ * 7 - Preparar cenário (Arrange)
+ *
+ *          |
+ *          v
+ *
+ * 8 - Executar comportamento (Act)
+ *
+ *          |
+ *          v
+ *
+ * 9 - Validar resultado (Assert)
+ *
+ *          |
+ *          v
+ *
+ * 10 - Garantir que o comportamento esperado está correto
+ *
+ *
+ * ============================================================================
+ */
