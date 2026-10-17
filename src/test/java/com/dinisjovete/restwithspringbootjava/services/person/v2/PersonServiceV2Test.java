@@ -3,15 +3,18 @@ package com.dinisjovete.restwithspringbootjava.services.person.v2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonInsertDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonUpdateDTOV2;
+import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
+import com.dinisjovete.restwithspringbootjava.exception.project_exception.ResourceNotFoundException;
 import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.v2.PersonMapper_MapStructV2;
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
 import com.dinisjovete.restwithspringbootjava.user_test.dozer.unittetests.mapper.mocks.v2.MockPersonV2;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,1021 +23,462 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.Mockito.*;
-
-
-/*
- * ============================================================================
- * CLASSE DE TESTE UNITÁRIO - PERSON SERVICE V2
- * ============================================================================
- *
- * Objetivo:
- *
- * Testar isoladamente a camada de serviço (Service).
- *
- * O Service contém as regras de negócio da aplicação.
- *
- * Durante o teste:
- *
- *      Controller
- *          |
- *          X
- *          |
- *      Service  <------ Unidade testada
- *          |
- *          |
- *     -----------------
- *     |               |
- * Repository       Mapper
- *    Mock             Mock
- *
- *
- * O banco de dados e outras dependências externas não são utilizadas.
- *
- * O Mockito cria objetos simulados (Mocks) para controlar o comportamento
- * dessas dependências e permitir testar somente a lógica do Service.
- *
- * ============================================================================
- */
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 /*
  * ============================================================================
- * CICLO DE VIDA DA CLASSE DE TESTE
+ * TESTE UNITÁRIO DA CAMADA DE SERVIÇO - PersonServiceV2
  * ============================================================================
  *
- * @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+ * O QUE ESTÁ SENDO TESTADO
+ * ------------------------
+ * Apenas a classe PersonServiceV2, isolada de tudo que está ao redor dela:
  *
- * Define como o JUnit cria as instâncias da classe de teste.
+ *      Controller            <- fora do teste (não participa)
+ *          |
+ *      PersonServiceV2       <- UNIDADE TESTADA (código real, executado de verdade)
+ *          |
+ *     +----+-----------+----------------+
+ *     |                |                |
+ *  Repository        Mapper       PasswordEncoder
+ *    (Mock)          (Mock)           (Mock)
  *
- *
- * PER_CLASS:
- *
- * O JUnit cria apenas uma única instância da classe de teste e reutiliza
- * essa mesma instância durante todos os métodos anotados com @Test.
- *
- *
- * Vantagens:
- *
- * - Permite compartilhar atributos entre métodos de teste.
- * - Permite utilizar @BeforeAll e @AfterAll sem precisar declarar métodos
- *   como static.
- *
- * ============================================================================
- */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-
-
-/*
- * ============================================================================
- * INTEGRAÇÃO DO MOCKITO COM JUNIT 5
- * ============================================================================
- *
- * @ExtendWith(MockitoExtension.class)
- *
- * Faz a integração entre JUnit 5 e Mockito.
+ * Nada de banco, nada de Spring, nada de BCrypt real. O Mockito cria "dublês"
+ * das dependências e nós controlamos o que eles devolvem. Por isso o teste é
+ * rápido (milissegundos) e, se falhar, o culpado só pode estar no Service.
  *
  *
- * Responsabilidades:
+ * V1 x V2 NESTE PROJETO
+ * ---------------------
+ * A V2 usa os DTOs próprios (PersonDTOV2, PersonInsertDTOV2, PersonUpdateDTOV2)
+ * e o mapper PersonMapper_MapStructV2, mas continua trabalhando com a MESMA
+ * entidade Person e o MESMO PersonRepository da V1. Por isso a entidade é
+ * importada do pacote v1 e as regras de negócio testadas aqui são as mesmas.
  *
- * - Inicializar automaticamente objetos com @Mock.
- * - Criar objetos anotados com @InjectMocks.
- * - Gerenciar o ciclo de vida dos mocks durante os testes.
+ *
+ * O QUE UM TESTE DE SERVICE DEVE PROVAR
+ * -------------------------------------
+ * Boa parte dos métodos só delega (repository -> mapper). O valor do teste está
+ * em proteger o que o Service REALMENTE decide:
+ *
+ *   - create():  criptografar a senha, aplicar a Role padrão CLIENT.
+ *   - findById / update / delete: lançar ResourceNotFoundException quando o ID
+ *     não existe e NÃO executar nenhuma escrita nesse caso.
+ *
+ * Por isso cada método tem o caminho feliz E o caminho de erro/borda.
  *
  *
- * Sem essa anotação seria necessário inicializar manualmente:
+ * PADRÃO DE ESCRITA: ARRANGE / ACT / ASSERT (+ VERIFY)
+ * ----------------------------------------------------
+ *   ARRANGE : monta os dados e ensina os mocks o que responder.
+ *   ACT     : chama o método real do Service (uma única chamada).
+ *   ASSERT  : confere o RESULTADO retornado.
+ *   VERIFY  : confere as INTERAÇÕES (quem foi chamado, em que ordem, quem NÃO foi).
  *
- * MockitoAnnotations.openMocks(this);
  *
+ * NOMES DOS TESTES
+ * ----------------
+ * Formato: metodo_quandoCondicao_resultadoEsperado
+ * Quando um teste falha, o nome já diz qual regra quebrou, sem abrir o código.
  * ============================================================================
  */
 @ExtendWith(MockitoExtension.class)
+        /*
+         * @ExtendWith(MockitoExtension.class)
+         *
+         * Liga o Mockito ao JUnit 5. Ele cria os @Mock, injeta no @InjectMocks e
+         * descarta tudo ao final de cada teste.
+         *
+         * Detalhe importante: essa extensão usa STRICT STUBS. Se você ensinar um mock
+         * com when(...) e o Service nunca chamar aquilo, o teste FALHA com
+         * UnnecessaryStubbingException. Isso é bom: impede stubs "sobrando" que
+         * enganam quem lê o teste.
+         *
+         * Observação sobre o ciclo de vida: NÃO usamos @TestInstance(PER_CLASS).
+         * O padrão do JUnit é criar uma instância nova da classe para cada @Test, o que
+         * isola completamente os testes (nenhum campo "vaza" de um para outro). PER_CLASS
+         * só vale a pena quando precisamos de @BeforeAll não-estático, o que não é o caso.
+         */
 class PersonServiceV2Test {
 
-
     /*
-     * ============================================================================
-     * MASSA DE DADOS (TEST DATA BUILDER)
-     * ============================================================================
-     *
-     * MockPersonV2 não é um Mock do Mockito.
-     *
-     * Ele é uma classe auxiliar responsável por criar objetos falsos
-     * utilizados nos testes.
-     *
-     *
-     * Exemplo:
-     *
-     * mockEntity(1)
-     *
-     * retorna uma entidade Person preenchida com dados previsíveis.
-     *
-     *
-     * mockDTO(1)
-     *
-     * retorna um PersonDTOV2 preenchido com dados previsíveis.
-     *
-     *
-     * Essa abordagem evita repetir a criação manual de objetos em todos
-     * os métodos de teste.
-     *
-     * ============================================================================
+     * Fábrica de dados fictícios (Test Data Builder). NÃO é um mock do Mockito:
+     * é uma classe nossa que devolve objetos reais, preenchidos com valores
+     * previsíveis. mockEntity(1) gera uma Person de id 1, mockDTO(1) um PersonDTOV2
+     * de id 1, e assim por diante. O número é o "índice" usado nos valores.
      */
-    MockPersonV2 input;
-
-
+    private MockPersonV2 input;
 
     /*
-     * ============================================================================
-     * UNIDADE SENDO TESTADA
-     * ============================================================================
-     *
-     * @InjectMocks
-     *
-     * Informa ao Mockito que essa classe é o objeto principal do teste.
-     *
-     *
-     * O Mockito:
-     *
-     * 1 - Cria uma instância real de PersonServiceV2.
-     *
-     * 2 - Procura dependências marcadas com @Mock.
-     *
-     * 3 - Injeta essas dependências dentro do Service.
-     *
-     *
-     * Exemplo:
-     *
-     * PersonServiceV2
-     *          |
-     *          |
-     *          +------ PersonRepository (Mock)
-     *          |
-     *          +------ PersonMapper (Mock)
-     *
-     *
-     * O Service executa sua lógica real.
-     * Apenas as dependências externas são simuladas.
-     *
-     * ============================================================================
+     * @InjectMocks: o Mockito instancia o PersonServiceV2 REAL chamando o
+     * construtor e entrega os @Mock abaixo. A injeção é por TIPO, então o nome
+     * dos campos não precisa coincidir com o nome usado dentro do Service.
      */
     @InjectMocks
     private PersonServiceV2 service;
 
+    /* @Mock: dublês das dependências. Não executam código real; devolvem o que mandarmos. */
+    @Mock
+    private PersonRepository repository;
 
+    @Mock
+    private PersonMapper_MapStructV2 mapper;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     /*
-     * ============================================================================
-     * DEPENDÊNCIAS SIMULADAS PELO MOCKITO
-     * ============================================================================
-     *
-     * @Mock
-     *
-     * Cria objetos falsos controlados pelo Mockito.
-     *
-     *
-     * Esses objetos:
-     *
-     * - Não acessam banco de dados.
-     * - Não executam implementação real.
-     * - Permitem definir retornos esperados.
-     *
-     *
-     * Assim conseguimos testar apenas a regra de negócio existente
-     * dentro do PersonServiceV2.
-     *
-     * ============================================================================
-     */
-    @Mock
-    PersonRepository repository;
-
-
-    @Mock
-    PersonMapper_MapStructV2 mapper;
-
-    @Mock
-    PasswordEncoder passwordEncoder;
-
-
-
-    /*
-     * ============================================================================
-     * PREPARAÇÃO ANTES DE CADA TESTE
-     * ============================================================================
-     *
-     * @BeforeEach
-     *
-     * Executa esse método antes da execução de cada método @Test.
-     *
-     *
-     * Responsabilidade:
-     *
-     * Criar novamente a massa de dados para garantir que cada teste tenha
-     * um ambiente independente.
-     *
-     * ============================================================================
+     * Roda antes de CADA @Test. Como os mocks são recriados pelo Mockito a cada
+     * teste, só precisamos recriar a fábrica de dados.
      */
     @BeforeEach
     void setUp() {
-
-
-        /*
-         * Cria o objeto responsável por fornecer dados falsos para os testes.
-         *
-         * Ele será utilizado para gerar:
-         *
-         * - Entidades Person.
-         * - DTOs PersonDTOV2.
-         *
-         */
         input = new MockPersonV2();
-
     }
 
+    // ========================================================================
+    // findById
+    // ========================================================================
 
     @Test
-    void findById() {
+    @DisplayName("findById: quando a pessoa existe, devolve o DTO produzido pelo mapper")
+    void findById_whenPersonExists_returnsMappedDto() {
 
+        // ARRANGE
+        // O repository (mock) "encontra" a entidade; o mapper (mock) a converte em DTO.
+        Person entity = input.mockEntity(1);
+        PersonDTOV2 dto = input.mockDTO(1);
 
-        /*
-         * ============================================================================
-         * ETAPA 1 - ARRANGE (PREPARAÇÃO DO CENÁRIO)
-         * ============================================================================
-         *
-         * Criação da massa de dados que será utilizada durante o teste.
-         *
-         *
-         * mockEntity(1):
-         *
-         * Retorna uma entidade Person preenchida com valores fictícios.
-         *
-         * Essa entidade representa o objeto que normalmente viria do banco
-         * de dados através do Repository.
-         *
-         *
-         * mockDTO(1):
-         *
-         * Retorna um PersonDTOV2 preenchido com valores fictícios.
-         *
-         * Esse DTO representa o objeto que seria retornado para o Controller.
-         *
-         * ============================================================================
-         */
-        Person person = input.mockEntity(1);
+        when(repository.findById(1L)).thenReturn(Optional.of(entity));
+        when(mapper.mapEntityToDto(entity)).thenReturn(dto);
 
-        PersonDTOV2 personDTO = input.mockDTO(1);
+        // ACT
+        PersonDTOV2 result = service.findById(1L);
 
+        // ASSERT
+        // assertSame compara a REFERÊNCIA: prova que o Service devolveu exatamente
+        // o objeto que o mapper produziu, sem trocar nem montar outro por conta própria.
+        assertSame(dto, result);
 
-
-        /*
-         * ============================================================================
-         * ETAPA 2 - ARRANGE (CONFIGURAÇÃO DOS MOCKS)
-         * ============================================================================
-         *
-         * Configurando o comportamento do Mapper.
-         *
-         *
-         * Cenário real:
-         *
-         * Service recebe uma entidade Person.
-         *
-         * Service chama o Mapper:
-         *
-         * PersonEntity
-         *       |
-         *       |
-         *       v
-         * PersonDTOV2
-         *
-         *
-         * Como o Mapper é um Mock, precisamos informar manualmente
-         * qual será o retorno esperado.
-         *
-         * ============================================================================
-         */
-        when(mapper.mapEntityToDto(person))
-                .thenReturn(personDTO);
-
-
-
-        /*
-         * ============================================================================
-         * ETAPA 3 - ARRANGE (CONFIGURAÇÃO DO REPOSITORY)
-         * ============================================================================
-         *
-         * Configurando o comportamento do Repository.
-         *
-         *
-         * Cenário real:
-         *
-         * Service solicita:
-         *
-         * repository.findById(1L)
-         *
-         *
-         * Banco de dados retornaria:
-         *
-         * Person encontrada
-         *
-         *
-         * No teste:
-         *
-         * O Mockito intercepta essa chamada e retorna o objeto
-         * Person criado pelo MockPersonV2.
-         *
-         * ============================================================================
-         */
-        when(repository.findById(1L))
-                .thenReturn(Optional.of(person));
-
-
-
-        /*
-         * ============================================================================
-         * ETAPA 4 - ACT (EXECUÇÃO DO COMPORTAMENTO TESTADO)
-         * ============================================================================
-         *
-         * Agora executamos o método real do Service.
-         *
-         *
-         * Fluxo durante o teste:
-         *
-         *
-         * service.findById(1L)
-         *
-         *          |
-         *          v
-         *
-         * PersonServiceV2
-         *
-         *          |
-         *          |
-         *          +------ repository.findById(1L)
-         *          |
-         *          |        retorna Person (Mock)
-         *          |
-         *          |
-         *          +------ mapper.mapEntityToDto(person)
-         *
-         *                   retorna PersonDTOV2 (Mock)
-         *
-         *
-         * O Service executa a regra real, porém utilizando dependências
-         * simuladas.
-         *
-         * ============================================================================
-         */
-        var result = service.findById(1L);
-
-
-
-        /*
-         * ============================================================================
-         * ETAPA 5 - ASSERT (VALIDAÇÃO DO RESULTADO)
-         * ============================================================================
-         *
-         * Aqui verificamos se o comportamento esperado realmente aconteceu.
-         *
-         * ============================================================================
-         */
-
-
-        /*
-         * O resultado retornado pelo Service nunca deve ser nulo.
-         */
-        Assertions.assertNotNull(result);
-
-
-
-        /*
-         * O DTO retornado deve possuir um ID preenchido.
-         */
-        Assertions.assertNotNull(result.getId());
-
-
-
-        /*
-         * Confirma que o ID retornado pelo Service é exatamente o mesmo
-         * ID existente no DTO preparado durante o cenário de teste.
-         */
-        Assertions.assertEquals(
-                personDTO.getId(),
-                result.getId()
-        );
-
-
-
-        /*
-         * ============================================================================
-         * ETAPA 6 - VERIFY (VALIDAÇÃO DAS INTERAÇÕES)
-         * ============================================================================
-         *
-         * Além de verificar o resultado, podemos confirmar se as dependências
-         * foram chamadas corretamente.
-         *
-         *
-         * Aqui estamos garantindo que:
-         *
-         * 1 - O Service realmente chamou o Repository.
-         *
-         * 2 - O Service realmente chamou o Mapper.
-         *
-         * ============================================================================
-         */
-        verify(repository)
-                .findById(1L);
-
-
-        verify(mapper)
-                .mapEntityToDto(person);
-
-    }
-
-
-
-    /*
-     * ============================================================================
-     * TESTES FUTUROS
-     * ============================================================================
-     *
-     * Os próximos testes seguirão a mesma estrutura:
-     *
-     *
-     * ARRANGE
-     *
-     * Criar dados e configurar mocks.
-     *
-     *
-     * ACT
-     *
-     * Executar o método do Service.
-     *
-     *
-     * ASSERT
-     *
-     * Validar o resultado.
-     *
-     *
-     * VERIFY
-     *
-     * Confirmar chamadas importantes.
-     *
-     * ============================================================================
-     */
-
-
-    @Test
-    void create() {
-
-        /*
-                      TESTE
-                |
-                v
-         PersonInsertDTOV2
-         (password = "password1")
-                        |
-                        |
-                        v
-                PersonServiceV2
-                        |
-                        |
-               passwordEncoder.encode()
-                        |
-                        v
-         Person Entity
-         (password = "$2a$10$....")
-                        |
-                        |
-                        v
-                repository.save()
-                        |
-                        v
-               PersonDTOV2 retorno
-         * ============================================================================
-         * ARRANGE - CRIAÇÃO DA MASSA DE DADOS
-         * ============================================================================
-         *
-         * Criamos os objetos necessários para simular o fluxo de criação:
-         *
-         * PersonInsertDTOV2:
-         * Representa os dados recebidos pelo Service.
-         *
-         * Person:
-         * Representa a entidade que será persistida no banco.
-         *
-         * PersonDTOV2:
-         * Representa o DTO que será retornado pela API.
-         *
-         * ============================================================================
-         */
-
-        Person person = input.mockEntity(1);
-
-        PersonInsertDTOV2 personDTO = input.mockInsertDTO(1);
-
-        PersonDTOV2 personDTO2 = input.mockDTO(1);
-
-
-
-        /*
-         * ============================================================================
-         * ARRANGE - CONFIGURAÇÃO DO MAPPER (DTO -> ENTITY)
-         * ============================================================================
-         *
-         * O Service recebe um DTO de entrada e converte para uma entidade.
-         *
-         * ============================================================================
-         */
-
-        when(mapper.mapDtoToEntity(personDTO))
-                .thenReturn(person);
-
-
-
-        /*
-         * ============================================================================
-         * ARRANGE - CONFIGURAÇÃO DO PASSWORD ENCODER
-         * ============================================================================
-         *
-         * O Service recebe a senha original enviada pelo usuário:
-         *
-         * password = "password1"
-         *
-         * Antes de salvar, ele aplica BCrypt:
-         *
-         * passwordEncoder.encode(password)
-         *
-         * Aqui simulamos o retorno do hash gerado.
-         *
-         * ============================================================================
-         */
-
-        when(passwordEncoder.encode(personDTO.getPassword()))
-                .thenReturn("senha_hash_teste");
-
-
-
-        /*
-         * ============================================================================
-         * ARRANGE - CONFIGURAÇÃO DO REPOSITORY
-         * ============================================================================
-         *
-         * O Repository recebe a entidade já processada pelo Service
-         * e retorna a entidade salva.
-         *
-         * ============================================================================
-         */
-
-        when(repository.save(person))
-                .thenReturn(person);
-
-
-
-        /*
-         * ============================================================================
-         * ARRANGE - CONFIGURAÇÃO DO MAPPER (ENTITY -> DTO)
-         * ============================================================================
-         *
-         * Após salvar, o Service converte novamente a entidade
-         * para o DTO de resposta.
-         *
-         * ============================================================================
-         */
-
-        when(mapper.mapEntityToDto(person))
-                .thenReturn(personDTO2);
-
-
-
-        /*
-         * ============================================================================
-         * ACT - EXECUÇÃO DO MÉTODO REAL
-         * ============================================================================
-         */
-
-        var result = service.create(personDTO);
-
-
-
-        /*
-         * ============================================================================
-         * ASSERT - VALIDAÇÃO DO RESULTADO
-         * ============================================================================
-         */
-
-        Assertions.assertNotNull(result);
-
-
-        Assertions.assertEquals(
-                personDTO2.getId(), // ID do DTO de saída esperado
-                result.getId()      // ID retornado pelo Service
-        );
-
-
-
-        /*
-         * ============================================================================
-         * VERIFY - VALIDAÇÃO DAS INTERAÇÕES
-         * ============================================================================
-         *
-         * Garantimos que o Service executou todas as etapas necessárias.
-         *
-         * ============================================================================
-         */
-
-        verify(mapper)
-                .mapDtoToEntity(personDTO);
-
-
-        verify(passwordEncoder)
-                .encode(personDTO.getPassword());
-
-
-        verify(repository)
-                .save(person);
-
-
-        verify(mapper)
-                .mapEntityToDto(person);
-
-    }
-
-
-
-    @Test
-    void update() {
-
-        /*
-         * ============================================================================
-         * 1 - MASSA DE DADOS
-         * ============================================================================
-         */
-        Person person = input.mockEntity(1);
-        PersonUpdateDTOV2 userUpdate = input.mockUpdateDTO(1);
-        PersonDTOV2 dtoUpdate = input.mockDTO(1);
-
-
-        /*
-         * ============================================================================
-         * 2 - PREPARAÇÃO DO CENÁRIO (ARRANGE)
-         * ============================================================================
-         */
-
-        // Busca a pessoa existente no banco
-        when(repository.findById(1L))
-                .thenReturn(Optional.of(person));
-
-        // Atualiza os dados da entidade existente (método void)
-        doNothing()
-                .when(mapper)
-                .updateEntityFromDTO(userUpdate, person);
-
-        // Salva a entidade atualizada
-        when(repository.save(person))
-                .thenReturn(person);
-
-        // Converte a entidade salva para DTO de saída
-        when(mapper.mapEntityToDto(person))
-                .thenReturn(dtoUpdate);
-
-
-        /*
-         * ============================================================================
-         * 3 - EXECUÇÃO (ACT)
-         * ============================================================================
-         */
-        var result = service.update(1L, userUpdate);
-
-
-        /*
-         * ============================================================================
-         * 4 - VALIDAÇÃO (ASSERT)
-         * ============================================================================
-         */
-
-        Assertions.assertNotNull(result);
-
-        Assertions.assertNotNull(result.getId());
-
-        Assertions.assertEquals(
-                dtoUpdate.getId(),
-                result.getId()
-        );
-
-        Assertions.assertEquals(
-                dtoUpdate.getFirstName(),
-                result.getFirstName()
-        );
-
-        Assertions.assertEquals(
-                dtoUpdate.getLastName(),
-                result.getLastName()
-        );
-
-
-        /*
-         * ============================================================================
-         * 5 - VERIFICAÇÃO DAS INTERAÇÕES (VERIFY)
-         * ============================================================================
-         */
-
+        // VERIFY
         verify(repository).findById(1L);
-
-        verify(mapper)
-                .updateEntityFromDTO(userUpdate, person);
-
-        verify(repository)
-                .save(person);
-
-        verify(mapper)
-                .mapEntityToDto(person);
+        verify(mapper).mapEntityToDto(entity);
+        verifyNoMoreInteractions(repository, mapper); // nenhuma chamada extra e inesperada
     }
 
-
-
     @Test
-    void delete() {
+    @DisplayName("findById: quando o ID não existe, lança ResourceNotFoundException")
+    void findById_whenPersonDoesNotExist_throwsResourceNotFoundException() {
 
-        /*
-         * ============================================================================
-         * 1 - MASSA DE DADOS
-         * ============================================================================
-         */
-        Person person = input.mockEntity(1);
+        // ARRANGE
+        // Optional.empty() é o que o JPA devolve quando não há registro com o ID.
+        when(repository.findById(1L)).thenReturn(Optional.empty());
 
+        // ACT + ASSERT
+        // assertThrows executa o lambda e passa se (e somente se) a exceção
+        // esperada for lançada. Aqui a ação e a verificação acontecem juntas.
+        assertThrows(ResourceNotFoundException.class, () -> service.findById(1L));
 
-        /*
-         * ============================================================================
-         * 2 - PREPARAÇÃO DO CENÁRIO (ARRANGE)
-         * ============================================================================
-         */
-
-        // Simula a busca da pessoa existente
-        when(repository.findById(1L))
-                .thenReturn(Optional.of(person));
-
-
-        /*
-         * ============================================================================
-         * 3 - EXECUÇÃO (ACT)
-         * ============================================================================
-         */
-
-        service.delete(1L);
-
-
-        /*
-         * ============================================================================
-         * 4 - VALIDAÇÃO DAS INTERAÇÕES (VERIFY)
-         * ============================================================================
-         *
-         * Como delete() não retorna nada, validamos se o fluxo interno ocorreu:
-         * 1 - Buscou a entidade pelo ID
-         * 2 - Mandou o repository remover essa entidade
-         *
-         * ============================================================================
-         */
-
-        verify(repository)
-                .findById(1L);
-
-        verify(repository)
-                .delete(person);
+        // VERIFY
+        // Sem entidade, não há o que converter: o mapper não pode ter sido acionado.
+        verifyNoInteractions(mapper);
     }
 
+    // ========================================================================
+    // findAll
+    // ========================================================================
 
     @Test
-    void findAll() {
+    @DisplayName("findAll: converte cada entidade em DTO e preserva a ordem")
+    void findAll_whenThereArePeople_returnsAllMappedDtosInOrder() {
 
-        /*
-         * ============================================================================
-         * 1 - MASSA DE DADOS
-         * ============================================================================
-         */
-
+        // ARRANGE
         Person person1 = input.mockEntity(1);
         Person person2 = input.mockEntity(2);
-
         PersonDTOV2 dto1 = input.mockDTO(1);
         PersonDTOV2 dto2 = input.mockDTO(2);
 
+        when(repository.findAll()).thenReturn(List.of(person1, person2));
+        when(mapper.mapEntityToDto(person1)).thenReturn(dto1);
+        when(mapper.mapEntityToDto(person2)).thenReturn(dto2);
 
-        List<Person> people = List.of(person1, person2);
+        // ACT
+        List<PersonDTOV2> result = service.findAll();
 
+        // ASSERT
+        // A lista inteira de uma vez: confere tamanho, conteúdo e ORDEM.
+        assertEquals(List.of(dto1, dto2), result);
 
-
-        /*
-         * ============================================================================
-         * 2 - ARRANGE
-         * ============================================================================
-         */
-
-        /*
-         * Simula o Repository buscando todas as pessoas no banco.
-         *
-         * Fluxo real:
-         *
-         * Banco
-         *   |
-         *   v
-         * Repository
-         *   |
-         *   v
-         * List<Person>
-         *
-         */
-
-        when(repository.findAll())
-                .thenReturn(people);
-
-
-
-        /*
-         * O Mapper recebe cada entidade individualmente
-         * e transforma em DTO.
-         *
-         * Person
-         *   |
-         *   v
-         * PersonDTOV2
-         *
-         */
-
-        when(mapper.mapEntityToDto(person1))
-                .thenReturn(dto1);
-
-
-        when(mapper.mapEntityToDto(person2))
-                .thenReturn(dto2);
-
-
-
-        /*
-         * ============================================================================
-         * 3 - ACT
-         * ============================================================================
-         */
-
-        var result = service.findAll();
-
-
-
-        /*
-         * ============================================================================
-         * 4 - ASSERT
-         * ============================================================================
-         */
-
-        Assertions.assertNotNull(result);
-
-
-        Assertions.assertEquals(
-                2,
-                result.size()
-        );
-
-
-        // valida primeiro elemento
-
-        Assertions.assertEquals(
-                dto1.getId(),
-                result.get(0).getId()
-        );
-
-
-        Assertions.assertEquals(
-                dto1.getFirstName(),
-                result.get(0).getFirstName()
-        );
-
-
-
-        // valida segundo elemento
-
-        Assertions.assertEquals(
-                dto2.getId(),
-                result.get(1).getId()
-        );
-
-
-        Assertions.assertEquals(
-                dto2.getFirstName(),
-                result.get(1).getFirstName()
-        );
-
-
-
-        /*
-         * ============================================================================
-         * 5 - VERIFY
-         * ============================================================================
-         */
-
-        verify(repository)
-                .findAll();
-
-
-        verify(mapper)
-                .mapEntityToDto(person1);
-
-
-        verify(mapper)
-                .mapEntityToDto(person2);
+        // VERIFY
+        verify(repository).findAll();
+        verify(mapper).mapEntityToDto(person1);
+        verify(mapper).mapEntityToDto(person2);
+        verifyNoMoreInteractions(repository, mapper);
     }
 
+    @Test
+    @DisplayName("findAll: quando não há ninguém, devolve lista vazia sem acionar o mapper")
+    void findAll_whenThereIsNobody_returnsEmptyList() {
 
+        // ARRANGE
+        when(repository.findAll()).thenReturn(List.of());
+
+        // ACT
+        List<PersonDTOV2> result = service.findAll();
+
+        // ASSERT
+        // Lista vazia (e não null) é o contrato esperado pelo Controller.
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        // VERIFY
+        verifyNoInteractions(mapper);
+    }
+
+    // ========================================================================
+    // create
+    // ========================================================================
+
+    @Test
+    @DisplayName("create: criptografa a senha ANTES de salvar e devolve o DTO do mapper")
+    void create_whenPasswordIsProvided_savesEntityWithEncodedPassword() {
+
+        // ARRANGE
+        // Fluxo do Service:
+        //   InsertDTOV2 --mapper--> Entity --encode(senha)--> save() --mapper--> DTOV2
+        Person entity = input.mockEntity(1);
+        PersonInsertDTOV2 insertDto = input.mockInsertDTO(1);
+        PersonDTOV2 responseDto = input.mockDTO(1);
+
+        when(mapper.mapDtoToEntity(insertDto)).thenReturn(entity);
+        when(passwordEncoder.encode(insertDto.getPassword())).thenReturn("senha_hash_teste");
+        when(repository.save(entity)).thenReturn(entity);
+        when(mapper.mapEntityToDto(entity)).thenReturn(responseDto);
+
+        // ACT
+        PersonDTOV2 result = service.create(insertDto);
+
+        // ASSERT
+        assertSame(responseDto, result);
+
+        // ArgumentCaptor "captura" o objeto que o Service passou ao repository.save().
+        // Sem ele, só saberíamos que encode() foi chamado, mas NÃO que o hash
+        // chegou na entidade salva. Se alguém apagasse o person.setPassword(...)
+        // do Service, um teste só com verify(encode) continuaria verde. Este não.
+        ArgumentCaptor<Person> savedCaptor = ArgumentCaptor.forClass(Person.class);
+        verify(repository).save(savedCaptor.capture());
+        assertEquals("senha_hash_teste", savedCaptor.getValue().getPassword());
+
+        // VERIFY - ORDEM DAS OPERAÇÕES
+        // Regra de segurança: a senha precisa ser criptografada antes de persistir.
+        // InOrder falha se save() acontecer antes de encode().
+        InOrder order = inOrder(mapper, passwordEncoder, repository);
+        order.verify(mapper).mapDtoToEntity(insertDto);
+        order.verify(passwordEncoder).encode(insertDto.getPassword());
+        order.verify(repository).save(entity);
+        order.verify(mapper).mapEntityToDto(entity);
+    }
+
+    @Test
+    @DisplayName("create: quando a Role vem nula, aplica a Role padrão CLIENT")
+    void create_whenRoleIsNull_setsDefaultRoleClient() {
+
+        // ARRANGE
+        // Forçamos role = null na entidade devolvida pelo mapper para exercitar o
+        // "if (person.getRole() == null)" do Service, que o caminho feliz pode nem tocar.
+        Person entity = input.mockEntity(1);
+        entity.setRole(null);
+        PersonInsertDTOV2 insertDto = input.mockInsertDTO(1);
+
+        when(mapper.mapDtoToEntity(insertDto)).thenReturn(entity);
+        when(passwordEncoder.encode(insertDto.getPassword())).thenReturn("hash");
+        when(repository.save(entity)).thenReturn(entity);
+        when(mapper.mapEntityToDto(entity)).thenReturn(input.mockDTO(1));
+
+        // ACT
+        service.create(insertDto);
+
+        // ASSERT
+        // Capturamos a entidade que foi salva e conferimos a Role atribuída.
+        ArgumentCaptor<Person> savedCaptor = ArgumentCaptor.forClass(Person.class);
+        verify(repository).save(savedCaptor.capture());
+        assertEquals(PersonRole.CLIENT, savedCaptor.getValue().getRole());
+    }
+
+    @Test
+    @DisplayName("create: quando a Role já vem preenchida, NÃO sobrescreve com CLIENT")
+    void create_whenRoleIsProvided_keepsOriginalRole() {
+
+        // ARRANGE
+        // Contraparte do teste anterior: o outro lado do mesmo "if".
+        // Sem este teste, um Service que sempre forçasse CLIENT passaria despercebido
+        // (e um usuário ADMIN viraria CLIENT).
+        Person entity = input.mockEntity(1);
+        entity.setRole(PersonRole.ADMIN);
+        PersonInsertDTOV2 insertDto = input.mockInsertDTO(1);
+
+        when(mapper.mapDtoToEntity(insertDto)).thenReturn(entity);
+        when(passwordEncoder.encode(insertDto.getPassword())).thenReturn("hash");
+        when(repository.save(entity)).thenReturn(entity);
+        when(mapper.mapEntityToDto(entity)).thenReturn(input.mockDTO(1));
+
+        // ACT
+        service.create(insertDto);
+
+        // ASSERT
+        ArgumentCaptor<Person> savedCaptor = ArgumentCaptor.forClass(Person.class);
+        verify(repository).save(savedCaptor.capture());
+        assertEquals(PersonRole.ADMIN, savedCaptor.getValue().getRole());
+    }
+
+    @Test
+    @DisplayName("create: quando a senha é nula, não chama o PasswordEncoder")
+    void create_whenPasswordIsNull_doesNotCallPasswordEncoder() {
+
+        // ARRANGE
+        // Exercita o "if (dto.getPassword() != null)" do Service.
+        // Guardamos a senha original da entidade para provar que ela não foi alterada.
+        Person entity = input.mockEntity(1);
+        String passwordBefore = entity.getPassword();
+        PersonInsertDTOV2 insertDto = input.mockInsertDTO(1);
+        insertDto.setPassword(null);
+
+        when(mapper.mapDtoToEntity(insertDto)).thenReturn(entity);
+        when(repository.save(entity)).thenReturn(entity);
+        when(mapper.mapEntityToDto(entity)).thenReturn(input.mockDTO(1));
+
+        // ACT
+        service.create(insertDto);
+
+        // ASSERT / VERIFY
+        // never() garante que a chamada NÃO aconteceu nenhuma vez.
+        verify(passwordEncoder, never()).encode(any());
+        assertEquals(passwordBefore, entity.getPassword());
+    }
+
+    // ========================================================================
+    // update
+    // ========================================================================
+
+    @Test
+    @DisplayName("update: busca, aplica o DTO na entidade existente, salva e devolve o DTO")
+    void update_whenPersonExists_updatesSavesAndReturnsDto() {
+
+        // ARRANGE
+        // updateEntityFromDTO é um método void: um mock de método void já "não faz
+        // nada" por padrão, então não precisamos de doNothing().
+        Person entity = input.mockEntity(1);
+        PersonUpdateDTOV2 updateDto = input.mockUpdateDTO(1);
+        PersonDTOV2 responseDto = input.mockDTO(1);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(entity));
+        when(repository.save(entity)).thenReturn(entity);
+        when(mapper.mapEntityToDto(entity)).thenReturn(responseDto);
+
+        // ACT
+        PersonDTOV2 result = service.update(1L, updateDto);
+
+        // ASSERT
+        assertSame(responseDto, result);
+
+        // VERIFY - ORDEM
+        // O mapper precisa atualizar a entidade ANTES do save, senão salvaríamos
+        // os dados antigos.
+        InOrder order = inOrder(repository, mapper);
+        order.verify(repository).findById(1L);
+        order.verify(mapper).updateEntityFromDTO(updateDto, entity);
+        order.verify(repository).save(entity);
+        order.verify(mapper).mapEntityToDto(entity);
+        verifyNoMoreInteractions(repository, mapper);
+    }
+
+    @Test
+    @DisplayName("update: quando o ID não existe, lança exceção e não salva nada")
+    void update_whenPersonDoesNotExist_throwsAndDoesNotSave() {
+
+        // ARRANGE
+        PersonUpdateDTOV2 updateDto = input.mockUpdateDTO(1);
+        when(repository.findById(1L)).thenReturn(Optional.empty());
+
+        // ACT + ASSERT
+        assertThrows(ResourceNotFoundException.class, () -> service.update(1L, updateDto));
+
+        // VERIFY
+        // O mais importante do caminho de erro: nenhuma escrita aconteceu.
+        verify(repository, never()).save(any());
+        verifyNoInteractions(mapper);
+    }
+
+    // ========================================================================
+    // delete
+    // ========================================================================
+
+    @Test
+    @DisplayName("delete: busca a entidade e manda o repository removê-la")
+    void delete_whenPersonExists_deletesEntity() {
+
+        // ARRANGE
+        Person entity = input.mockEntity(1);
+        when(repository.findById(1L)).thenReturn(Optional.of(entity));
+
+        // ACT
+        service.delete(1L);
+
+        // VERIFY
+        // O método é void, então não há retorno para conferir: o que importa é
+        // o efeito (delete) e a ordem (primeiro busca, depois remove).
+        InOrder order = inOrder(repository);
+        order.verify(repository).findById(1L);
+        order.verify(repository).delete(entity);
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("delete: quando o ID não existe, lança exceção e não remove nada")
+    void delete_whenPersonDoesNotExist_throwsAndDoesNotDelete() {
+
+        // ARRANGE
+        when(repository.findById(1L)).thenReturn(Optional.empty());
+
+        // ACT + ASSERT
+        assertThrows(ResourceNotFoundException.class, () -> service.delete(1L));
+
+        // VERIFY
+        verify(repository, never()).delete(any());
+    }
 }
-
-
 
 /*
  * ============================================================================
- * TESTE DE HATEOAS - RESPONSABILIDADE DO CONTROLLER
+ * FORA DO ESCOPO DESTE TESTE: HATEOAS, STATUS HTTP E HEADERS
  * ============================================================================
  *
+ * Links HATEOAS, códigos de status, headers e content negotiation são
+ * responsabilidade do CONTROLLER, não do Service. Eles são testados com
+ * @WebMvcTest + MockMvc, que sobem só a camada web e simulam requisições HTTP:
  *
- * Observação importante:
+ *   - existe o link rel="self"?
+ *   - o href aponta para o recurso correto (ex.: /person/v2/1)?
+ *   - GET / POST / PUT / DELETE respondem com o status esperado?
  *
- * O teste de links HATEOAS NÃO pertence ao Service.
+ * Observação: o atributo "type" de um Link HATEOAS é o media type do recurso,
+ * e não o verbo HTTP.
  *
+ * Divisão de responsabilidades nos testes:
  *
- * Motivo:
- *
- * O Service é responsável por:
- *
- * - Regras de negócio.
- * - Busca e transformação de dados.
- * - Comunicação com Repository e Mapper.
- *
- *
- * O Controller é responsável por:
- *
- * - HTTP.
- * - Status code.
- * - Headers.
- * - Content Negotiation.
- * - Representação final da resposta.
- * - Links HATEOAS.
- *
- *
- * Fluxo:
- *
- *
- * Controller
- *      |
- *      |
- *      v
- * PersonHateoasAssembler
- *      |
- *      |
- *      v
- * PersonDTO + Links
- *
- *
- * Portanto, a validação dos links deve ser feita utilizando:
- *
- * @WebMvcTest
- * MockMvc
- *
- *
- * Exemplo de validação:
- *
- *
- * Assertions:
- *
- * - Verificar se existe coleção de links.
- * - Verificar se existe link "self".
- * - Verificar se o href aponta para o recurso correto.
- *
- *
- * Exemplo:
- *
- *
- * result.getLinks()
- *
- * deve possuir:
- *
- * rel = self
- *
- * href = /person/v2/1
- *
- *
- * Observação:
- *
- * O atributo "type" do Link HATEOAS não representa verbo HTTP.
- *
- * Ele representa o Media Type associado ao recurso.
- *
- *
- * Verbos HTTP como:
- *
- * GET
- * POST
- * PUT
- * DELETE
- *
- *
- * Devem ser testados na camada Controller através do MockMvc.
- *
+ *   Service    -> regras de negócio            -> JUnit + Mockito (este arquivo)
+ *   Controller -> contrato HTTP e links        -> @WebMvcTest + MockMvc
+ *   Repository -> consultas e mapeamento JPA   -> @DataJpaTest (ou Testcontainers)
  * ============================================================================
  */

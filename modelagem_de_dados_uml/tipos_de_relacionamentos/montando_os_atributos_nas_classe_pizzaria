@@ -1,0 +1,95 @@
+/*
+================================================================================
+1ª ETAPA - IDENTIFICANDO QUEM CONHECE QUEM
+================================================================================
+
+Visto que existe uma associação entre Cliente, Motoboy, Pizzaiolo e Pedido,
+precisamos descobrir quem deve possuir a referência para quem.
+
+Uma forma simples de descobrir isso é fazendo perguntas baseadas
+na regra de negócio do sistema.
+
+
+Pergunta 1:
+O Pedido precisa saber quem é o Cliente?
+
+Resposta:
+
+Sim.
+
+Então:
+
+Pedido possui uma referência para Cliente.
+
+puclic class Pedido {
+
+      private Client client;
+
+}
+
+
+Pergunta 2:
+
+O Pedido precisa saber quem preparou a pizza?
+
+Resposta:
+
+Sim.
+
+Então:
+
+Pedido possui uma referência para Pizzaiolo.
+puclic class Pedido {
+
+      private Client client;
+      private Pizzaiolo pizzaiolo;
+
+
+}
+
+
+Pergunta 3:
+
+O Pedido precisa saber quem fará a entrega?
+
+Resposta:
+
+Sim.
+
+Então:
+
+Pedido possui uma referência para Motoboy.
+
+puclic class Pedido {
+
+      private Client client;
+      private Pizzaiolo pizzaiolo;
+      private Motoboy motoboy
+
+
+}
+
+
+Pergunta 4:
+
+Cliente precisa obrigatoriamente conhecer todos os seus Pedidos?
+
+Resposta:
+
+Nem sempre.
+
+Depende da necessidade do sistema.
+
+
+Conclusão:
+
+Antes de criar atributos nas classes, devemos entender
+a regra de negócio e perguntar:
+
+"Quem realmente precisa conhecer quem?"
+
+
+Essa pergunta ajuda a decidir em qual classe
+a associação será implementada.
+================================================================================
+*/
