@@ -28,6 +28,7 @@
         <java.version>21</java.version>
         <dozer.version>7.0.0</dozer.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <springdocswagger.version>2.7.0</springdocswagger.version>
     </properties>
 
     <!-- 5ª - DEPENDÊNCIAS DO PROJETO -->
@@ -63,6 +64,14 @@
             <artifactId>spring-boot-starter-hateoas</artifactId>
         </dependency>
 
+
+        <!-- Swagger / OpenAPI 3 para Spring Boot 3.4 -->
+
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdocswagger.version}</version>
+        </dependency>
 
 
         <!-- ===================================================================== -->

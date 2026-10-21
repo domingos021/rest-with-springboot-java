@@ -363,7 +363,7 @@ public class MockPersonV2 {
         person.setCpf(String.format("000.000.%03d-00", number));
         person.setPhone("1234567890" + number);
         person.setEmail("test" + number + "@email.com");
-        person.setPassword("password" + number);
+        person.setPassword("Password@" + number);
         person.setAddress("Address Test" + number);
         person.setGender(((number % 2) == 0) ? "Male" : "Female");
         person.setRole((number % 2 == 0) ? PersonRole.CLIENT : PersonRole.ADMIN);

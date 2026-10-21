@@ -344,7 +344,9 @@ public class MockPerson {
         person.setLastName("Last Name Test" + number);
         person.setCpf(String.format("000.000.%03d-00", number));
         person.setEmail("test" + number + "@email.com");
-        person.setPassword("password" + number);
+        // senha válida para passar na validação:
+        // Possui: maiúscula + minúscula + número + caractere especial
+        person.setPassword("Password@" + number);
         person.setAddress("Address Test" + number);
         person.setGender(((number % 2) == 0) ? "Male" : "Female");
         person.setRole((number % 2 == 0) ? PersonRole.CLIENT : PersonRole.ADMIN);

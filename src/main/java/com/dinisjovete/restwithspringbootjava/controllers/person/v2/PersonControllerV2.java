@@ -7,6 +7,12 @@ import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonInsertDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonUpdateDTOV2;
 import com.dinisjovete.restwithspringbootjava.services.person.v2.PersonServiceV2;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
@@ -20,26 +26,19 @@ import java.util.List;
 
 @RestController
 /*
-- ============================================================================
-
-- @RequestMapping
-
-- ============================================================================
-
-- Define o caminho base (Base URL) deste Controller.
-
+ * ============================================================================
+ * @RequestMapping
+ * ============================================================================
+ * Define o caminho base (Base URL) deste Controller.
  *
-- Todas as requisições para este Controller começarão com:
-
+ * Todas as requisições para este Controller começarão com:
  *
--      http://localhost:8080/person/v2
-
+ *      http://localhost:8080/person/v2
  *
-- Assim, todos os métodos desta classe herdam esse caminho base.
-
-- ============================================================================
-
+ * Assim, todos os métodos desta classe herdam esse caminho base.
+ * ============================================================================
  */
+@Tag(name = "People", description = "Endpoints of people management") // swagger
 @RequestMapping("/person/v2")
 public class PersonControllerV2 {
 
@@ -63,45 +62,65 @@ public class PersonControllerV2 {
         this.assemblerV2 = personHateoasAssembler;
     }
 
-    /*
-- =========================================================================
-
-- ENDPOINT HTTP
-
-- =========================================================================
-
-- Retorna uma pessoa a partir do seu ID, repassando o DTO retornado pelo service.
-
+    /**
+     * =========================================================================
+     * ENDPOINT HTTP
+     * =========================================================================
+     * Retorna uma pessoa a partir do seu ID, repassando o DTO retornado pelo service.
      *
-- Método HTTP:
-
--      GET
-
+     * Método HTTP:
      *
-- Endpoint:
-
--      http://localhost:8080/person/v2/{id}
-
+     *      GET
      *
-- Exemplos:
-
--      http://localhost:8080/person/v2/4?mediaType=json
-
--      http://localhost:8080/person/v2/4?mediaType=xml
-
+     * Endpoint:
      *
-- Onde:
-
--      /person -> recurso (Resource)
-
--      /4      -> Path Parameter (ID da pessoa)
-
+     *      http://localhost:8080/person/v2/{id}
      *
-- O valor informado na URL será recebido pelo parâmetro "id".
-
-- =========================================================================
-
+     * Exemplos:
+     *
+     *      http://localhost:8080/person/v2/4?mediaType=json
+     *
+     *      http://localhost:8080/person/v2/4?mediaType=xml
+     *
+     * Onde:
+     *
+     *      /person -> recurso (Resource)
+     *
+     *      /4      -> Path Parameter (ID da pessoa)
+     *
+     * O valor informado na URL será recebido pelo parâmetro "id".
+     * =========================================================================
      */
+    //Swagger mapping
+    @Operation(
+            summary = "Find a Person",
+            description = "Here we are getting one person by its ID",
+            tags = {"People"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved the person",
+                            content = {
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = PersonDTOV2.class)
+                                    ),
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_XML_VALUE,
+                                            schema = @Schema(implementation = PersonDTOV2.class)
+                                    ),
+                                    @Content(
+                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+                                            schema = @Schema(implementation = PersonDTOV2.class)
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Person not found"
+                    )
+            }
+    )
     @GetMapping(
             // Caminho relativo ao @RequestMapping("/person/v2") da classe.
             // "{id}" representa um Path Parameter.
@@ -194,50 +213,31 @@ public class PersonControllerV2 {
     public PersonDTOV2 findById(@PathVariable("id") Long id) {
         // solicita ao Service o PersonDTO correspondente ao ID informado.
         /*
-- Fluxo da requisição:
-
+         * Fluxo da requisição:
          *
-- Controller
-
--      ↓
-
-- Aciona o método findById() do Service.
-
+         * Controller
+         *      ↓
+         * Aciona o método findById() do Service.
          *
-- Service
-
--      ↓
-
-- Aciona o método findById() do Repository.
-
+         * Service
+         *      ↓
+         * Aciona o método findById() do Repository.
          *
-- Repository
-
--      ↓
-
-- Consulta o banco de dados utilizando o ID informado.
-
+         * Repository
+         *      ↓
+         * Consulta o banco de dados utilizando o ID informado.
          *
-- Banco de Dados
-
--      ↓
-
-- Retorna a Entity encontrada.
-
+         * Banco de Dados
+         *      ↓
+         * Retorna a Entity encontrada.
          *
-- Service
-
--      ↓
-
-- Converte a Entity em PersonDTO.
-
+         * Service
+         *      ↓
+         * Converte a Entity em PersonDTO.
          *
-- Controller
-
--      ↓
-
-- Retorna o PersonDTO como resposta da API.
-
+         * Controller
+         *      ↓
+         * Retorna o PersonDTO como resposta da API.
          */
 
 
@@ -247,6 +247,40 @@ public class PersonControllerV2 {
     }
 
     // GET http://localhost:8080/person/v2
+    /**
+     * Retorna todos os registros de pessoas com suporte completo a HATEOAS.
+     *
+     * POR QUE FAZEMOS ISSO?
+     * - Para transformar uma listagem comum em uma API HATEOAS (Hypermedia as the Engine of Application State),
+     *   permitindo que o cliente navegue pela API através de links dinâmicos e auto-descritivos,
+     *   tanto para os itens individuais quanto para a coleção como um todo.
+     */
+    //Swagger mapping
+    @Operation(
+            summary = "Find all People",
+            description = "Here we are getting all data from people table",
+            tags = {"People"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved all people (an empty list is returned when there are no records)",
+                            content = {
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                            array = @ArraySchema(schema = @Schema(implementation = PersonDTOV2.class))
+                                    ),
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_XML_VALUE,
+                                            array = @ArraySchema(schema = @Schema(implementation = PersonDTOV2.class))
+                                    ),
+                                    @Content(
+                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+                                            array = @ArraySchema(schema = @Schema(implementation = PersonDTOV2.class))
+                                    )
+                            }
+                    )
+            }
+    )
     @GetMapping(
             value = "",
             /*
@@ -258,15 +292,6 @@ public class PersonControllerV2 {
                     CustomMediaType.APPLICATION_YAML_VALUE
             }
     )
-
-    /**
-     * Retorna todos os registros de pessoas com suporte completo a HATEOAS.
-     *
-     * POR QUE FAZEMOS ISSO?
-     * - Para transformar uma listagem comum em uma API HATEOAS (Hypermedia as the Engine of Application State),
-     *   permitindo que o cliente navegue pela API através de links dinâmicos e auto-descritivos,
-     *   tanto para os itens individuais quanto para a coleção como um todo.
-     */
     public CollectionModel<PersonDTOV2> findAll() {
 
         // 1º Passo: Acessa o banco via service para buscar os dados brutos (DTOs)
@@ -291,59 +316,80 @@ public class PersonControllerV2 {
     }
 
 
-    /*
-- ============================================================================
-
-- CREATE - CRIAR UMA NOVA PESSOA
-
-- ============================================================================
-
-- Utiliza o PersonInsertDTO no corpo da requisição (@RequestBody) validado
-
-- pelas regras da anotação @Valid. Retorna o PersonDTO de saída fornecido pelo service
-
-- com o status HTTP 201 (Created).
-
+    /**
+     * ============================================================================
+     * CREATE - CRIAR UMA NOVA PESSOA
+     * ============================================================================
+     * Utiliza o PersonInsertDTO no corpo da requisição (@RequestBody) validado
+     * pelas regras da anotação @Valid. Retorna o PersonDTO de saída fornecido pelo service
+     * com o status HTTP 201 (Created).
      *
-- ----------------------------------------------------------------------------
-
-- EXEMPLO DE JSON PARA O POSTMAN (POST http://localhost:8080/person/v2):
-
-- ----------------------------------------------------------------------------
-
-     {
-      "firstName": "Elon",
-      "lastName": "Musk",
-      "birthDate": "28/06/1971",
-      "cpf": "99988877766",
-      "phone": "+1 512 99999-9999",
-      "email": "elon.musk@email.com",
-      "password": "123456",
-      "address": "Texas - EUA",
-      "gender": "Male",
-      "role": "CLIENT"
-    }
-
-- ----------------------------------------------------------------------------
-- EXEMPLO DE XML PARA O POSTMAN (POST http://localhost:8080/person/v2):
-- ----------------------------------------------------------------------------
-
-     <PersonVO>
-         <id>null</id>
-         <firstName>Elon</firstName>
-         <lastName>Musk</lastName>
-         <birthDate>28/06/1971</birthDate>
-         <cpf>99988877766</cpf>
-         <phone>+1 512 99999-9999</phone>
-         <email>elon.musk@email.com</email>
-         <password>123456</password>
-         <address>Texas - EUA</address>
-         <gender>Male</gender>
-         <role>CLIENT</role>
-     </PersonVO>
-- ============================================================================
-
+     * ----------------------------------------------------------------------------
+     * EXEMPLO DE JSON PARA O POSTMAN (POST http://localhost:8080/person/v2):
+     * ----------------------------------------------------------------------------
+     *
+     * {
+     *   "firstName": "Elon",
+     *   "lastName": "Musk",
+     *   "birthDate": "28/06/1971",
+     *   "cpf": "99988877766",
+     *   "phone": "+1 512 99999-9999",
+     *   "email": "elon.musk@email.com",
+     *   "password": "123456",
+     *   "address": "Texas - EUA",
+     *   "gender": "Male",
+     *   "role": "CLIENT"
+     * }
+     *
+     * ----------------------------------------------------------------------------
+     * EXEMPLO DE XML PARA O POSTMAN (POST http://localhost:8080/person/v2):
+     * ----------------------------------------------------------------------------
+     *
+     * <PersonVO>
+     *     <id>null</id>
+     *     <firstName>Elon</firstName>
+     *     <lastName>Musk</lastName>
+     *     <birthDate>28/06/1971</birthDate>
+     *     <cpf>99988877766</cpf>
+     *     <phone>+1 512 99999-9999</phone>
+     *     <email>elon.musk@email.com</email>
+     *     <password>123456</password>
+     *     <address>Texas - EUA</address>
+     *     <gender>Male</gender>
+     *     <role>CLIENT</role>
+     * </PersonVO>
+     * ============================================================================
      */
+    //Swagger mapping
+    @Operation(
+            summary = "Create a Person",
+            description = "Here we are creating a new person from the data sent in the request body",
+            tags = {"People"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "201",
+                            description = "Person successfully created",
+                            content = {
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = PersonDTOV2.class)
+                                    ),
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_XML_VALUE,
+                                            schema = @Schema(implementation = PersonDTOV2.class)
+                                    ),
+                                    @Content(
+                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+                                            schema = @Schema(implementation = PersonDTOV2.class)
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid data sent in the request body"
+                    )
+            }
+    )
     @PostMapping(
             value = "",
             consumes = {
@@ -366,68 +412,86 @@ public class PersonControllerV2 {
     public ResponseEntity<PersonDTOV2> create(@Valid @RequestBody PersonInsertDTOV2 personDTO) {
         PersonDTOV2 createdPerson = service.create(personDTO);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(createdPerson);
+                .body(assemblerV2.addLinks(createdPerson));
     }
 
 
-    /*
-- ============================================================================
-
-- UPDATE - ALTERAR UMA PESSOA
-
-- ============================================================================
-
+    /**
+     * ============================================================================
+     * UPDATE - ALTERAR UMA PESSOA
+     * ============================================================================
      *
-- Método HTTP:
-
--      PUT
-
+     * Método HTTP:
      *
-- Endpoint:
-
--      http://localhost:8080/person/v2/{id}
-
+     *      PUT
      *
-- O ID vem pela URL (Path Variable) e os novos dados de entrada vêm pelo
-
-- corpo da requisição utilizando o PersonUpdateDTO com @Valid.
-
+     * Endpoint:
      *
-- ----------------------------------------------------------------------------
-
-- EXEMPLO DE JSON PARA O POSTMAN (PUT http://localhost:8080/person/v2/1):
-
-- ----------------------------------------------------------------------------
-
-- {
-
--   "firstName": "Ayrton",
-
--   "lastName": "Senna da Silva",
-
--   "address": "São Paulo - SP - Brasil",
-
--   "gender": "Male",
-
--   "role": "ADMIN"
-
-- }
-
-- ----------------------------------------------------------------------------
-- EXEMPLO DE XML PARA O POSTMAN (PUT http://localhost:8080/person/v2/1):
-- ----------------------------------------------------------------------------
-
-- <PersonVO>
--   <firstName>Ayrton</firstName>
--   <lastName>Senna da Silva</lastName>
--   <address>São Paulo - SP - Brasil</address>
--   <gender>Male</gender>
--   <role>ADMIN</role>
-- </PersonVO>
-
-- ============================================================================
-
+     *      http://localhost:8080/person/v2/{id}
+     *
+     * O ID vem pela URL (Path Variable) e os novos dados de entrada vêm pelo
+     * corpo da requisição utilizando o PersonUpdateDTO com @Valid.
+     *
+     * ----------------------------------------------------------------------------
+     * EXEMPLO DE JSON PARA O POSTMAN (PUT http://localhost:8080/person/v2/1):
+     * ----------------------------------------------------------------------------
+     *
+     * {
+     *   "firstName": "Ayrton",
+     *   "lastName": "Senna da Silva",
+     *   "address": "São Paulo - SP - Brasil",
+     *   "gender": "Male",
+     *   "role": "ADMIN"
+     * }
+     *
+     * ----------------------------------------------------------------------------
+     * EXEMPLO DE XML PARA O POSTMAN (PUT http://localhost:8080/person/v2/1):
+     * ----------------------------------------------------------------------------
+     *
+     * <PersonVO>
+     *   <firstName>Ayrton</firstName>
+     *   <lastName>Senna da Silva</lastName>
+     *   <address>São Paulo - SP - Brasil</address>
+     *   <gender>Male</gender>
+     *   <role>ADMIN</role>
+     * </PersonVO>
+     *
+     * ============================================================================
      */
+    //Swagger mapping
+    @Operation(
+            summary = "Update a Person",
+            description = "Here we are updating an existing person by its ID",
+            tags = {"People"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Person successfully updated",
+                            content = {
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = PersonDTOV2.class)
+                                    ),
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_XML_VALUE,
+                                            schema = @Schema(implementation = PersonDTOV2.class)
+                                    ),
+                                    @Content(
+                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+                                            schema = @Schema(implementation = PersonDTOV2.class)
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid data sent in the request body"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Person not found"
+                    )
+            }
+    )
     @PutMapping(
             value = "/{id}",
             consumes = {
@@ -446,35 +510,44 @@ public class PersonControllerV2 {
             @Valid @RequestBody PersonUpdateDTOV2 personUpdate
     ) {
         return assemblerV2.addLinks(
-            service.update(id, personUpdate)
+                service.update(id, personUpdate)
         );
     }
 
 
-    /*
-- ============================================================================
-
-- DELETE - REMOVER UMA PESSOA
-
-- ============================================================================
-
+    /**
+     * ============================================================================
+     * DELETE - REMOVER UMA PESSOA
+     * ============================================================================
      *
-- Método HTTP:
-
--      DELETE
-
+     * Método HTTP:
      *
-- Endpoint:
-
--      http://localhost:8080/person/v2/{id}
-
+     *      DELETE
      *
-- O ID da pessoa que será removida é enviado pela URL.
-
+     * Endpoint:
      *
-- ============================================================================
-
+     *      http://localhost:8080/person/v2/{id}
+     *
+     * O ID da pessoa que será removida é enviado pela URL.
+     *
+     * ============================================================================
      */
+    //Swagger mapping
+    @Operation(
+            summary = "Delete a Person",
+            description = "Here we are deleting a person by its ID",
+            tags = {"People"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "204",
+                            description = "Person successfully deleted (no content returned)"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Person not found"
+                    )
+            }
+    )
     @DeleteMapping(
             value = "/{id}"
     )
@@ -487,3 +560,6 @@ public class PersonControllerV2 {
     }
 
 }
+
+//Swagger UI: http://localhost:8080/swagger-ui/index.html
+//YAML da documentação: http://localhost:8080/v3/api-docs.yaml

@@ -130,6 +130,23 @@ node_modules/
 
 
 ################################################################################
+# SEGREDOS E CONFIGURAÇÕES LOCAIS (NUNCA VERSIONAR)
+################################################################################
+
+# Arquivo com credenciais reais do banco (DB_USER / DB_PASSWORD).
+# Importado pelo application.properties via spring.config.import.
+src/main/resources/application-local.properties
+
+# Padrão geral: qualquer arquivo "-local" de configuração do Spring
+# e arquivos de variáveis de ambiente (.env).
+application-local.properties
+application-local.yml
+application-local.yaml
+.env
+.env.*
+
+
+################################################################################
 # ARQUIVOS TEMPORÁRIOS
 ################################################################################
 

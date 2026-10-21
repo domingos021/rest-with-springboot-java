@@ -2,11 +2,16 @@ package com.dinisjovete.restwithspringbootjava.controllers.person.v1;
 
 import com.dinisjovete.restwithspringbootjava.config.hateoas.v1.PersonHateoasAssembler;
 import com.dinisjovete.restwithspringbootjava.config.mediatypes.CustomMediaType;
-import com.dinisjovete.restwithspringbootjava.controllers.person.v2.PersonControllerV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonInsertDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonUpdateDTO;
 import com.dinisjovete.restwithspringbootjava.services.person.v1.PersonService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
@@ -19,96 +24,175 @@ import java.util.List;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
+/*
+ * ============================================================================
+ * CONTROLLER - PersonController (v1)
+ * ============================================================================
+ *
+ * RESPONSABILIDADE
+ * ----------------
+ * Traduzir HTTP <-> Java. Recebe a requisição, valida o formato da entrada,
+ * delega ao Service e devolve a resposta com o status HTTP correto e os links
+ * HATEOAS.
+ *
+ * O Controller NÃO contém regra de negócio: ela mora no PersonService.
+ *
+ *
+ * POSIÇÃO NO FLUXO
+ * ----------------
+ *
+ *      Cliente (Postman, navegador, front-end)
+ *          |
+ *          v
+ *      PersonController          <- esta classe
+ *          |
+ *          +------ @Valid ------> valida o DTO de entrada (400 se inválido)
+ *          |
+ *          v
+ *      PersonService             -> regras de negócio
+ *          |
+ *          v
+ *      Repository -> Banco de Dados
+ *          |
+ *          v
+ *      Service devolve PersonDTO
+ *          |
+ *          v
+ *      PersonHateoasAssembler    -> adiciona os links ao DTO
+ *          |
+ *          v
+ *      Resposta HTTP para o cliente
+ *
+ *
+ * ENDPOINTS
+ * ---------
+ *
+ *      Verbo    Rota                  Sucesso          Erros previstos
+ *      ------   -------------------   --------------   ----------------------------
+ *      GET      /person/v1/{id}       200 OK           404 (não existe)
+ *      GET      /person/v1            200 OK           -
+ *      POST     /person/v1            201 Created      400 (entrada inválida)
+ *      PUT      /person/v1/{id}       200 OK           400 (entrada inválida), 404
+ *      DELETE   /person/v1/{id}       204 No Content   404 (não existe)
+ *
+ * Os erros de negócio (como 404) são lançados pelo Service como exceção e
+ * convertidos em status HTTP pelo ControllerAdvice global.
+ *
+ *
+ * FORMATOS ACEITOS E PRODUZIDOS
+ * -----------------------------
+ * JSON, XML e YAML. O formato da resposta é escolhido pelo cabeçalho Accept da
+ * requisição e o formato do corpo enviado é indicado pelo cabeçalho Content-Type.
+ *
+ * Exemplos de cabeçalho:
+ *
+ *      Accept: application/json
+ *      Accept: application/xml
+ *      Accept: <valor definido em CustomMediaType.APPLICATION_YAML_VALUE>
+ * ============================================================================
+ */
 @RestController
 /*
-- ============================================================================
-
-- @RequestMapping
-
-- ============================================================================
-
-- Define o caminho base (Base URL) deste Controller.
-
+ * @RequestMapping("/person/v1")
  *
-- Todas as requisições para este Controller começarão com:
-
+ * Define o caminho base deste Controller. Todos os métodos herdam esse prefixo:
  *
--      http://localhost:8080/person/v1
-
+ *      http://localhost:8080/person/v1
  *
-- Assim, todos os métodos desta classe herdam esse caminho base.
-
-- ============================================================================
-
+ * O "v1" faz parte do versionamento da API: a versão 2 vive em outro Controller
+ * (/person/v2) e os dois podem coexistir sem se afetar.
  */
+@Tag(name = "People V1", description = "Endpoints of people management (version 1)") // swagger
 @RequestMapping("/person/v1")
 public class PersonController {
 
-    // =========================================================================
-    // Injeção de Dependência (Dependency Injection)
-    // =========================================================================
-    // 'final' garante que a referência não poderá ser alterada após a
-    // construção do objeto, tornando a classe mais segura e imutável.
-    // =========================================================================
-    private final PersonService service;
-    private final PersonHateoasAssembler assembler; // Configuration HATEOAS
 
     // =========================================================================
-    // Construtor utilizado pelo Spring para realizar a Injeção de Dependência.
+    // INJEÇÃO DE DEPENDÊNCIA
+    // =========================================================================
+    // 'final' impede que a referência seja trocada depois da construção do
+    // objeto: a classe fica mais segura e previsível.
+    // =========================================================================
+    private final PersonService service;
+    private final PersonHateoasAssembler assembler; // adiciona os links HATEOAS aos DTOs
+
+    // =========================================================================
+    // CONSTRUTOR
+    // =========================================================================
+    // O Spring usa este construtor para injetar as dependências.
     //
-    // A partir do Spring Boot 3.x, quando existe apenas um construtor,
-    // a anotação @Autowired não é mais necessária.
+    // Desde o Spring Boot 3.x, quando existe um único construtor, a anotação
+    // @Autowired é opcional. Injeção por construtor também facilita os testes:
+    // basta passar mocks na criação do objeto.
     // =========================================================================
     public PersonController(PersonService personService,PersonHateoasAssembler assembler) {
         this.service = personService;
         this.assembler = assembler;
     }
 
+
     /*
-- =========================================================================
-
-- ENDPOINT HTTP
-
-- =========================================================================
-
-- Retorna uma pessoa a partir do seu ID, repassando o DTO retornado pelo service.
-
+     * ============================================================================
+     * GET /person/v1/{id}  ->  BUSCAR UMA PESSOA PELO ID
+     * ============================================================================
      *
-- Método HTTP:
-
--      GET
-
+     * Devolve a pessoa correspondente ao ID informado na URL.
      *
-- Endpoint:
-
--      http://localhost:8080/person/v1/{id}
-
+     *      GET http://localhost:8080/person/v1/4
      *
-- Exemplos:
-
--      http://localhost:8080/person/v1/4?mediaType=json
-
--      http://localhost:8080/person/v1/4?mediaType=xml
-
+     *      /person/v1  -> recurso (Resource)
+     *      /4          -> Path Parameter: o valor 4 é recebido no parâmetro "id"
      *
-- Onde:
-
--      /person/v1 -> recurso (Resource)
-
--      /4         -> Path Parameter (ID da pessoa)
-
+     * Respostas:
      *
-- O valor informado na URL será recebido pelo parâmetro "id".
-
-- =========================================================================
-
+     *      200 OK        pessoa encontrada (corpo: PersonDTO com links)
+     *      404 Not Found ID inexistente (ResourceNotFoundException no Service)
+     *      400 Bad Request ID que não é número (ex.: /person/v1/abc)
+     *
+     * O "produces" lista os formatos que este endpoint sabe devolver. Se o
+     * cliente pedir um formato fora da lista, o Spring responde 406.
+     * ============================================================================
      */
+    //Swagger mapping
+    @Operation(
+            summary = "Find a Person",
+            description = "Here we are getting one person by its ID",
+            tags = {"People V1"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved the person",
+                            content = {
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = PersonDTO.class)
+                                    ),
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_XML_VALUE,
+                                            schema = @Schema(implementation = PersonDTO.class)
+                                    ),
+                                    @Content(
+                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+                                            schema = @Schema(implementation = PersonDTO.class)
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid ID (not a number)"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Person not found"
+                    )
+            }
+    )
     @GetMapping(
             // Caminho relativo ao @RequestMapping da classe.
             // "{id}" representa um Path Parameter.
             value = "/{id}",
 
-            // Define que a resposta será enviada no formato JSON/XML/YAML
+            // Formatos que o endpoint produz (negociados pelo cabeçalho Accept).
             produces = {
                     MediaType.APPLICATION_JSON_VALUE,
                     MediaType.APPLICATION_XML_VALUE,
@@ -116,59 +200,62 @@ public class PersonController {
             }
     )
     public PersonDTO findById(@PathVariable("id") Long id) {
-        // solicita ao Service o PersonDTO correspondente ao ID informado.
-        /*
-- Fluxo da requisição:
 
-         *
-- Controller
-
--      ↓
-
-- Aciona o método findById() do Service.
-
-         *
-- Service
-
--      ↓
-
-- Aciona o método findById() do Repository.
-
-         *
-- Repository
-
--      ↓
-
-- Consulta o banco de dados utilizando o ID informado.
-
-         *
-- Banco de Dados
-
--      ↓
-
-- Retorna a Entity encontrada.
-
-         *
-- Service
-
--      ↓
-
-- Converte a Entity em PersonDTO.
-
-         *
-- Controller
-
--      ↓
-
-- Retorna o PersonDTO como resposta da API.
-
-         */
+        // Fluxo: Controller -> Service -> Repository -> Banco -> Entity
+        //        -> Service converte em PersonDTO -> Controller devolve.
         PersonDTO person = service.findById(id);
-        return assembler.addLinks(person); // Adiciona links HATEOAS ao PersonDTO antes de retornar
+
+        // O DTO volta enriquecido com os links HATEOAS (ex.: link "self").
+        return assembler.addLinks(person);
 
     }
 
-    // GET http://localhost:8080/person/v1
+
+    /*
+     * ============================================================================
+     * GET /person/v1  ->  LISTAR TODAS AS PESSOAS (com HATEOAS)
+     * ============================================================================
+     *
+     * Devolve todas as pessoas cadastradas.
+     *
+     * POR QUE O RETORNO É UM CollectionModel E NÃO UMA List?
+     *
+     * Uma List comum não tem onde guardar links. O CollectionModel embrulha a
+     * lista e permite anexar links à COLEÇÃO inteira (como o "self" da
+     * listagem), além dos links individuais de cada item. Assim o cliente pode
+     * navegar pela API seguindo os links, sem montar URLs na mão.
+     *
+     * Respostas:
+     *
+     *      200 OK  sempre. Se não houver ninguém, a coleção vem vazia (isso não é erro).
+     * ============================================================================
+     */
+    //Swagger mapping
+    @Operation(
+            summary = "Find all People",
+            description = "Here we are getting all data from people table",
+            tags = {"People V1"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved all people (an empty list is returned when there are no records)",
+                            content = {
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                            array = @ArraySchema(schema = @Schema(implementation = PersonDTO.class))
+                                    ),
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_XML_VALUE,
+                                            array = @ArraySchema(schema = @Schema(implementation = PersonDTO.class))
+                                    ),
+                                    @Content(
+                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+                                            array = @ArraySchema(schema = @Schema(implementation = PersonDTO.class))
+                                    )
+                            }
+                    )
+            }
+    )
     @GetMapping(
             value = "",
             produces = {
@@ -177,97 +264,114 @@ public class PersonController {
                     CustomMediaType.APPLICATION_YAML_VALUE
             }
     )
-    /**
-     * Retorna todos os registros de pessoas com suporte completo a HATEOAS.
-     *
-     * POR QUE FAZEMOS ISSO?
-     * - Para transformar uma listagem comum em uma API HATEOAS (Hypermedia as the Engine of Application State),
-     *   permitindo que o cliente navegue pela API através de links dinâmicos e auto-descritivos,
-     *   tanto para os itens individuais quanto para a coleção como um todo.
-     */
     public CollectionModel<PersonDTO> findAll() {
 
-        // 1º Passo: Acessa o banco via service para buscar os dados brutos (DTOs)
-        // Motivo: O service/repository gerencia a persistência, retornando uma lista comum do Java.
+        // 1º passo: busca a lista de DTOs no Service.
+        // O Service cuida da persistência e da conversão Entity -> DTO.
         List<PersonDTO> persons = service.findAll();
 
-        // 2º Passo: Adiciona os links HATEOAS individuais em cada objeto da lista
-        // Motivo: Cada item da lista precisa expor seus próprios links (ex: link de detalhes/self),
-        // e o 'assemblerV2' encapsula essa regra de negócio para evitar código duplicado.
+        // 2º passo: adiciona os links HATEOAS de cada item (ex.: "self" -> /person/v1/{id}).
+        // O 'assembler' concentra essa montagem de links num único lugar,
+        // evitando código repetido entre os endpoints.
         persons.forEach(assembler::addLinks);
 
-        // 3º Passo: Empacota a lista em um CollectionModel e adiciona o link global da rota
-        // Motivo: O Spring HATEOAS exige um 'CollectionModel' para conseguir anexar links
-        // referentes à coleção inteira (como o link 'self' da listagem).
+        // 3º passo: empacota a lista em um CollectionModel e anexa o link da
+        // própria coleção (self -> /person/v1).
         return CollectionModel.of(persons,
                 linkTo(
                         methodOn(PersonController.class)
                                 .findAll()
                 )
-                        .withSelfRel() //adiciona o link global da rota (selfRel)
+                        .withSelfRel() // link "self" da coleção
         );
     }
 
 
     /*
-- ============================================================================
-
-- CREATE - CRIAR UMA NOVA PESSOA
-
-- ============================================================================
-
-- Utiliza o PersonInsertDTO no corpo da requisição (@RequestBody) validado
-
-- pelas regras da anotação @Valid. Retorna o PersonDTO de saída fornecido pelo service
-
-- com o status HTTP 201 (Created).
-
+     * ============================================================================
+     * POST /person/v1  ->  CRIAR UMA NOVA PESSOA
+     * ============================================================================
      *
-- ----------------------------------------------------------------------------
-
-- EXEMPLO DE JSON PARA O POSTMAN (POST http://localhost:8080/person/v1):
-
-- ----------------------------------------------------------------------------
-
-- {
-
--   "firstName": "Elon",
-
--   "lastName": "Musk",
-
--   "cpf": "99988877766",
-
--   "email": "elon.musk@email.com",
-
--   "password": "123456",
-
--   "address": "Texas - EUA",
-
--   "gender": "Male",
-
--   "role": "CLIENT"
-
-- }
-
-- ----------------------------------------------------------------------------
-- EXEMPLO DE XML PARA O POSTMAN (POST http://localhost:8080/person/v1):
-- ----------------------------------------------------------------------------
-
-- <PersonVO>
--   <id>null</id>
--   <firstName>Elon</firstName>
--   <lastName>Musk</lastName>
--   <cpf>99988877766</cpf>
--   <email>elon.musk@email.com</email>
--   <password>123456</password>
--   <address>Texas - EUA</address>
--   <gender>Male</gender>
--   <role>CLIENT</role>
-- </PersonVO>
-
-- ============================================================================
-
+     * Recebe um PersonInsertDTO no corpo da requisição (@RequestBody), valida
+     * com @Valid e devolve o PersonDTO criado com o status 201 (Created).
+     *
+     * Respostas:
+     *
+     *      201 Created     pessoa criada (corpo: PersonDTO com links, sem senha)
+     *      400 Bad Request corpo malformado ou que viola as regras de validação
+     *      415 Unsupported Media Type  Content-Type fora de JSON/XML/YAML
+     *
+     * @Valid executa as regras de validação declaradas no PersonInsertDTO
+     * (@NotBlank, @Email, @Size etc.) ANTES de o método rodar. Se a validação
+     * falhar, o Service nem é chamado.
+     *
+     * ----------------------------------------------------------------------------
+     * EXEMPLO DE JSON (POST http://localhost:8080/person/v1)
+     * ----------------------------------------------------------------------------
+     *
+     *      {
+     *        "firstName": "Elon",
+     *        "lastName": "Musk",
+     *        "cpf": "99988877766",
+     *        "email": "elon.musk@email.com",
+     *        "password": "123456",
+     *        "address": "Texas - EUA",
+     *        "gender": "Male",
+     *        "role": "CLIENT"
+     *      }
+     *
+     * ----------------------------------------------------------------------------
+     * EXEMPLO DE XML (POST http://localhost:8080/person/v1)
+     * ----------------------------------------------------------------------------
+     *
+     *      <PersonInsertDTO>
+     *        <firstName>Elon</firstName>
+     *        <lastName>Musk</lastName>
+     *        <cpf>99988877766</cpf>
+     *        <email>elon.musk@email.com</email>
+     *        <password>123456</password>
+     *        <address>Texas - EUA</address>
+     *        <gender>Male</gender>
+     *        <role>CLIENT</role>
+     *      </PersonInsertDTO>
+     *
+     * O DTO de entrada não possui "id": quem gera o identificador é o banco.
+     * ============================================================================
      */
+    //Swagger mapping
+    @Operation(
+            summary = "Create a Person",
+            description = "Here we are creating a new person from the data sent in the request body",
+            tags = {"People V1"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "201",
+                            description = "Person successfully created",
+                            content = {
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = PersonDTO.class)
+                                    ),
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_XML_VALUE,
+                                            schema = @Schema(implementation = PersonDTO.class)
+                                    ),
+                                    @Content(
+                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+                                            schema = @Schema(implementation = PersonDTO.class)
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Malformed body or invalid data"
+                    ),
+                    @ApiResponse(
+                            responseCode = "415",
+                            description = "Unsupported Content-Type (use JSON, XML or YAML)"
+                    )
+            }
+    )
     @PostMapping(
             value = "",
             consumes = {
@@ -285,103 +389,91 @@ public class PersonController {
         PersonDTO createdPerson = service.create(personDTO);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(assembler.addLinks(createdPerson)); // HATEOAS
+                .body(assembler.addLinks(createdPerson)); // devolve o DTO criado, já com links HATEOAS
     }
 
 
     /*
-- ============================================================================
-
-- UPDATE - ALTERAR UMA PESSOA
-
-- ============================================================================
-
+     * ============================================================================
+     * PUT /person/v1/{id}  ->  ATUALIZAR UMA PESSOA
+     * ============================================================================
      *
-- Método HTTP:
-
--      PUT
-
+     *      PUT http://localhost:8080/person/v1/1
      *
-- Endpoint:
-
--      http://localhost:8080/person/v1/{id}
-
+     * O ID vem da URL (@PathVariable) e os novos dados vêm no corpo da requisição
+     * (@RequestBody), convertidos pelo Jackson em um PersonUpdateDTO.
      *
-- O ID da pessoa é recebido através da URL utilizando @PathVariable.
-
+     * O PersonUpdateDTO contém SOMENTE os campos que a API permite alterar.
+     * Estes campos não fazem parte da atualização, pois têm regras próprias:
      *
-- Os novos dados são enviados no corpo da requisição (Request Body) em formato
-
-- JSON e convertidos pelo Jackson para o objeto PersonUpdateDTO.
-
+     *      id, cpf, email, password, role, birthDate
      *
-- O PersonUpdateDTO contém somente os campos permitidos para atualização.
-
+     * Isso é uma lista branca de campos editáveis: o que não está no DTO não
+     * pode ser alterado por este endpoint, mesmo que o cliente envie no JSON.
      *
-- Campos como:
-
+     * Respostas:
      *
-- id
-
-- cpf
-
-- email
-
-- password
-
-- role
-
-- birthDate
-
+     *      200 OK          pessoa atualizada (corpo: PersonDTO com links)
+     *      400 Bad Request corpo malformado, inválido ou ID que não é número
+     *      404 Not Found   ID inexistente
      *
-- Não fazem parte desta operação, pois possuem regras específicas de alteração.
-
+     * ----------------------------------------------------------------------------
+     * EXEMPLO DE JSON (PUT http://localhost:8080/person/v1/1)
+     * ----------------------------------------------------------------------------
      *
+     *      {
+     *        "firstName": "Ayrton",
+     *        "lastName": "Senna da Silva",
+     *        "address": "São Paulo - SP - Brasil",
+     *        "gender": "Male"
+     *      }
      *
-- ----------------------------------------------------------------------------
-
-- EXEMPLO DE JSON PARA O POSTMAN
-
-- ----------------------------------------------------------------------------
-
+     * ----------------------------------------------------------------------------
+     * EXEMPLO DE XML (PUT http://localhost:8080/person/v1/1)
+     * ----------------------------------------------------------------------------
      *
-- PUT:
-
-     *
-- http://localhost:8080/person/v1/1
-
-     *
-     *
-- Body (JSON):
-
-     *
-- {
-
--   "firstName": "Ayrton",
-
--   "lastName": "Senna da Silva",
-
--   "address": "São Paulo - SP - Brasil",
-
--   "gender": "Male"
-
-- }
-
-     *
-- ----------------------------------------------------------------------------
-- EXEMPLO DE XML PARA O POSTMAN (PUT http://localhost:8080/person/v1/1):
-- ----------------------------------------------------------------------------
-
-- <PersonVO>
--   <firstName>Ayrton</firstName>
--   <lastName>Senna da Silva</lastName>
--   <address>São Paulo - SP - Brasil</address>
--   <gender>Male</gender>
-- </PersonVO>
-
-- ============================================================================
-
+     *      <PersonUpdateDTO>
+     *        <firstName>Ayrton</firstName>
+     *        <lastName>Senna da Silva</lastName>
+     *        <address>São Paulo - SP - Brasil</address>
+     *        <gender>Male</gender>
+     *      </PersonUpdateDTO>
+     * ============================================================================
      */
+    //Swagger mapping
+    @Operation(
+            summary = "Update a Person",
+            description = "Here we are updating an existing person by its ID",
+            tags = {"People V1"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Person successfully updated",
+                            content = {
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                            schema = @Schema(implementation = PersonDTO.class)
+                                    ),
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_XML_VALUE,
+                                            schema = @Schema(implementation = PersonDTO.class)
+                                    ),
+                                    @Content(
+                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
+                                            schema = @Schema(implementation = PersonDTO.class)
+                                    )
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Malformed body, invalid data or ID that is not a number"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Person not found"
+                    )
+            }
+    )
     @PutMapping(
             value = "/{id}",
             consumes = {
@@ -397,94 +489,19 @@ public class PersonController {
     )
     public PersonDTO update(
 
-            /*
-- =====================================================================
-
-- PATH VARIABLE
-
-- =====================================================================
-
-             *
-- Recebe o ID da pessoa diretamente pela URL.
-
-             *
-- Exemplo:
-
-             *
-- PUT /person/v1/1
-
-             *
-- O valor 1 será recebido neste parâmetro.
-
-             *
-- Esse ID será utilizado pelo Service para localizar a entidade
-
-- existente no banco de dados.
-
-             *
-             */
+            // ID da pessoa a atualizar, recebido pela URL (PUT /person/v1/1 -> id = 1).
+            // O Service usa esse ID para localizar a entidade existente.
             @PathVariable("id") Long id,
 
-
-            /*
-- =====================================================================
-
-- REQUEST BODY
-
-- =====================================================================
-
-             *
-- Recebe o corpo JSON enviado pelo cliente.
-
-             *
-- O Jackson converte automaticamente o JSON para um objeto
-
-- PersonUpdateDTO.
-
-             *
-- A anotação @Valid executa as validações definidas no DTO:
-
-             *
-- @NotBlank
-
-- @Size
-
-- outras regras de validação
-
-             *
-- Após a validação, o DTO é enviado para o Service, onde fica a lógica
-
-- de atualização da pessoa.
-
-             *
-             */
+            // Corpo da requisição convertido em PersonUpdateDTO pelo Jackson.
+            // @Valid aplica as regras de validação declaradas no DTO antes de o
+            // método rodar. Depois disso, a lógica de atualização fica no Service.
             @Valid @RequestBody PersonUpdateDTO personUpdate
 
     ) {
 
-        /*
-- Envia para o Service:
-
-         *
-- ID da pessoa que será atualizada.
-
-- DTO contendo os novos valores permitidos.
-
-         *
-- O Service executa a regra de negócio:
-
-         *
-- Busca a entidade.
-
-- Atualiza os campos permitidos.
-
-- Salva no banco.
-
-- Retorna a pessoa atualizada.
-
-         *
-         */
-        //COM HATEOAS
+        // O Service busca a entidade, aplica os campos permitidos, salva e devolve
+        // a pessoa atualizada. O assembler adiciona os links HATEOAS à resposta.
         return assembler.addLinks(
                 service.update(id, personUpdate)
         );
@@ -492,38 +509,53 @@ public class PersonController {
 
 
     /*
-- ============================================================================
-
-- DELETE - REMOVER UMA PESSOA
-
-- ============================================================================
-
+     * ============================================================================
+     * DELETE /person/v1/{id}  ->  REMOVER UMA PESSOA
+     * ============================================================================
      *
-- Método HTTP:
-
--      DELETE
-
+     *      DELETE http://localhost:8080/person/v1/{id}
      *
-- Endpoint:
-
--      http://localhost:8080/person/v1/{id}
-
+     * O ID da pessoa a remover vem pela URL.
      *
-- O ID da pessoa que será removida é enviado pela URL.
-
+     * Respostas:
      *
-- ============================================================================
-
+     *      204 No Content  removida com sucesso (sem corpo na resposta)
+     *      404 Not Found   ID inexistente
+     *      400 Bad Request ID que não é número
+     *
+     * O status 204 é o correto para uma operação concluída que não tem nada a
+     * devolver. É o ResponseEntity.noContent() que define esse status e garante
+     * o corpo vazio; o tipo ResponseEntity<?> apenas indica que não há corpo.
+     * ============================================================================
      */
+    //Swagger mapping
+    @Operation(
+            summary = "Delete a Person",
+            description = "Here we are deleting a person by its ID",
+            tags = {"People V1"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "204",
+                            description = "Person successfully deleted (no content returned)"
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid ID (not a number)"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Person not found"
+                    )
+            }
+    )
     @DeleteMapping(
             value = "/{id}"
     )
-    //ResponseEntity<?> -> retorna o status code 204 que e o correto nesse caso
     public ResponseEntity<?> delete(
             @PathVariable("id") Long id
     ) {
         service.delete(id);
-        return ResponseEntity.noContent().build(); // não retorna nenhum conteúdo no body de resposta, apenas 204
+        return ResponseEntity.noContent().build(); // 204, sem conteúdo no corpo
     }
 
 }

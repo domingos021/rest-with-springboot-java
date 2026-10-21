@@ -49,6 +49,7 @@ import java.util.Objects;
 //RepresentationModel -> da suporte ao  hateoas para essa dto, a configuração e feita no controller
 public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Serializable {
 
+
     @Serial
     private static final long serialVersionUID = 1L;
 
