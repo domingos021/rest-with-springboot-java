@@ -1,300 +1,95 @@
+/*
+ * =============================================================================
+ * YAML JACKSON HTTP MESSAGE CONVERTER - CONVERSOR DE RESPOSTAS EM YAML
+ * =============================================================================
+ *
+ * OBJETIVO:
+ *
+ * Ensinar o Spring MVC a converter objetos Java (DTOs) em YAML e a ler YAML
+ * recebido, para que a API responda em application/yaml além de JSON e XML.
+ *
+ * -----------------------------------------------------------------------------
+ * QUEM USA ESTA CLASSE:
+ *
+ * Apenas o WebConfig, que cria uma instância dela em extendMessageConverters()
+ * e a registra no Spring MVC. Nenhum Controller, Service ou Repository a chama
+ * diretamente.
+ *
+ * Quem sente o efeito dela são os endpoints que devolvem DTOs
+ * (/book, /person/v1, /person/v2), sempre que o cliente enviar o header
+ * "Accept: application/yaml".
+ *
+ * -----------------------------------------------------------------------------
+ * COMO FUNCIONA:
+ *
+ * Em vez de criar um YAMLMapper do zero (que nasce sem os módulos de data e
+ * sem as configurações do Spring Boot), ela recebe o ObjectMapper já
+ * configurado pelo Boot e gera uma CÓPIA dele trocando apenas a fábrica de
+ * formato para YAML (copyWith(new YAMLFactory())).
+ *
+ * Resultado: JSON e YAML seguem as mesmas regras de serialização.
+ * Exemplo: LocalDateTime sai como "1916-01-01T00:00:00" nos dois formatos,
+ * e não como lista de números.
+ *
+ * -----------------------------------------------------------------------------
+ * FLUXO:
+ *
+ *      Cliente  --  GET /book/1   Accept: application/yaml
+ *          |
+ *          v
+ *      Spring MVC (escolhe o conversor compatível com application/yaml)
+ *          |
+ *          v
+ *      YamlJackson2HttpMessageConverter
+ *          |  usa a cópia do ObjectMapper com YAMLFactory
+ *          v
+ *      Resposta em YAML
+ *
+ * -----------------------------------------------------------------------------
+ * DETALHES IMPORTANTES:
+ *
+ * - NON_NULL: campos com valor null não aparecem no YAML. Como a configuração
+ *   é feita na CÓPIA, o ObjectMapper do JSON não é afetado.
+ * - MediaType: usa CustomMediaType.APPLICATION_YAML_VALUE ("application/yaml"),
+ *   o que permite ao Spring reconhecer este conversor para esse formato.
+ * - O registro é feito no WebConfig. Criar esta classe sozinha não basta.
+ * - Depende de o ObjectMapperConfig (config.somente_estudo) continuar
+ *   desativado: se ele voltar com "new ObjectMapper()", a cópia herdaria um
+ *   mapper sem módulo de datas e o erro de LocalDateTime voltaria.
+ * =============================================================================
+ */
+
+
 package com.dinisjovete.restwithspringbootjava.serialization.converter;
 
 import com.dinisjovete.restwithspringbootjava.config.mediatypes.CustomMediaType;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 
 /*
- * =============================================================================
- * FUNCIONAMENTO EM TEMPO DE EXECUÇÃO
- * =============================================================================
+ * Conversor de mensagens HTTP para YAML (application/yaml).
  *
- * Este converter não é chamado diretamente por nenhum código da aplicação.
+ * Em vez de criar um YAMLMapper do zero, ele recebe o ObjectMapper já
+ * configurado pelo Spring Boot (módulos de data, features, etc.) e gera uma
+ * CÓPIA dele trocando apenas o formato para YAML. Assim JSON e YAML seguem
+ * as mesmas regras de serialização.
  *
- * Nenhum Controller, Service ou Repository possui uma chamada explícita para:
- *
- *      new YamlJackson2HttpMessageConverter()
- *
- * ou para algum método desta classe.
- *
- * -----------------------------------------------------------------------------
- * O Spring MVC gerencia este componente internamente.
- *
- * Quando a aplicação inicia, o Spring registra os HttpMessageConverters
- * disponíveis no contexto da aplicação.
- *
- * Durante uma requisição HTTP, o Spring analisa o Header "Accept" enviado pelo
- * cliente e verifica qual converter é capaz de produzir aquele formato.
- *
- * Exemplo:
- *
- * Requisição:
- *
- *      GET http://localhost:8080/person/v1/4
- *
- *      Accept: application/yaml
- *
- *
- * Fluxo:
- *
- *      Controller
- *          |
- *          | retorna PersonDTO
- *          |
- *          v
- *      Spring MVC
- *          |
- *          | analisa o MediaType solicitado
- *          |
- *          v
- *      YamlJackson2HttpMessageConverter
- *          |
- *          | utiliza YAMLMapper
- *          |
- *          v
- *      Resposta YAML
- *
- *
- * -----------------------------------------------------------------------------
- * Portanto, este converter funciona através do mecanismo de infraestrutura do
- * Spring, sendo acionado automaticamente apenas quando a resposta solicitada
- * pelo cliente for compatível com "application/yaml".
- *
- * Para respostas JSON ou XML, outros HttpMessageConverters serão utilizados.
- *
- * =============================================================================
+ * O registro no Spring MVC é feito em WebConfig.extendMessageConverters().
  */
-
 public final class YamlJackson2HttpMessageConverter extends AbstractJackson2HttpMessageConverter {
 
-    public YamlJackson2HttpMessageConverter() {
+    public YamlJackson2HttpMessageConverter(ObjectMapper baseMapper) {
 
-        super(new YAMLMapper()
-                    .setSerializationInclusion(JsonInclude.Include.NON_NULL),
-                /*
-                  * CustomMediaType.APPLICATION_YAML_VALUE é uma constante definida na classe CustomMediaType
-                  * que representa o Media Type "application/yaml". Isso permite que o Spring
-                  * reconheça este conversor como capaz de produzir respostas nesse formato.
-                 */
+        super(
+                // copyWith: cópia independente do mapper do Boot, só com a fábrica YAML.
+                // O NON_NULL vale apenas para o YAML e não altera o mapper do JSON.
+                baseMapper.copyWith(new YAMLFactory())
+                        .setSerializationInclusion(JsonInclude.Include.NON_NULL),
+
                 MediaType.parseMediaType(CustomMediaType.APPLICATION_YAML_VALUE)
         );
-
-
     }
-
-
 }
-
-/*
- * =============================================================================
- * YAML JACKSON HTTP MESSAGE CONVERTER
- * =============================================================================
- *
- * Esta classe cria um conversor personalizado de mensagens HTTP para o formato
- * YAML utilizando o YAMLMapper do Jackson.
- *
- * O objetivo desta classe é ensinar ao Spring MVC como converter objetos Java
- * (DTOs, Entities, etc.) para uma representação YAML na resposta HTTP da API.
- *
- * Por padrão, o Spring Boot já possui conversores para formatos como JSON e XML.
- * Este converter adiciona suporte para YAML.
- *
- * -----------------------------------------------------------------------------
- * CONCEITO:
- *
- * Um HttpMessageConverter é responsável por realizar a conversão entre:
- *
- *      Objeto Java
- *           |
- *           |
- *           v
- *      Representação HTTP
- *
- * Exemplo:
- *
- *      PersonDTO
- *
- *           |
- *           |
- *           v
- *
- *      JSON / XML / YAML
- *
- *
- * =============================================================================
- * FLUXO DA REQUISIÇÃO
- * =============================================================================
- *
- * Cliente (Postman / Front-end / Mobile)
- *
- *        |
- *        |
- *        | GET http://localhost:8080/person/v1/4
- *        |
- *        | Header:
- *        | Accept: application/yaml
- *        |
- *        v
- *
- * Controller
- *
- *        |
- *        |
- *        | Retorna um objeto PersonDTO
- *        |
- *        v
- *
- * HttpMessageConverter
- *
- *        |
- *        |
- *        | Identifica que o cliente solicitou YAML
- *        |
- *        v
- *
- * YamlJackson2HttpMessageConverter
- *
- *        |
- *        |
- *        | Utiliza o YAMLMapper do Jackson
- *        |
- *        v
- *
- * Resposta HTTP YAML
- *
- *        |
- *        |
- *        v
- *
- * Content-Type: application/yaml
- *
- * {
- *      id: 4,
- *      firstName: Nikola,
- *      lastName: Tesla
- * }
- *
- *
- * =============================================================================
- * FUNCIONAMENTO INTERNO
- * =============================================================================
- *
- * O Spring utiliza o Jackson para converter objetos Java em diferentes formatos.
- *
- * Conversor padrão:
- *
- *      PersonDTO
- *          |
- *          v
- *      ObjectMapper
- *          |
- *          v
- *      JSON
- *
- *
- * Este conversor personalizado:
- *
- *      PersonDTO
- *          |
- *          v
- *      YAMLMapper
- *          |
- *          v
- *      YAML
- *
- *
- * =============================================================================
- * YAMLMapper
- * =============================================================================
- *
- * O YAMLMapper é uma implementação do Jackson responsável por serializar e
- * desserializar objetos utilizando a estrutura YAML.
- *
- * Exemplo:
- *
- * Objeto Java:
- *
- * PersonDTO {
- *      id = 4,
- *      firstName = "Nikola",
- *      lastName = "Tesla"
- * }
- *
- *
- * Resultado YAML:
- *
- * id: 4
- * firstName: Nikola
- * lastName: Tesla
- *
- *
- * =============================================================================
- * JsonInclude.Include.NON_NULL
- * =============================================================================
- *
- * Configuração utilizada para remover propriedades que possuem valor null
- * durante a conversão.
- *
- * Exemplo:
- *
- * Sem NON_NULL:
- *
- * id: 4
- * firstName: Nikola
- * phone: null
- *
- *
- * Com NON_NULL:
- *
- * id: 4
- * firstName: Nikola
- *
- *
- * =============================================================================
- * MediaType
- * =============================================================================
- *
- * Define qual tipo de conteúdo HTTP este conversor suporta.
- *
- * Neste caso:
- *
- *      application/yaml
- *
- *
- * Exemplo de requisição:
- *
- * GET http://localhost:8080/person/v1/4
- *
- * Header:
- *
- *      Accept: application/yaml
- *
- *
- * Resposta:
- *
- *      HTTP/1.1 200 OK
- *
- *      Content-Type: application/yaml
- *
- *
- * =============================================================================
- * OBSERVAÇÃO
- * =============================================================================
- *
- * Criar esta classe não registra automaticamente o converter no Spring MVC.
- *
- * É necessário adicioná-lo através da configuração:
- *
- *      WebMvcConfigurer
- *
- * utilizando:
- *
- *      extendMessageConverters()
- *
- *
- * Assim o Spring passa a conhecer este novo formato de resposta.
- *
- * =============================================================================
- */

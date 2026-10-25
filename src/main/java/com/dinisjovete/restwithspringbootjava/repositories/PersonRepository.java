@@ -10,10 +10,21 @@ import java.util.Optional;
  * JpaRepository -> essa interface nativa espera receber como parâmetro
  * um tipo no caso(Person), e um Id do tipo Long, que é o tipo do id da entidade Person.
  * A interface JpaRepository fornece métodos prontos para realizar operações de CRUD (Create, Read, etc).
+ *
+ * Busca por ID: já vem pronta (findById). É o identificador padrão da API (/person/{id}).
  */
 public interface PersonRepository extends JpaRepository<Person, Long> {
 
-    // Adicionado para permitir a verificação individual no Seed e futuras buscas por e-mail
+    // Chave natural única (e-mail não se repete): login, seed e buscas por e-mail.
     Optional<Person> findByEmail(String email);
+
+    // Chave natural única (CPF não se repete): busca interna. Não expor o CPF na URL (LGPD).
+    Optional<Person> findByCpf(String cpf);
+
+    // Verifica duplicidade no cadastro sem carregar a entidade inteira.
+    boolean existsByEmail(String email);
+
+    // Chave natural única (CPF não se repete): verificação de duplicidade no cadastro.
+    boolean existsByCpf(String cpf);
 
 }

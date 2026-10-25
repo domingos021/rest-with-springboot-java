@@ -1,0 +1,5 @@
+FASE 1   Núcleo do catálogo        Person ✔ → Book → Product (abstrato) → Category
+FASE 2   Núcleo da compra          Order → OrderItem → Inventory
+FASE 3   Fechamento do pedido      Address → Payment → Shipment
+FASE 4   Carrinho e promoções      Cart/CartItem → Coupon
+FASE 5   Engajamento               Review → Wishlist → Brand

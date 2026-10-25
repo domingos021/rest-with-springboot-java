@@ -6,12 +6,6 @@ import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonInsertDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonUpdateDTO;
 import com.dinisjovete.restwithspringbootjava.services.person.v1.PersonService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
@@ -36,6 +30,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
  * HATEOAS.
  *
  * O Controller NÃO contém regra de negócio: ela mora no PersonService.
+ *
+ * A documentação Swagger NÃO mora aqui: ela fica na interface
+ * PersonControllerDocs, que esta classe implementa.
  *
  *
  * POSIÇÃO NO FLUXO
@@ -102,9 +99,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
  * O "v1" faz parte do versionamento da API: a versão 2 vive em outro Controller
  * (/person/v2) e os dois podem coexistir sem se afetar.
  */
-@Tag(name = "People V1", description = "Endpoints of people management (version 1)") // swagger
 @RequestMapping("/person/v1")
-public class PersonController {
+public class PersonController implements PersonControllerDocs { // documentação Swagger na interface
 
 
     // =========================================================================
@@ -125,7 +121,7 @@ public class PersonController {
     // @Autowired é opcional. Injeção por construtor também facilita os testes:
     // basta passar mocks na criação do objeto.
     // =========================================================================
-    public PersonController(PersonService personService,PersonHateoasAssembler assembler) {
+    public PersonController(PersonService personService, PersonHateoasAssembler assembler) {
         this.service = personService;
         this.assembler = assembler;
     }
@@ -153,40 +149,36 @@ public class PersonController {
      * cliente pedir um formato fora da lista, o Spring responde 406.
      * ============================================================================
      */
-    //Swagger mapping
-    @Operation(
-            summary = "Find a Person",
-            description = "Here we are getting one person by its ID",
-            tags = {"People V1"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Successfully retrieved the person",
-                            content = {
-                                    @Content(
-                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                            schema = @Schema(implementation = PersonDTO.class)
-                                    ),
-                                    @Content(
-                                            mediaType = MediaType.APPLICATION_XML_VALUE,
-                                            schema = @Schema(implementation = PersonDTO.class)
-                                    ),
-                                    @Content(
-                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-                                            schema = @Schema(implementation = PersonDTO.class)
-                                    )
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "400",
-                            description = "Invalid ID (not a number)"
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Person not found"
-                    )
-            }
-    )
+    /*
+     * @Override: este método implementa o método findById(Long)
+     * declarado na interface PersonControllerDocs.
+     *
+     * A assinatura do método (nome + tipos dos parâmetros) precisa ser
+     * exatamente igual à declaração da interface; caso contrário,
+     * o compilador acusará erro.
+     *
+     * O @Override não injeta a documentação da interface.
+     * Ele apenas informa ao Java que este método está implementando
+     * um contrato definido anteriormente.
+     *
+     * Representação da relação:
+     *
+     *
+     *        PersonControllerDocs => (Interface)
+     *                  |
+     *                  | contrato:
+     *                  | findById(Long)
+     *                  ↓
+     *        PersonController  => (implementação)
+     *
+     *
+     *         findById(Long)  -> inplementa aqui o contrato conrespondente
+     *
+     * O SpringDoc/OpenAPI utiliza essa relação entre interface e implementação
+     * para encontrar as anotações de documentação (@Operation, @ApiResponse, etc.)
+     * declaradas na interface e associá-las a este endpoint do Controller.
+     */
+    @Override
     @GetMapping(
             // Caminho relativo ao @RequestMapping da classe.
             // "{id}" representa um Path Parameter.
@@ -230,32 +222,7 @@ public class PersonController {
      *      200 OK  sempre. Se não houver ninguém, a coleção vem vazia (isso não é erro).
      * ============================================================================
      */
-    //Swagger mapping
-    @Operation(
-            summary = "Find all People",
-            description = "Here we are getting all data from people table",
-            tags = {"People V1"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Successfully retrieved all people (an empty list is returned when there are no records)",
-                            content = {
-                                    @Content(
-                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                            array = @ArraySchema(schema = @Schema(implementation = PersonDTO.class))
-                                    ),
-                                    @Content(
-                                            mediaType = MediaType.APPLICATION_XML_VALUE,
-                                            array = @ArraySchema(schema = @Schema(implementation = PersonDTO.class))
-                                    ),
-                                    @Content(
-                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-                                            array = @ArraySchema(schema = @Schema(implementation = PersonDTO.class))
-                                    )
-                            }
-                    )
-            }
-    )
+    @Override
     @GetMapping(
             value = "",
             produces = {
@@ -338,40 +305,7 @@ public class PersonController {
      * O DTO de entrada não possui "id": quem gera o identificador é o banco.
      * ============================================================================
      */
-    //Swagger mapping
-    @Operation(
-            summary = "Create a Person",
-            description = "Here we are creating a new person from the data sent in the request body",
-            tags = {"People V1"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "201",
-                            description = "Person successfully created",
-                            content = {
-                                    @Content(
-                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                            schema = @Schema(implementation = PersonDTO.class)
-                                    ),
-                                    @Content(
-                                            mediaType = MediaType.APPLICATION_XML_VALUE,
-                                            schema = @Schema(implementation = PersonDTO.class)
-                                    ),
-                                    @Content(
-                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-                                            schema = @Schema(implementation = PersonDTO.class)
-                                    )
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "400",
-                            description = "Malformed body or invalid data"
-                    ),
-                    @ApiResponse(
-                            responseCode = "415",
-                            description = "Unsupported Content-Type (use JSON, XML or YAML)"
-                    )
-            }
-    )
+    @Override
     @PostMapping(
             value = "",
             consumes = {
@@ -440,40 +374,7 @@ public class PersonController {
      *      </PersonUpdateDTO>
      * ============================================================================
      */
-    //Swagger mapping
-    @Operation(
-            summary = "Update a Person",
-            description = "Here we are updating an existing person by its ID",
-            tags = {"People V1"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Person successfully updated",
-                            content = {
-                                    @Content(
-                                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                            schema = @Schema(implementation = PersonDTO.class)
-                                    ),
-                                    @Content(
-                                            mediaType = MediaType.APPLICATION_XML_VALUE,
-                                            schema = @Schema(implementation = PersonDTO.class)
-                                    ),
-                                    @Content(
-                                            mediaType = CustomMediaType.APPLICATION_YAML_VALUE,
-                                            schema = @Schema(implementation = PersonDTO.class)
-                                    )
-                            }
-                    ),
-                    @ApiResponse(
-                            responseCode = "400",
-                            description = "Malformed body, invalid data or ID that is not a number"
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Person not found"
-                    )
-            }
-    )
+    @Override
     @PutMapping(
             value = "/{id}",
             consumes = {
@@ -528,26 +429,7 @@ public class PersonController {
      * o corpo vazio; o tipo ResponseEntity<?> apenas indica que não há corpo.
      * ============================================================================
      */
-    //Swagger mapping
-    @Operation(
-            summary = "Delete a Person",
-            description = "Here we are deleting a person by its ID",
-            tags = {"People V1"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "204",
-                            description = "Person successfully deleted (no content returned)"
-                    ),
-                    @ApiResponse(
-                            responseCode = "400",
-                            description = "Invalid ID (not a number)"
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Person not found"
-                    )
-            }
-    )
+    @Override
     @DeleteMapping(
             value = "/{id}"
     )

@@ -1,14 +1,128 @@
+
+/*
+ * =============================================================================
+ * WEB CONFIG - CONFIGURAÇÃO DO SPRING MVC (FORMATOS DE RESPOSTA)
+ * =============================================================================
+ *
+ * OBJETIVO:
+ *
+ * Definir em quais formatos a API pode responder (JSON, XML e YAML) e como o
+ * Spring escolhe o formato de cada resposta. É a única classe do projeto que
+ * personaliza o comportamento do Spring MVC nesse ponto.
+ *
+ * -----------------------------------------------------------------------------
+ * QUEM USA ESTA CLASSE:
+ *
+ * Nenhuma classe do projeto chama o WebConfig diretamente. Ele implementa
+ * WebMvcConfigurer, então o próprio Spring o detecta (@Configuration) na
+ * inicialização e chama seus métodos ao montar o Spring MVC.
+ *
+ * Quem sente o efeito dele são os endpoints que devolvem DTOs:
+ *
+ *      BookController          (/book)
+ *      PersonController        (/person/v1)
+ *      PersonControllerV2      (/person/v2)
+ *
+ * -----------------------------------------------------------------------------
+ * PARA QUE SERVE CADA PARTE:
+ *
+ * 1) configureContentNegotiation()
+ *    Define a regra de escolha do formato: o cliente pede pelo header Accept
+ *    (application/json, application/xml ou application/yaml) e, se não pedir
+ *    nada, a resposta sai em JSON (defaultContentType). Um Accept não
+ *    suportado, como text/html, recebe 406 Not Acceptable.
+ *
+ * 2) extendMessageConverters()
+ *    Registra o conversor de YAML (YamlJackson2HttpMessageConverter) no lugar
+ *    do conversor de YAML automático do Spring. O nosso usa uma cópia do
+ *    ObjectMapper do Spring Boot, então o YAML segue as mesmas regras do JSON
+ *    (ex.: LocalDateTime sai como "1916-01-01T00:00:00" e não como lista de
+ *    números).
+ *
+ * 3) Construtor com ObjectMapper
+ *    Recebe o ObjectMapper configurado pelo Spring Boot, que é a base do
+ *    conversor de YAML.
+ *
+ * -----------------------------------------------------------------------------
+ * FLUXO DE UMA REQUISIÇÃO:
+ *
+ *      Cliente (Postman / Front-end)
+ *          |
+ *          | GET /book/1   Accept: application/yaml
+ *          v
+ *      Spring MVC  --> consulta as regras do WebConfig
+ *          |
+ *          | formato pedido = YAML
+ *          v
+ *      YamlJackson2HttpMessageConverter
+ *          |
+ *          v
+ *      Resposta em YAML
+ *
+ * -----------------------------------------------------------------------------
+ * DEPENDÊNCIAS E CUIDADOS:
+ *
+ * - Depende do jackson-dataformat-yaml e do jackson-dataformat-xml no pom.xml.
+ * - Depende de o ObjectMapperConfig (config.somente_estudo) continuar
+ *   desativado. Se ele for reativado com "new ObjectMapper()", o mapper
+ *   injetado aqui perde o módulo de datas e o erro de LocalDateTime volta.
+ * =============================================================================
+ */
+
+
+
+
 package com.dinisjovete.restwithspringbootjava.config.web_config;
 
 import com.dinisjovete.restwithspringbootjava.config.mediatypes.CustomMediaType;
+import com.dinisjovete.restwithspringbootjava.serialization.converter.YamlJackson2HttpMessageConverter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.yaml.MappingJackson2YamlHttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.List;
 
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+    /*
+     * ObjectMapper já configurado pelo Spring Boot (módulo de datas, features, etc.).
+     * É injetado por construtor e serve de base para o conversor de YAML, para que
+     * JSON e YAML sigam as mesmas regras de serialização.
+     *
+     * ATENÇÃO: isto só funciona enquanto o ObjectMapperConfig (config.somente_estudo)
+     * estiver desativado. Se ele for reativado com "new ObjectMapper()", o mapper
+     * injetado aqui passa a ser um mapper "pelado", sem JavaTimeModule.
+     */
+    private final ObjectMapper objectMapper;
+
+    public WebConfig(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
+
+    /*
+     * REGISTRO DO CONVERSOR DE YAML
+     *
+     * Com o jackson-dataformat-yaml no pom.xml, o Spring MVC registra sozinho um
+     * conversor de YAML próprio (MappingJackson2YamlHttpMessageConverter), que não
+     * usa o ObjectMapper do Boot (a data saía como lista de números).
+     *
+     * Aqui removemos esse conversor automático e registramos o nosso, baseado em
+     * uma cópia do ObjectMapper do Boot, para que ele seja o único responsável
+     * por application/yaml.
+     */
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        converters.removeIf(c -> c instanceof MappingJackson2YamlHttpMessageConverter);
+        converters.add(new YamlJackson2HttpMessageConverter(objectMapper));
+    }
+
 
     @Override
     public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
@@ -84,158 +198,3 @@ public class WebConfig implements WebMvcConfigurer {
         */
     }
 }
-
-
-/*
- * =============================================================================
- * CONFIGURAÇÃO WEB - CONTENT NEGOTIATION
- * =============================================================================
- *
- * Classe responsável por personalizar configurações relacionadas ao Spring MVC,
- * implementando a interface WebMvcConfigurer.
- *
- * O principal objetivo desta classe é configurar como a API irá negociar o
- * formato dos dados enviados na resposta para o cliente.
- *
- * -----------------------------------------------------------------------------
- * CONCEITO:
- *
- * Content Negotiation (negociação de conteúdo) é o mecanismo utilizado pelo
- * HTTP para permitir que cliente e servidor definam qual formato de dados será
- * utilizado na comunicação.
- *
- * O cliente informa através do Header HTTP "Accept" qual representação deseja
- * receber, e o Spring verifica se existe um conversor compatível para gerar
- * aquela resposta.
- *
- * -----------------------------------------------------------------------------
- *
- * EXEMPLO DO FLUXO:
- *
- * Cliente (Postman / Front-end / Mobile)
- *
- *        |
- *        |
- *        |  GET /person/v2/4
- *        |  Accept: application/json
- *        |
- *        v
- *
- * Spring Boot
- *
- *        |
- *        | Analisa o Header Accept
- *        |
- *        | Encontra o formato solicitado
- *        |
- *        v
- *
- * Resposta:
- *
- *        Content-Type: application/json
- *
- *        {
- *            "id": 4,
- *            "firstName": "Nikola",
- *            "lastName": "Tesla"
- *        }
- *
- *
- * =============================================================================
- * EXEMPLO 1 - SOLICITANDO JSON
- * =============================================================================
- *
- * Requisição HTTP:
- *
- * GET http://localhost:8080/person/v2/4 HTTP/1.1
- * Host: localhost:8080
- * Accept: application/json
- *
- *
- * Resposta HTTP:
- *
- * HTTP/1.1 200 OK
- * Content-Type: application/json
- *
- * {
- *     "id": 4,
- *     "firstName": "Nikola",
- *     "lastName": "Tesla"
- * }
- *
- *
- * =============================================================================
- * EXEMPLO 2 - SOLICITANDO XML
- * =============================================================================
- *
- * Requisição HTTP:
- *
- * GET http://localhost:8080/person/v2/4 HTTP/1.1
- * Host: localhost:8080
- * Accept: application/xml
- *
- *
- * Resposta HTTP:
- *
- * HTTP/1.1 200 OK
- * Content-Type: application/xml
- *
- * <Person>
- *      <id>4</id>
- *      <firstName>Nikola</firstName>
- *      <lastName>Tesla</lastName>
- * </Person>
- *
- *
- * =============================================================================
- * CONFIGURAÇÃO NO POSTMAN
- * =============================================================================
- *
- * Método:
- *
- *      GET
- *
- * URL:
- *
- *      http://localhost:8080/person/v2/4
- *
- *
- * Aba Headers:
- *
- *      KEY              VALUE
- *
- *      Accept           application/json
- *
- * ou
- *
- *      Accept           application/xml
- *
- *
- * =============================================================================
- * FORMATO YAML (EXEMPLO DE REPRESENTAÇÃO)
- * =============================================================================
- *
- * Embora YAML não seja utilizado diretamente nesta configuração, ele é outro
- * formato de representação de dados muito usado em arquivos de configuração,
- * como Docker, Kubernetes e ferramentas DevOps.
- *
- * Exemplo:
- *
- * person:
- *   id: 4
- *   firstName: Nikola
- *   lastName: Tesla
- *
- *
- * =============================================================================
- * OBSERVAÇÃO:
- *
- * Caso o cliente não informe o Header Accept, o Spring utilizará o formato
- * definido como padrão através de:
- *
- *      .defaultContentType(MediaType.APPLICATION_JSON)
- *
- * Portanto, a API responderá em JSON por padrão.
- *
- * =============================================================================
- */

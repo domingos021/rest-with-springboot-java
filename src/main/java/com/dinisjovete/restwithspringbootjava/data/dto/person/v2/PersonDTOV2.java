@@ -22,16 +22,15 @@ import java.util.Objects;
  Representa o contrato oficial de dados (Data Transfer Object) da entidade
  Person na camada de API (Versão 2).
 
- Utilizado para transportar dados de forma segura entre o servidor e o cliente,
- omitindo informações sensíveis e controlando a exposição dos dados através
- da camada REST.
+ Representa apenas o CADASTRO da pessoa. Não carrega livros, pedidos nem
+ produtos: esses dados pertencem a outros contextos (Book, Order, Product)
+ e são expostos pelos DTOs e endpoints próprios de cada um.
 
  Inclui novos campos adicionados na evolução do sistema, como birthDate e phone.
  ============================================================================
  */
 
 // Campos com valor null não serão enviados no JSON de resposta.
-// Mantém o contrato da API mais limpo evitando propriedades vazias.
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder(
         {
@@ -43,75 +42,42 @@ import java.util.Objects;
                 "Telefone",
                 "Email",
                 "Endereço",
+                "Género",
                 "Perfil"
         }
 )
-//RepresentationModel -> da suporte ao  hateoas para essa dto, a configuração e feita no controller
+// RepresentationModel -> dá suporte ao HATEOAS para este DTO, a configuração é feita no controller
 public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Serializable {
-
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-
     @JsonProperty("ID_usuário")
     private Long id;
 
-
-    // ========================================================================
-    // CONFIGURAÇÃO DE MAPEAMENTO JSON (@JsonProperty)
-    // ========================================================================
-    //
-    // Objetivo:
-    // Define explicitamente o nome do atributo no contrato JSON.
-    //
-    // Permite separar o nome utilizado internamente no Java do nome exposto
-    // pela API REST.
-    //
-    // Exemplo:
-    // firstName (Java) -> first_name (JSON)
-    //
-    // ========================================================================
-
+    // @JsonProperty separa o nome usado no Java do nome exposto no JSON.
+    // Exemplo: firstName (Java) -> "Nome" (JSON)
     @JsonProperty("Nome")
     private String firstName;
-
 
     @JsonProperty("Sobrenome")
     private String lastName;
 
-    //private String sensitiveData;
-
-
-    // ========================================================================
-    // @JsonFormat & Mapeamento JSON
-    // ========================================================================
-    //
-    // Garante que a data seja formatada como "dd/MM/yyyy" no JSON.
-    //
-    // Exemplo:
-    // 15/05/1990
-    //
-    // ========================================================================
-
+    // Data formatada como "dd/MM/yyyy" no JSON (ex: 15/05/1990)
     @JsonProperty("Data_nascimento")
     @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate birthDate;
-
 
     @JsonProperty("CPF")
     @JsonSerialize(using = CpfMaskSerializer.class)
     private String cpf; // Sai mascarado no JSON (ex: 123.***.***-01)
 
-
     @JsonProperty("Telefone")
     private String phone;
-
 
     @JsonProperty("Email")
     @JsonSerialize(using = EmailMaskSerializer.class)
     private String email; // Sai mascarado no JSON (ex: di***@gmail.com)
-
 
     @JsonProperty("Endereço")
     private String address;
@@ -119,15 +85,28 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
     @JsonProperty("Género")
     private String gender;
 
-
     @JsonIgnore
     private PersonRole role;
 
+    // ========================================================================
+    // RELACIONAMENTOS (de propósito, não existem aqui)
+    // ========================================================================
+    //
+    // Este DTO NÃO possui lista de livros, pedidos ou produtos.
+    // Os papéis de negócio (autor, cliente, vendedor) nascem dos relacionamentos
+    // e aparecem no DTO de quem tem a regra:
+    //
+    //   BookDTO.author     -> resumo da pessoa (id e nome)
+    //   OrderDTO.customer  -> resumo da pessoa (id e nome)
+    //
+    // Para listar os livros de um autor, use um endpoint próprio
+    // (ex.: GET /books?authorId={id}) consultando o BookRepository.
+    //
+    // ========================================================================
 
     // Default Constructor
     public PersonDTOV2() {
     }
-
 
     // Parameterized Constructor
     public PersonDTOV2(Long id,
@@ -153,7 +132,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
         this.role = role;
     }
 
-
     // ========================================================================
     // GETTERS AND SETTERS
     // ========================================================================
@@ -166,7 +144,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
         this.id = id;
     }
 
-
     public String getFirstName() {
         return firstName;
     }
@@ -174,7 +151,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
     public void setFirstName(String firstName) {
         this.firstName = firstName;
     }
-
 
     public String getLastName() {
         return lastName;
@@ -184,7 +160,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
         this.lastName = lastName;
     }
 
-
     public LocalDate getBirthDate() {
         return birthDate;
     }
@@ -192,7 +167,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
     public void setBirthDate(LocalDate birthDate) {
         this.birthDate = birthDate;
     }
-
 
     public String getCpf() {
         return cpf;
@@ -202,7 +176,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
         this.cpf = cpf;
     }
 
-
     public String getPhone() {
         return phone;
     }
@@ -210,7 +183,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
     public void setPhone(String phone) {
         this.phone = phone;
     }
-
 
     public String getEmail() {
         return email;
@@ -220,7 +192,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
         this.email = email;
     }
 
-
     public String getAddress() {
         return address;
     }
@@ -228,7 +199,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
     public void setAddress(String address) {
         this.address = address;
     }
-
 
     public String getGender() {
         return gender;
@@ -238,7 +208,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
         this.gender = gender;
     }
 
-
     public PersonRole getRole() {
         return role;
     }
@@ -246,7 +215,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
     public void setRole(PersonRole role) {
         this.role = role;
     }
-
 
     // ========================================================================
     // EQUALS AND HASHCODE (Baseados no ID único)
@@ -259,12 +227,10 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
         return Objects.equals(id, personDTO.id);
     }
 
-
     @Override
     public int hashCode() {
         return Objects.hash(id);
     }
-
 
     // ========================================================================
     // SERIALIZADOR CUSTOMIZADO: MASCARAMENTO DE CPF
@@ -288,7 +254,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
             }
         }
     }
-
 
     // ========================================================================
     // SERIALIZADOR CUSTOMIZADO: MASCARAMENTO DE E-MAIL
@@ -322,7 +287,6 @@ public class PersonDTOV2 extends RepresentationModel<PersonDTOV2> implements Ser
             }
         }
     }
-
 
     // ========================================================================
     // TO STRING

@@ -1,407 +1,211 @@
 package com.dinisjovete.restwithspringbootjava.services.person.v2;
 
-
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonInsertDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonUpdateDTOV2;
-import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
+import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
+
+import com.dinisjovete.restwithspringbootjava.exception.ResourceConflictException;
 import com.dinisjovete.restwithspringbootjava.exception.project_exception.ResourceNotFoundException;
 import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.v2.PersonMapper_MapStructV2;
+
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
+import com.dinisjovete.restwithspringbootjava.repositories.book.BookRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Service // Marca a classe como um Bean gerenciado pelo Spring (Injeção de Dependência)
+/*
+ * ============================================================================
+ * PersonServiceV2
+ * ----------------------------------------------------------------------------
+ * Regras de negócio do CADASTRO de pessoas.
+ *
+ * Person não carrega livros, pedidos nem produtos: esses dados são tratados
+ * pelos serviços e DTOs de cada contexto (Book, Order, Product).
+ *
+ * Fluxo de camadas:
+ *
+ *   Controller  -> recebe a requisição HTTP e valida a entrada
+ *       |
+ *   Service     -> aplica regras de negócio e coordena as operações
+ *       |--> Mapper     (DTO <-> Entity)
+ *       |--> Repository (acesso ao banco de dados)
+ * ============================================================================
+ */
+@Service
 public class PersonServiceV2 {
 
-
-    // Registry logs (mensagens de erro, avisos e informações) no console da aplicação
     private static final Logger logger = LoggerFactory.getLogger(PersonServiceV2.class.getName());
 
-    // Injeção de Dependência do Repositório JPA para acesso ao Banco de Dados
+    private static final String NOT_FOUND_MESSAGE = "Nenhum registro encontrado para este ID!";
+
     private final PersonRepository repository;
-
-    /*
-     * ============================================================================
-     * ARQUITETURA DE MÁSCARAS E CONVERSÃO (ESTRATÉGIAS DE MAPPER)
-     * ============================================================================
-     *
-     * O projeto explora e compara três abordagens distintas de mapeamento entre
-     * Entidades e DTOs, mantendo o ecossistema flexível para estudo comparativo:
-     *
-     * 1. Mapper Manual (`PersonMapper`):
-     *    - Implementação nativa própria, controlada linha a linha.
-     *    - Total transparência, sem mágica ou dependências de bibliotecas de terceiros.
-     *
-     * 2. Dozer (`ObjectMapper`):
-     *    - Abordagem baseada em reflexão em tempo de execução (Reflection).
-     *    - Conveniente pela cópia automática por nome de propriedades, porém
-     *      com menor performance e alto custo computacional em larga escala.
-     *
-     * 3. MapStruct (`PersonMapper_MapStruct`):
-     *    - Abordagem moderna baseada em anotações e processamento em tempo de compilação.
-     *    - Gera código Java puro (bytecode otimizado), unindo a velocidade do mapeamento
-     *      manual com a produtividade da automação.
-     *
-     * ----------------------------------------------------------------------------
-     * CONFIGURAÇÃO ATIVA NA CAMADA DE SERVIÇO:
-     * ----------------------------------------------------------------------------
-     */
-
-    // Injeção de Dependência do Mapper ativo para centralizar as conversões da API
-   // private final PersonMapper mapper01;  // 1ª Alternativa: Mapper Manual (Foco em controle total)
-    // private final ObjectMapper mapper02;     // 2ª Alternativa: Dozer Mapper (Foco em reflexão/dinamismo)
-     private final PersonMapper_MapStructV2 mapper03; // 3ª Alternativa: MapStruct (Foco em performance em tempo de compilação)
-
-    // Injeção de Dependência do PasswordEncoder para tratar a regra de negócio de segurança da senha
+    private final BookRepository bookRepository; // usado para proteger a exclusão de autores
+    private final PersonMapper_MapStructV2 mapper; // MapStruct: conversão gerada em tempo de compilação
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired   // injetando as dependências no construtor
-    public PersonServiceV2(PersonMapper_MapStructV2 mapper03, PasswordEncoder passwordEncoder, PersonRepository repository) {
-        this.mapper03 = mapper03;
-        this.passwordEncoder = passwordEncoder;
+    // Construtor único: o Spring injeta as dependências sem precisar de @Autowired
+    public PersonServiceV2(PersonRepository repository,
+                           BookRepository bookRepository,
+                           PersonMapper_MapStructV2 mapper,
+                           PasswordEncoder passwordEncoder) {
         this.repository = repository;
+        this.bookRepository = bookRepository;
+        this.mapper = mapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
+    /*
+     * FIND BY ID
+     * Busca a pessoa pelo ID. Se não existir, lança ResourceNotFoundException
+     * (tratada pelo ControllerAdvice como HTTP 404).
+     * A entidade é convertida em DTO para não expor dados internos, como a senha.
+     */
+    @Transactional(readOnly = true)
     public PersonDTOV2 findById(Long id) {
 
         logger.info("Finding one Person!");
 
-        /*
-         * ============================================================================
-         * FLUXO COM BANCO DE DADOS (JPA REPOSITORY)
-         * ============================================================================
-         * O Service solicita ao Repository que busque a pessoa no banco de dados
-         * tendo como referência o ID enviado pelo Controller.
-         *
-         * Tratamento de Ausência com Optional (.orElseThrow):
-         * Substitui a condicional 'if' tradicional de forma elegante e funcional:
-         *
-         *   [Método Tradicional com IF]
-         *   Optional<Person> optional = repository.findById(id);
-         *   if (!optional.isPresent()) {
-         *       throw new ResourceNotFoundException("No record found for this ID!");
-         *   }
-         *   Person entity = optional.get();
-         *
-         * Caso não encontre o registro, o .orElseThrow lança a nossa ResourceNotFoundException
-         * (que é capturada e tratada globalmente pelo ControllerAdvice).
-         *
-         * Fluxo de Camadas:
-         * PersonController -> PersonService -> PersonRepository -> Banco de Dados (Tabela person)
-         * ============================================================================
-         */
         Person entity = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("ID não existente na base de dados!"));
-        /*
-         * O Repository solicita ao JPA/Hibernate a busca da entidade Person no banco.
-         *
-         * O resultado retornado é uma entidade Person contendo os dados persistidos,
-         * inclusive campos internos da entidade como a senha.
-         *
-         * Por isso, antes de enviar a resposta ao cliente, a entidade é convertida
-         * para um DTO, que controla quais dados serão expostos pela API.
-         *
-         * Fluxo:
-         *
-         * 1. O Controller recebe a requisição HTTP GET para buscar uma pessoa pelo ID.
-         *
-         * 2. O Controller chama o método findById() do Service, passando o ID recebido.
-         *
-         * 3. O Service chama repository.findById(id).
-         *
-         * 4. O Repository utiliza o JPA/Hibernate para buscar os dados no banco.
-         *
-         * 5. O JPA/Hibernate monta uma entidade Person com os dados encontrados.
-         *
-         * 6. O Mapper converte a entidade Person em PersonDTO, removendo dados
-         *    que não devem ser expostos, como a senha.
-         *
-         * 7. O Service retorna o DTO para o Controller enviar ao cliente.
-         */
-        // Converte a entidade JPA recuperada para o DTO de resposta seguro usando o Mapper
-        return mapper03.mapEntityToDto(entity); // envia a entidade para ser convertida em um DTO filtrando dados sensíveis como a senha antes de enviar a resposta final ao cliente
+                .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND_MESSAGE));
+
+        return mapper.mapEntityToDto(entity);
     }
 
-    //método que retorna uma lista do tipo personDto
-    //como vai vai trabalhar com hateoas vamos trocar para collectionModel lista do próprio Hateoas
+    /*
+     * FIND ALL
+     * Lista todas as pessoas convertendo cada entidade em DTO de resposta.
+     */
+    @Transactional(readOnly = true)
     public List<PersonDTOV2> findAll() {
 
         logger.info("Finding all Persons!");
 
-        // Executa a consulta SELECT * FROM person; e converte cada entidade para PersonDTO
-        /*
-         *   // web user request -> GET http://localhost:8080/person -> controller -> service ->repository-> banco de dados
-         *  1. O Controller recebe a requisição HTTP GET para listar todas as pessoas
-         *  2. O Controller chama o método findAll() do Service
-         *  3. O Service chama o método findAll() do Repository, que executa a consulta no banco de dados
-         *  4. O Repository retorna uma lista de entidades Person para o Service
-         *  5. O Service mapeia cada entidade Person
-         */
-
-        /*
-         * pega a resposta recebida via: banco -> repository -> service -> controller -> web user
-         *  e converte cada entidade Person para PersonDTO, filtrando dados sensíveis como a senha, antes de enviar a resposta final ao cliente.
-         *  O método .stream() cria um fluxo de dados, .map(mapper::toDTO) aplica a conversão para cada elemento do fluxo, e .toList() coleta os resultados em uma lista final de PersonDTO.
-         *       *
-         * E interessante notar que a resposta e retornada como a entidade pura
-         * esse dados são colocado na esteira (stream) para serem transformados
-         * lodo o map(pega esses dados(entidade pura) aplica a função que os  transforma e um novo objeto
-         * do tipo personDto e por fim constrói uma lista com os dados da dto e apresenta essa lista ao cliente web
-         */
-        return repository.findAll().stream()
-                .map(mapper03::mapEntityToDto) // converte cada entidade Person em PersonDTO
-                .toList();
+        return mapper.mapEntityListToDtoList(repository.findAll());
     }
 
+    /*
+     * CREATE
+     * PersonInsertDTOV2 -> Person -> (regras) -> save -> PersonDTOV2
+     *
+     * Regras aplicadas:
+     * - E-mail e CPF não podem estar cadastrados (HTTP 409).
+     * - A senha é criptografada com BCrypt antes de salvar.
+     * - Role padrão CLIENT quando nenhuma for informada.
+     *
+     * As constraints unique do banco continuam como última barreira para
+     * requisições simultâneas.
+     */
+    @Transactional
     public PersonDTOV2 create(PersonInsertDTOV2 personDto) {
 
-        logger.info("Creating a new Person!"); // Registra no log que uma nova pessoa será criada.
+        logger.info("Creating a new Person!");
 
-        /*
-         * ============================================================================
-         * FLUXO DE CRIAÇÃO DE UMA NOVA PESSOA
-         * ============================================================================
-         *
-         * O cliente envia os dados através da API no formato PersonInsertDTO.
-         *
-         * O DTO representa os dados recebidos da requisição, mas não é o objeto
-         * utilizado pelo JPA/Hibernate para persistência.
-         *
-         * Por isso, o Mapper é responsável por converter:
-         *
-         * PersonInsertDTO  --->  Person (Entidade)
-         *
-         * Durante essa conversão, o Service aplica regras necessárias de segurança:
-         * - Criptografa a senha utilizando BCrypt.
-         * - Define a Role padrão CLIENT caso nenhuma seja informada.
-         *
-         * Depois da conversão, o Repository recebe uma entidade Person e o JPA/Hibernate
-         * transforma essa entidade em comandos SQL para salvar no banco de dados.
-         *
-         * Após salvar, a entidade persistida retorna para o Service.
-         *
-         * Por segurança, essa entidade não é enviada diretamente ao cliente, pois possui
-         * campos internos como senha.
-         *
-         * Então o Mapper converte novamente:
-         *
-         * Person (Entidade)  --->  PersonDTO (Resposta)
-         *
-         * O DTO de resposta contém apenas os dados permitidos para exposição na API.
-         *
-         * Fluxo completo:
-         *
-         * Cliente
-         *    |
-         *    ▼
-         * Controller
-         *    |
-         *    ▼
-         * PersonInsertDTO
-         *    |
-         *    ▼
-         * PersonMapper.toEntity()
-         *    |
-         *    ▼
-         * Person (Entidade)
-         *    |
-         *    ▼ (Aplica PasswordEncoder e Role padrão no Service)
-         *    ▼
-         * Repository.save()
-         *    |
-         *    ▼
-         * Banco de Dados
-         *    |
-         *    ▼
-         * Person salva
-         *    |
-         *    ▼
-         * PersonMapper.toDTO()
-         *    |
-         *    ▼
-         * PersonDTO
-         *    |
-         *    ▼
-         * Resposta HTTP para o cliente
-         *
-         * ============================================================================
-         */
-
-
-        // Converte o DTO recebido pelo Controller em uma entidade Person pura através do Mapper.
-        Person person = mapper03.mapDtoToEntity(personDto);
-
-        // Aplica a regra de negócio/segurança de criptografia da senha via BCrypt (caso informada)
-        if (personDto.getPassword() != null) {
-            person.setPassword(passwordEncoder.encode(personDto.getPassword()));
+        if (repository.existsByEmail(personDto.getEmail())) {
+            throw new ResourceConflictException("E-mail já cadastrado!");
+        }
+        if (repository.existsByCpf(personDto.getCpf())) {
+            throw new ResourceConflictException("CPF já cadastrado!");
         }
 
-        // Garante a atribuição da Role (padrão CLIENT se vier nula)
+        Person person = mapper.mapDtoToEntity(personDto);
+
+        // A senha é obrigatória (@NotBlank no PersonInsertDTOV2) e nunca é salva em texto puro
+        person.setPassword(passwordEncoder.encode(personDto.getPassword()));
+
         if (person.getRole() == null) {
             person.setRole(PersonRole.CLIENT);
         }
 
+        Person savedPerson = repository.save(person);
 
-        // Envia a entidade tratada para o Repository, que utiliza o JPA/Hibernate para salvar no banco.
-        Person savedPerson = repository.save(person); // Entidade Person -> INSERT no banco de dados.
-
-
-        // Converte a entidade salva em DTO de resposta, ocultando dados sensíveis como senha.
-        // a entidade criada retorna a dto de retorno para o cliente
-        return mapper03.mapEntityToDto(savedPerson); // Entidade Person persistida -> PersonDTO enviado ao cliente.
+        return mapper.mapEntityToDto(savedPerson);
     }
 
     /*
-     * ============================================================================
-     * UPDATE - ATUALIZAÇÃO DE UMA PESSOA EXISTENTE
-     * ============================================================================
+     * UPDATE
+     * Busca a entidade existente, copia somente os campos permitidos do
+     * PersonUpdateDTOV2 (id, cpf, email, senha e role permanecem intactos)
+     * e devolve o DTO atualizado.
      *
-     * O cliente envia uma requisição PUT/PATCH contendo:
-     *
-     * - ID da pessoa que será atualizada.
-     * - Novos valores através do PersonUpdateDTO.
-     *
-     * O Service primeiro busca a entidade existente no banco.
-     *
-     * Caso encontre:
-     * - O Mapper copia os valores permitidos do DTO para a entidade existente.
-     * - O Repository salva a entidade alterada.
-     * - O Mapper converte a entidade atualizada em PersonDTO para resposta.
-     *
-     * Caso não encontre:
-     * - O Service lança ResourceNotFoundException.
-     * - O ControllerAdvice transforma a exceção em resposta HTTP 404.
-     *
-     *
-     * Fluxo:
-     *
-     * Cliente
-     *    |
-     *    ▼
-     * Controller
-     *    |
-     *    ▼
-     * PersonService.update()
-     *    |
-     *    ▼
-     * repository.findById(id)
-     *    |
-     *    ▼
-     * Banco de Dados
-     *    |
-     *    ▼
-     * Person (entidade existente)
-     *    |
-     *    ▼
-     * PersonMapper.updateEntityFromDTO()
-     *    |
-     *    ▼
-     * Person modificada
-     *    |
-     *    ▼
-     * repository.save()
-     *    |
-     *    ▼
-     * Banco de Dados (UPDATE)
-     *    |
-     *    ▼
-     * PersonMapper.toDTO()
-     *    |
-     *    ▼
-     * PersonDTO
-     *    |
-     *    ▼
-     * Resposta HTTP para o cliente
-     *
-     * ============================================================================
+     * Como a entidade é gerenciada dentro da transação, o Hibernate grava
+     * a alteração no commit; o save() mantém a intenção explícita.
      */
+    @Transactional
     public PersonDTOV2 update(Long id, PersonUpdateDTOV2 dto) {
 
-        logger.info("Updating one Person!"); // Registra no log que uma atualização será realizada.
+        logger.info("Updating one Person!");
 
-
-        // Busca a pessoa existente pelo ID informado.
-        // Se não encontrar, lança ResourceNotFoundException e retorna HTTP 404.
         Person entity = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("No record found for this ID!"));
+                .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND_MESSAGE));
 
+        mapper.updateEntityFromDTO(dto, entity);
 
-        // Recebe o DTO de atualização e altera somente os campos permitidos
-        // da entidade que foi carregada do banco.
-        mapper03.updateEntityFromDTO(dto, entity);
-
-
-        // Salva a entidade modificada.
-        // Como a entidade possui ID, o JPA/Hibernate executa um UPDATE no banco.
         Person updatedPerson = repository.save(entity);
 
-
-        // Converte a entidade atualizada em DTO de resposta,
-        // ocultando campos internos que não devem ser enviados ao cliente.
-        return mapper03.mapEntityToDto(updatedPerson);
+        return mapper.mapEntityToDto(updatedPerson);
     }
 
-
     /*
-     * ============================================================================
      * DELETE
-     * ============================================================================
-     * Remove uma pessoa pelo ID.
+     * Uma pessoa que é autora de livros não pode ser removida: o livro exige
+     * um autor (author_id NOT NULL) e as vidas das entidades são independentes,
+     * sem exclusão em cascata. Nesse caso retorna HTTP 409.
      *
-     * Fluxo:
-     *
-     * Controller
-     *      |
-     *      ↓
-     * PersonService.delete()
-     *      |
-     *      ↓ (Verifica se existe pelo ID antes de deletar)
-     * PersonRepository.delete()
-     *      |
-     *      ↓
-     * Remove da tabela person no Banco de Dados (DELETE)
-     *
-     * VOID -> não retorna conteúdo
-     * ============================================================================
+     * Quando a entidade Order existir, a mesma checagem vale para pedidos:
+     * orderRepository.existsByPersonId(id).
      */
+    @Transactional
     public void delete(Long id) {
 
         logger.info("Deleting one Person!");
 
-        // Garante que o registro existe antes de tentar deletar
         Person entity = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("No record found for this ID!"));
+                .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND_MESSAGE));
+
+        if (bookRepository.existsByAuthorId(id)) {
+            throw new ResourceConflictException("Pessoa possui livros cadastrados e não pode ser removida!");
+        }
 
         repository.delete(entity);
-
-        // não retona nada ao cliente
     }
 }
 
-    /*
-    Controller
-        |
-        | recebe requisição HTTP
-        | valida entrada básica
-        |
-        ▼
-    Service
-        |
-        | regra de negócio
-        | coordena operações
-        |
-        ├── Mapper
-        |       |
-        |       └── DTO <-> Entity
-        |
-        └── Repository
-                |
-                └── Banco de Dados
-     */
+/*
+ * ============================================================================
+ * POR QUE USAMOS @Transactional
+ * ----------------------------------------------------------------------------
+ * Uma transação agrupa várias operações no banco em um bloco único, do tipo
+ * "tudo ou nada":
+ *
+ *   - Se o método termina sem erro  -> COMMIT   (todas as alterações são gravadas)
+ *   - Se lança uma RuntimeException -> ROLLBACK (todas as alterações são desfeitas)
+ *
+ * Isso evita dados pela metade. Exemplo: criar um pedido e baixar o estoque;
+ * se a baixa falhar, o pedido também é desfeito.
+ *
+ * Também mantém a entidade "gerenciada" pelo Hibernate durante o método:
+ * alterações feitas nela são detectadas e gravadas automaticamente no commit
+ * (dirty checking), e as checagens feitas antes de gravar (como e-mail
+ * duplicado ou autor com livros) rodam no mesmo contexto da gravação.
+ *
+ * Onde é aplicada:
+ *   - Métodos que gravam (create, update, delete) -> @Transactional
+ *   - Métodos que só leem (findById, findAll)     -> @Transactional(readOnly = true)
+ *     Avisa ao Hibernate que nada será alterado, evitando trabalho
+ *     desnecessário e protegendo contra gravações acidentais.
+ *
+ * Fica no Service porque é onde as regras de negócio e as operações no banco
+ * se juntam. Controller e Mapper não acessam o banco, e o Repository já é
+ * transacional nas operações do JpaRepository.
+ *
+ * Observação: só métodos públicos chamados de FORA da classe são interceptados.
+ * Chamar outro método da mesma classe (this.metodo()) ignora a anotação.
+ * ============================================================================
+ */

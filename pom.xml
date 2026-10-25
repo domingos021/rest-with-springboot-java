@@ -29,6 +29,13 @@
         <dozer.version>7.0.0</dozer.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <springdocswagger.version>2.7.0</springdocswagger.version>
+
+        <!-- BYTE BUDDY: O Spring Boot 3.4.0 traz uma versão do Byte Buddy que só suporta até o Java 24.
+             O Mockito usa o Byte Buddy para criar mocks (ex.: @MockitoBean em testes de controller),
+             então rodar os testes na JDK 25 derrubava o contexto com
+             "Java 25 (69) is not supported by the current version of Byte Buddy".
+             Esta propriedade sobrescreve a versão gerenciada pelo Spring Boot. -->
+        <byte-buddy.version>1.17.7</byte-buddy.version>
     </properties>
 
     <!-- 5ª - DEPENDÊNCIAS DO PROJETO -->

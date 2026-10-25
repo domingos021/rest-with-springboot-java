@@ -99,3 +99,33 @@ WHERE id = 3;
 5. 🗑️ Exclusão de Dados - DELETE
 -- Deletar um registro específico por ID
 DELETE FROM public.person WHERE id = 1;
+
+
+==========================================================================
+RESSETAR O BANCO DO ZERO
+
+DROP SCHEMA public CASCADE
+        ↓
+Remove:
+- tabelas
+- dados
+- constraints
+- sequences
+- flyway_schema_history
+
+CREATE SCHEMA public
+        ↓
+Cria um schema vazio para o Flyway reconstruir
+
+CREATE SCHEMA public;
+
+
+=============================================
+TESTA AS RELAÇÕES
+SELECT
+    b.title,
+    p.first_name,
+    p.last_name
+FROM books b
+JOIN person p
+ON b.author_id = p.id;

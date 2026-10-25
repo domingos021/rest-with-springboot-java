@@ -5,15 +5,14 @@ import jakarta.persistence.*;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDate;
 
 /*
- * A classe inteira corresponde a uma entidade do banco de dados, representando uma tabela chamada "person".
- * Cada instância da classe Person representa uma linha (registro) nessa tabela.
- * A anotação @Entity indica que a classe é uma entidade JPA (Java Persistence API).
- * A anotação @Table(name = "person") especifica o nome da tabela no banco de dados que essa entidade representa.
- * A interface Serializable permite que objetos dessa classe possam ser convertidos em uma sequência de bytes, o que é útil para persistência, envio pela rede ou armazenamento em cache.
- * O campo serialVersionUID é usado para garantir a compatibilidade durante a serialização e desserialização, evitando problemas quando a classe é modificada.
+ * A classe corresponde a uma entidade do banco de dados, representando a tabela "person".
+ * Cada instância de Person representa uma linha (registro) nessa tabela.
+ * @Entity indica que a classe é uma entidade JPA.
+ * @Table(name = "person") define o nome da tabela.
+ * Serializable permite converter o objeto em bytes (persistência, rede, cache).
+ * serialVersionUID garante compatibilidade na serialização/desserialização.
  */
 @Entity
 @Table(name = "person")
@@ -22,15 +21,10 @@ public class Person implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /*
-     * A cada atributo da classe corresponde a uma coluna na tabela "person" do banco de dados.
-     * A anotação @Id indica que o atributo 'id' é a chave primária da tabela, garantindo que cada registro seja único.
-     * Os demais atributos representam informações pessoais e são mapeados para colunas correspondentes na tabela.
-     * A classe possui construtores, getters e setters para manipulação dos dados, além de métodos equals e hashCode para comparação e armazenamento eficiente em coleções.
-     */
-    /*
-     *  nullable = false -> não pode ser nulo
-     *  length = 70 -> tamanho máximo do campo
-     *  @Column() -> quando não definimos o nome, significa que o nome da coluna será o mesmo do atributo
+     * Cada atributo corresponde a uma coluna da tabela "person".
+     * nullable = false -> não pode ser nulo
+     * length -> tamanho máximo do campo
+     * @Column() sem name -> a coluna tem o mesmo nome do atributo
      */
 
     @Id
@@ -43,9 +37,8 @@ public class Person implements Serializable {
     @Column(name = "last_name", nullable = false, length = 70)
     private String lastName;
 
-
     /*
-     * Ajustado para length = 14 (tamanho exato e otimizado para o formato "000.000.000-00")
+     * length = 14 (tamanho exato para o formato "000.000.000-00")
      */
     @Column(name = "cpf", unique = true, nullable = false, length = 14)
     private String cpf;
@@ -63,11 +56,27 @@ public class Person implements Serializable {
     private String gender;
 
     /*
-     * Persistent PersonRole enum field stored as String in the database.
+     * Papel de ACESSO ao sistema (ex.: ADMIN, USER), armazenado como String no banco.
+     * Não confundir com os papéis de negócio (cliente, autor, vendedor), que são
+     * definidos pelos relacionamentos de cada entidade.
      */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PersonRole role;
+
+    /*
+     * RELACIONAMENTOS (de propósito, não existem aqui)
+     *
+     * Person representa apenas o cadastro da pessoa. Os papéis de negócio nascem dos
+     * relacionamentos, e quem guarda a chave estrangeira é a entidade do lado "N":
+     *
+     *  - Book  N ---- 1 Person  -> Book.author   (coluna author_id)    -> papel: Autor
+     *  - Order N ---- 1 Person  -> Order.person  (coluna person_id)    -> papel: Cliente
+     *
+     * Por isso Person NÃO possui listas de books, orders ou products.
+     * Para consultar, use os repositórios, por exemplo:
+     *   bookRepository.findByAuthorId(personId);
+     */
 
     public Person() {
     }
@@ -116,7 +125,6 @@ public class Person implements Serializable {
     public void setLastName(String lastName) {
         this.lastName = lastName;
     }
-
 
     public String getCpf() {
         return cpf;
@@ -176,10 +184,11 @@ public class Person implements Serializable {
 
     @Override
     public int hashCode() {
-        // Retorna um valor constante recomendado para entidades JPA com ID gerado por banco
+        // Valor constante recomendado para entidades JPA com ID gerado pelo banco
         return 31;
     }
 
+    // A senha fica de fora do toString de propósito: evita vazar o hash em logs.
     @Override
     public String toString() {
         return "Person{" +
@@ -188,7 +197,6 @@ public class Person implements Serializable {
                 ", lastName='" + lastName + '\'' +
                 ", cpf='" + cpf + '\'' +
                 ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
                 ", address='" + address + '\'' +
                 ", gender='" + gender + '\'' +
                 ", role=" + role +
