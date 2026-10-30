@@ -1,4 +1,4 @@
-package com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.v2;
+package com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.person.v2;
 
 /*
  * =====================================================================

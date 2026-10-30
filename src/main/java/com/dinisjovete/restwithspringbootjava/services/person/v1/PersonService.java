@@ -7,7 +7,7 @@ import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRo
 import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
 import com.dinisjovete.restwithspringbootjava.exception.ResourceConflictException;
 import com.dinisjovete.restwithspringbootjava.exception.project_exception.ResourceNotFoundException;
-import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.v1.PersonMapper_MapStruct;
+import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.person.v1.PersonMapper_MapStruct;
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
 import com.dinisjovete.restwithspringbootjava.repositories.book.BookRepository;
 import org.slf4j.Logger;

@@ -1,6 +1,6 @@
 package com.dinisjovete.restwithspringbootjava.controllers.person.v1;
 
-import com.dinisjovete.restwithspringbootjava.config.hateoas.v1.PersonHateoasAssembler;
+import com.dinisjovete.restwithspringbootjava.config.hateoas.person.v1.PersonHateoasAssembler;
 import com.dinisjovete.restwithspringbootjava.config.mediatypes.CustomMediaType;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonDTO;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v1.PersonInsertDTO;

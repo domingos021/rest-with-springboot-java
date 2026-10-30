@@ -12,12 +12,17 @@ import java.util.Objects;
  * A classe Book corresponde a uma entidade do banco de dados, representando
  * uma tabela chamada "books".
  *
- * Cada instância da classe Book representa uma linha (registro) nessa tabela.
+ * Cada instância da classe Book representa uma linha (registro) nessa tabela,
+ * complementada por uma linha correspondente na tabela "products".
  *
  * A anotação @Entity indica que a classe é uma entidade JPA (Java Persistence API).
  *
  * A anotação @Table(name = "books") especifica o nome da tabela no banco de dados
  * que essa entidade representa.
+ *
+ * A anotação @PrimaryKeyJoinColumn(name = "id") informa que a coluna "id" de
+ * "books" é, ao mesmo tempo, chave primária e chave estrangeira para
+ * "products.id". É assim que o banco liga cada livro ao seu produto.
  *
  * A classe Book herda da classe Product, que contém os atributos comuns a todos
  * os produtos do sistema, como:
@@ -27,20 +32,19 @@ import java.util.Objects;
  * - price
  * - launchDate
  *
- * Como Product utiliza @MappedSuperclass, seus atributos são herdados por Book
- * e também fazem parte da tabela "books" no banco de dados.
+ * Como Product é uma entidade com herança JOINED (@Inheritance), esses atributos
+ * comuns ficam gravados na tabela "products", e NÃO na tabela "books".
  *
  * Dessa forma, Book mantém apenas características específicas de livros.
  *
- * Exemplo da estrutura da tabela:
+ * Exemplo da estrutura das tabelas:
  *
- * books
- * -----------------
- * id              (Product)
- * title           (Product)
+ * products                        books
+ * -----------------               -----------------
+ * id              (Product)       id          (PK e FK -> products.id)
+ * title           (Product)       author_id   (Book)
  * price           (Product)
  * launch_date     (Product)
- * author_id       (Book)
  *
  *
  * A interface Serializable permite que objetos dessa classe possam ser
@@ -53,6 +57,7 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "books")
+@PrimaryKeyJoinColumn(name = "id")
 public class Book extends Product implements Serializable {
 
     @Serial

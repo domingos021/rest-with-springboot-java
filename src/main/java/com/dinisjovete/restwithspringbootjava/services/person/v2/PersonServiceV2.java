@@ -8,7 +8,7 @@ import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Pers
 
 import com.dinisjovete.restwithspringbootjava.exception.ResourceConflictException;
 import com.dinisjovete.restwithspringbootjava.exception.project_exception.ResourceNotFoundException;
-import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.v2.PersonMapper_MapStructV2;
+import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.person.v2.PersonMapper_MapStructV2;
 
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
 import com.dinisjovete.restwithspringbootjava.repositories.book.BookRepository;

@@ -1,4 +1,4 @@
-package com.dinisjovete.restwithspringbootjava.config.hateoas.v2;
+package com.dinisjovete.restwithspringbootjava.config.hateoas.person.v2;
 
 
 import com.dinisjovete.restwithspringbootjava.controllers.person.v2.PersonControllerV2;

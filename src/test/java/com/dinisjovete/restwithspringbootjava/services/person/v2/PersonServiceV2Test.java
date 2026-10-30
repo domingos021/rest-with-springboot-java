@@ -6,7 +6,7 @@ import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonUpdateDTO
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
 import com.dinisjovete.restwithspringbootjava.exception.project_exception.ResourceNotFoundException;
-import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.v2.PersonMapper_MapStructV2;
+import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.person.v2.PersonMapper_MapStructV2;
 import com.dinisjovete.restwithspringbootjava.mocks.v2.MockPersonV2;
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
 import org.junit.jupiter.api.BeforeEach;

@@ -32,17 +32,24 @@ import java.util.Objects;
  * Por ser uma classe abstrata, ela não pode ser instanciada diretamente.
  *
  * Apenas suas subclasses concretas (como Book, Movie, Game, etc.) poderão
- * ser instanciadas e persistidas como entidades JPA.
+ * ser instanciadas e persistidas.
  *
  * Cada classe filha herdará automaticamente todos os atributos e métodos
  * definidos aqui, podendo ainda adicionar suas próprias características
  * e comportamentos específicos.
  *
- * A anotação @MappedSuperclass informa ao JPA que esta classe não representa
- * uma tabela própria no banco de dados.
+ * A anotação @Entity com @Table(name = "products") informa ao JPA que esta
+ * classe REPRESENTA uma tabela própria no banco de dados.
  *
- * Seus atributos serão herdados pelas entidades filhas, e cada entidade filha
- * terá sua própria tabela contendo esses campos.
+ * Isso é necessário para que outras entidades (como OrderItem) possam ter uma
+ * chave estrangeira apontando para "um produto qualquer", seja ele livro,
+ * filme ou jogo. Com @MappedSuperclass isso não era possível, pois cada filho
+ * tinha sua própria tabela e não existia uma tabela comum para referenciar.
+ *
+ * A anotação @Inheritance(strategy = InheritanceType.JOINED) define como a
+ * herança é gravada no banco: uma tabela para os campos comuns (products) e
+ * uma tabela para cada filha, contendo apenas os campos específicos dela.
+ * As duas tabelas são ligadas pelo id.
  *
  * Exemplo:
  *
@@ -50,14 +57,19 @@ import java.util.Objects;
  *    |
  *    └── Book
  *
- * A tabela "books" possuirá os campos herdados:
+ * A tabela "products" possuirá os campos comuns:
  *
  * id
  * title
  * price
  * launch_date
  *
- * juntamente com os campos específicos de Book.
+ * e a tabela "books" possuirá apenas:
+ *
+ * id          (chave primária e também chave estrangeira para products.id)
+ * author_id   (campo específico de Book)
+ *
+ * Ao buscar um Book, o Hibernate une as duas tabelas (JOIN) automaticamente.
  *
  * A interface Serializable permite que objetos dessa classe possam ser
  * convertidos em uma sequência de bytes, o que é útil para persistência,
@@ -67,7 +79,9 @@ import java.util.Objects;
  * a serialização e desserialização, evitando problemas quando a classe é
  * modificada.
  */
-@MappedSuperclass
+@Entity
+@Table(name = "products")
+@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Product implements Serializable {
 
     @Serial
@@ -195,3 +209,22 @@ public abstract class Product implements Serializable {
         return Objects.hashCode(getId());
     }
 }
+
+/*
+                 Product
+              (tabela products)
+              ----------------
+                      id
+                      title
+                      price
+                      launch_date
+                            ▲
+                            |
+                  ---------------------
+                  |                   |
+                Book                Movie
+            (tabela books)      (tabela movies)
+            -------------       --------------
+            id                  id
+            author_id           director_id
+ */
