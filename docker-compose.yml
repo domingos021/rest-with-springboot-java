@@ -1,0 +1,70 @@
+# ==========================================================
+# DOCKER COMPOSE
+# Descreve os serviços (containers) que formam o sistema e
+# sobe todos juntos com um único comando: docker compose up
+# ==========================================================
+services:
+
+  # ----------------------------------------------------------
+  # SERVIÇO 1 - BANCO DE DADOS (PostgreSQL)
+  # ----------------------------------------------------------
+  db:
+    # Imagem oficial do PostgreSQL, versão 16, baixada do Docker Hub
+    image: postgres:16
+
+    # Variáveis de ambiente que o PostgreSQL lê na primeira inicialização
+    environment:
+      # Nome do banco criado automaticamente (o mesmo do seu DB_URL)
+      POSTGRES_DB: rest_with_springboot_java
+      # Usuário administrador do banco
+      POSTGRES_USER: postgres
+      # Senha do usuário. O ${DB_PASSWORD} vem do arquivo .env
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    # Volume: guarda os dados do banco FORA do container.
+    # Sem ele, os dados sumiriam toda vez que o container fosse apagado.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+    # Verificação de saúde: testa de 5 em 5 segundos se o PostgreSQL
+    # já está pronto para receber conexões (pg_isready).
+    # Tenta até 10 vezes antes de considerar que falhou.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rest_with_springboot_java"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------------------------
+  # SERVIÇO 2 - APLICAÇÃO (Spring Boot)
+  # ----------------------------------------------------------
+  app:
+    # Constrói a imagem a partir do Dockerfile na pasta atual (.)
+    build: .
+
+    # Mapeia portas: "porta do seu PC : porta dentro do container".
+    # Por isso você acessa em http://localhost:8080
+    ports:
+      - "8080:8080"
+
+    # Variáveis que o application.properties lê (DB_URL, DB_USER, DB_PASSWORD).
+    # Note o "db" no lugar de "localhost": dentro do Compose, o nome
+    # do serviço funciona como o endereço do banco na rede interna.
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/rest_with_springboot_java
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+
+    # Só inicia a aplicação depois que o banco estiver SAUDÁVEL
+    # (healthcheck passou). Evita o erro de conexão na subida.
+    depends_on:
+      db:
+        condition: service_healthy
+
+# ==========================================================
+# VOLUMES
+# Declara o volume "pgdata" usado pelo banco. O Docker cuida
+# de onde ele fica guardado na sua máquina.
+# ==========================================================
+volumes:
+  pgdata:

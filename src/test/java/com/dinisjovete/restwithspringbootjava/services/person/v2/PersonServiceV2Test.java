@@ -9,6 +9,7 @@ import com.dinisjovete.restwithspringbootjava.exception.project_exception.Resour
 import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.person.v2.PersonMapper_MapStructV2;
 import com.dinisjovete.restwithspringbootjava.mocks.v2.MockPersonV2;
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
+import com.dinisjovete.restwithspringbootjava.repositories.book.BookRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -138,6 +139,10 @@ class PersonServiceV2Test {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    // ADICIONE ESTA LINHA:
+    @Mock
+    private BookRepository bookRepository;
+
     /*
      * Roda antes de CADA @Test. Como os mocks são recriados pelo Mockito a cada
      * teste, só precisamos recriar a fábrica de dados.
@@ -209,21 +214,23 @@ class PersonServiceV2Test {
         PersonDTOV2 dto1 = input.mockDTO(1);
         PersonDTOV2 dto2 = input.mockDTO(2);
 
-        when(repository.findAll()).thenReturn(List.of(person1, person2));
-        when(mapper.mapEntityToDto(person1)).thenReturn(dto1);
-        when(mapper.mapEntityToDto(person2)).thenReturn(dto2);
+        List<Person> personList = List.of(person1, person2);
+        List<PersonDTOV2> dtoList = List.of(dto1, dto2);
+
+        when(repository.findAll()).thenReturn(personList);
+        // Ajustado para o mock responder à conversão da lista inteira usada no Service V2
+        when(mapper.mapEntityListToDtoList(personList)).thenReturn(dtoList);
 
         // ACT
         List<PersonDTOV2> result = service.findAll();
 
         // ASSERT
         // A lista inteira de uma vez: confere tamanho, conteúdo e ORDEM.
-        assertEquals(List.of(dto1, dto2), result);
+        assertEquals(dtoList, result);
 
         // VERIFY
         verify(repository).findAll();
-        verify(mapper).mapEntityToDto(person1);
-        verify(mapper).mapEntityToDto(person2);
+        verify(mapper).mapEntityListToDtoList(personList);
         verifyNoMoreInteractions(repository, mapper);
     }
 
@@ -350,6 +357,8 @@ class PersonServiceV2Test {
         // Exercita o "if (dto.getPassword() != null)" do Service.
         // Guardamos a senha original da entidade para provar que ela não foi alterada.
         Person entity = input.mockEntity(1);
+        entity.setPassword(null); // <- Garante que a entidade mapeada reflete a senha nula
+
         String passwordBefore = entity.getPassword();
         PersonInsertDTOV2 insertDto = input.mockInsertDTO(1);
         insertDto.setPassword(null);
@@ -432,16 +441,18 @@ class PersonServiceV2Test {
         Person entity = input.mockEntity(1);
         when(repository.findById(1L)).thenReturn(Optional.of(entity));
 
+        // Ensina o mock do BookRepository a retornar false (indicando que não há livros vinculados)
+        when(bookRepository.existsByAuthorId(1L)).thenReturn(false);
+
         // ACT
         service.delete(1L);
 
         // VERIFY
-        // O método é void, então não há retorno para conferir: o que importa é
-        // o efeito (delete) e a ordem (primeiro busca, depois remove).
-        InOrder order = inOrder(repository);
+        InOrder order = inOrder(repository, bookRepository);
         order.verify(repository).findById(1L);
+        order.verify(bookRepository).existsByAuthorId(1L);
         order.verify(repository).delete(entity);
-        verifyNoMoreInteractions(repository);
+        verifyNoMoreInteractions(repository, bookRepository);
     }
 
     @Test

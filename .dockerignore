@@ -1,0 +1,21 @@
+# ==========================================================
+# .DOCKERIGNORE
+# Lista o que o Docker deve ignorar ao copiar arquivos para o
+# build. Deixa o build mais rápido e evita vazar segredos.
+# ==========================================================
+
+# Pasta gerada pelo Maven na sua máquina. O Docker gera a dele
+# dentro do build, então a sua só atrapalharia.
+target/
+
+# Histórico do Git: pesado e desnecessário dentro da imagem
+.git/
+
+# Configurações do IntelliJ: só servem para a sua IDE
+.idea/
+
+# Segredos (senha do banco): nunca devem entrar na imagem
+.env
+
+# Arquivos de log
+*.log

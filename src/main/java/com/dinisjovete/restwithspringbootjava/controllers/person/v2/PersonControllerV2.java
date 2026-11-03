@@ -461,3 +461,19 @@ public class PersonControllerV2 implements PersonControllerDocsV2 { // documenta
 
 //Swagger UI: http://localhost:8080/swagger-ui/index.html
 //YAML da documentação: http://localhost:8080/v3/api-docs.yaml
+
+/*
+MOdelo de criação
+{
+  "firstName": "Domingos",
+  "lastName": "Jovete",
+  "birthDate": "28/06/1971",
+  "cpf": "99988877766",
+  "phone": "+1 512 99999-9999",
+  "email": "beckymel27@gmail.com",
+  "password": "Ag123456@",
+  "address": "Texas - EUA",
+  "gender": "Male",
+  "role": "CLIENT"
+}
+ */

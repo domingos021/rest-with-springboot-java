@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 
 /*
@@ -87,8 +88,17 @@ public class PersonServiceV2 {
 
         logger.info("Finding all Persons!");
 
-        return mapper.mapEntityListToDtoList(repository.findAll());
+        List<Person> persons = repository.findAll();
+
+        // Adicionado apenas este "if" para não chamar o mapper se a lista vier vazia
+        if (persons.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return mapper.mapEntityListToDtoList(persons);
     }
+
+
 
     /*
      * CREATE
@@ -107,24 +117,61 @@ public class PersonServiceV2 {
 
         logger.info("Creating a new Person!");
 
+        //1ª vai ate o repositório verificar se já existe um registro com o mesmo email
         if (repository.existsByEmail(personDto.getEmail())) {
             throw new ResourceConflictException("E-mail já cadastrado!");
         }
+        //2ª vai ate o repositório verificar se já existe um registro com o mesmo cpf
         if (repository.existsByCpf(personDto.getCpf())) {
             throw new ResourceConflictException("CPF já cadastrado!");
         }
 
+        // 3ª converte o DTO em entidade para aplicar as regras de negócio
         Person person = mapper.mapDtoToEntity(personDto);
 
-        // A senha é obrigatória (@NotBlank no PersonInsertDTOV2) e nunca é salva em texto puro
-        person.setPassword(passwordEncoder.encode(personDto.getPassword()));
-
+        //4ª A senha é obrigatória (@NotBlank no PersonInsertDTOV2) e nunca é salva em texto puro
+        /*
+         * Verifica se a senha foi informada
+         * (não é nula) e se contém pelo menos
+         * um caractere (não está vazia).
+         */
+        if (personDto.getPassword() != null && !personDto.getPassword().isEmpty()) {
+            /*
+             * Como a senha foi validada na verificação anterior,
+             * ela é criptografada com Bcrypt antes de ser
+             * armazenada no banco de dados.
+             */
+            person.setPassword(passwordEncoder.encode(personDto.getPassword()));
+        }
+        /*
+         * Se nenhum role for informado, define CLIENT como padrão.
+         *
+         * Isso evita que um usuário mal-intencionado tente criar
+         * um registro com privilégios elevados, como ADMIN.
+         *
+         * Além disso, a validação do role é realizada no DTO,
+         * que aceita apenas os valores definidos no enum PersonRole.
+         */
         if (person.getRole() == null) {
             person.setRole(PersonRole.CLIENT);
         }
 
+        /*
+         * Se todas as verificações acima forem atendidas,
+         * salva o novo usuário no banco de dados.
+         */
         Person savedPerson = repository.save(person);
 
+        /*
+         * Retorna o DTO de resposta, que não expõe a senha
+         * nem outros dados internos.
+         *
+         * A conversão é realizada pelo MapStruct, que gera
+         * o código de mapeamento em tempo de compilação.
+         *
+         * O mesmo DTO é utilizado nos métodos findById e
+         * findAll, garantindo consistência nas respostas da API.
+         */
         return mapper.mapEntityToDto(savedPerson);
     }
 

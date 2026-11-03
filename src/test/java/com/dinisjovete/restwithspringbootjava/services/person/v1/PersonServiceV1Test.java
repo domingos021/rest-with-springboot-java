@@ -9,6 +9,7 @@ import com.dinisjovete.restwithspringbootjava.exception.project_exception.Resour
 import com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.person.v1.PersonMapper_MapStruct;
 import com.dinisjovete.restwithspringbootjava.mocks.v1.MockPerson;
 import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
+import com.dinisjovete.restwithspringbootjava.repositories.book.BookRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,86 +38,86 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /*
- * ============================================================================
- * TESTE UNITÁRIO DA CAMADA DE SERVIÇO - PersonService (v1)
- * ============================================================================
+- ============================================================================
+- TESTE UNITÁRIO DA CAMADA DE SERVIÇO - PersonService (v1)
+- ============================================================================
  *
- * O QUE ESTÁ SENDO TESTADO
- * ------------------------
- * Apenas a classe PersonService, isolada de tudo que está ao redor dela:
+- O QUE ESTÁ SENDO TESTADO
+- ------------------------
+- Apenas a classe PersonService, isolada de tudo que está ao redor dela:
  *
- *      Controller            <- fora do teste (não participa)
- *          |
- *      PersonService         <- UNIDADE TESTADA (código real, executado de verdade)
- *          |
- *     +----+-----------+----------------+
- *     |                |                |
- *  Repository        Mapper       PasswordEncoder
- *    (Mock)          (Mock)           (Mock)
+-      Controller            <- fora do teste (não participa)
+-          |
+-      PersonService         <- UNIDADE TESTADA (código real, executado de verdade)
+-          |
+-     +----+-----------+----------------+
+-     |                |                |
+-  Repository        Mapper       PasswordEncoder
+-    (Mock)          (Mock)           (Mock)
  *
- * Nada de banco, nada de Spring, nada de BCrypt real. O Mockito cria "dublês"
- * das dependências e nós controlamos o que eles devolvem. Por isso o teste é
- * rápido (milissegundos) e, se falhar, o culpado só pode estar no Service.
- *
- *
- * O QUE UM TESTE DE SERVICE DEVE PROVAR
- * -------------------------------------
- * Boa parte dos métodos deste Service só delega (repository -> mapper). O valor
- * do teste está em proteger o que o Service REALMENTE decide:
- *
- *   - create():  criptografar a senha, aplicar a Role padrão CLIENT.
- *   - findById / update / delete: lançar ResourceNotFoundException quando o ID
- *     não existe e NÃO executar nenhuma escrita nesse caso.
- *
- * Por isso cada método tem o caminho feliz E o caminho de erro/borda.
+- Nada de banco, nada de Spring, nada de BCrypt real. O Mockito cria "dublês"
+- das dependências e nós controlamos o que eles devolvem. Por isso o teste é
+- rápido (milissegundos) e, se falhar, o culpado só pode estar no Service.
  *
  *
- * PADRÃO DE ESCRITA: ARRANGE / ACT / ASSERT (+ VERIFY)
- * ----------------------------------------------------
- *   ARRANGE : monta os dados e ensina os mocks o que responder.
- *   ACT     : chama o método real do Service (uma única chamada).
- *   ASSERT  : confere o RESULTADO retornado.
- *   VERIFY  : confere as INTERAÇÕES (quem foi chamado, em que ordem, quem NÃO foi).
+- O QUE UM TESTE DE SERVICE DEVE PROVAR
+- -------------------------------------
+- Boa parte dos métodos deste Service só delega (repository -> mapper). O valor
+- do teste está em proteger o que o Service REALMENTE decide:
+ *
+- create():  criptografar a senha, aplicar a Role padrão CLIENT.
+- findById / update / delete: lançar ResourceNotFoundException quando o ID
+-     não existe e NÃO executar nenhuma escrita nesse caso.
+ *
+- Por isso cada método tem o caminho feliz E o caminho de erro/borda.
  *
  *
- * NOMES DOS TESTES
- * ----------------
- * Formato: metodo_quandoCondicao_resultadoEsperado
- * Quando um teste falha, o nome já diz qual regra quebrou, sem abrir o código.
- * ============================================================================
+- PADRÃO DE ESCRITA: ARRANGE / ACT / ASSERT (+ VERIFY)
+- ----------------------------------------------------
+-   ARRANGE : monta os dados e ensina os mocks o que responder.
+-   ACT     : chama o método real do Service (uma única chamada).
+-   ASSERT  : confere o RESULTADO retornado.
+-   VERIFY  : confere as INTERAÇÕES (quem foi chamado, em que ordem, quem NÃO foi).
+ *
+ *
+- NOMES DOS TESTES
+- ----------------
+- Formato: metodo_quandoCondicao_resultadoEsperado
+- Quando um teste falha, o nome já diz qual regra quebrou, sem abrir o código.
+- ============================================================================
  */
 @ExtendWith(MockitoExtension.class)
         /*
-         * @ExtendWith(MockitoExtension.class)
+- @ExtendWith(MockitoExtension.class)
          *
-         * Liga o Mockito ao JUnit 5. Ele cria os @Mock, injeta no @InjectMocks e
-         * descarta tudo ao final de cada teste.
+- Liga o Mockito ao JUnit 5. Ele cria os @Mock, injeta no @InjectMocks e
+- descarta tudo ao final de cada teste.
          *
-         * Detalhe importante: essa extensão usa STRICT STUBS. Se você ensinar um mock
-         * com when(...) e o Service nunca chamar aquilo, o teste FALHA com
-         * UnnecessaryStubbingException. Isso é bom: impede stubs "sobrando" que
-         * enganam quem lê o teste.
+- Detalhe importante: essa extensão usa STRICT STUBS. Se você ensinar um mock
+- com when(...) e o Service nunca chamar aquilo, o teste FALHA com
+- UnnecessaryStubbingException. Isso é bom: impede stubs "sobrando" que
+- enganam quem lê o teste.
          *
-         * Observação sobre o ciclo de vida: NÃO usamos @TestInstance(PER_CLASS).
-         * O padrão do JUnit é criar uma instância nova da classe para cada @Test, o que
-         * isola completamente os testes (nenhum campo "vaza" de um para outro). PER_CLASS
-         * só vale a pena quando precisamos de @BeforeAll não-estático, o que não é o caso.
+- Observação sobre o ciclo de vida: NÃO usamos @TestInstance(PER_CLASS).
+- O padrão do JUnit é criar uma instância nova da classe para cada @Test, o que
+- isola completamente os testes (nenhum campo "vaza" de um para outro). PER_CLASS
+- só vale a pena quando precisamos de @BeforeAll não-estático, o que não é o caso.
          */
 class PersonServiceV1Test {
 
     /*
-     * Fábrica de dados fictícios (Test Data Builder). NÃO é um mock do Mockito:
-     * é uma classe nossa que devolve objetos reais, preenchidos com valores
-     * previsíveis. mockEntity(1) gera uma Person de id 1, mockDTO(1) um PersonDTO
-     * de id 1, e assim por diante. O número é o "índice" usado nos valores.
+- Fábrica de dados fictícios (Test Data Builder). NÃO é um mock do Mockito:
+- é uma classe nossa que devolve objetos reais, preenchidos com valores
+- previsíveis. mockEntity(1) gera uma Person de id 1, mockDTO(1) um PersonDTO
+- de id 1, e assim por diante. O número é o "índice" usado nos valores.
      */
     private MockPerson input;
 
     /*
-     * @InjectMocks: o Mockito instancia o PersonService REAL chamando o construtor
-     * PersonService(PersonMapper_MapStruct, PasswordEncoder, PersonRepository) e
-     * entrega os @Mock abaixo. A injeção é por TIPO, então o nome do campo
-     * (mapper aqui, mapper03 no Service) não precisa coincidir.
+- @InjectMocks: o Mockito instancia o PersonService REAL chamando o construtor
+- PersonService(PersonMapper_MapStruct, PasswordEncoder, PersonRepository) e
+- entrega os @Mock abaixo. A injeção é por TIPO, então o nome do campo
+- (mapper aqui, mapper03 no Service) não precisa coincidir.
      */
     @InjectMocks
     private PersonService service;
@@ -131,9 +132,12 @@ class PersonServiceV1Test {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private BookRepository bookRepository;
+
     /*
-     * Roda antes de CADA @Test. Como os mocks são recriados pelo Mockito a cada
-     * teste, só precisamos recriar a fábrica de dados.
+- Roda antes de CADA @Test. Como os mocks são recriados pelo Mockito a cada
+- teste, só precisamos recriar a fábrica de dados.
      */
     @BeforeEach
     void setUp() {
@@ -202,21 +206,22 @@ class PersonServiceV1Test {
         PersonDTO dto1 = input.mockDTO(1);
         PersonDTO dto2 = input.mockDTO(2);
 
-        when(repository.findAll()).thenReturn(List.of(person1, person2));
-        when(mapper.mapEntityToDto(person1)).thenReturn(dto1);
-        when(mapper.mapEntityToDto(person2)).thenReturn(dto2);
+        List<Person> personList = List.of(person1, person2);
+        List<PersonDTO> dtoList = List.of(dto1, dto2);
+
+        when(repository.findAll()).thenReturn(personList);
+        // Ajustado para o mock responder à conversão da lista inteira
+        when(mapper.mapEntityListToDtoList(personList)).thenReturn(dtoList);
 
         // ACT
         List<PersonDTO> result = service.findAll();
 
         // ASSERT
-        // A lista inteira de uma vez: confere tamanho, conteúdo e ORDEM.
-        assertEquals(List.of(dto1, dto2), result);
+        assertEquals(dtoList, result);
 
         // VERIFY
         verify(repository).findAll();
-        verify(mapper).mapEntityToDto(person1);
-        verify(mapper).mapEntityToDto(person2);
+        verify(mapper).mapEntityListToDtoList(personList);
         verifyNoMoreInteractions(repository, mapper);
     }
 
@@ -340,10 +345,9 @@ class PersonServiceV1Test {
     void create_whenPasswordIsNull_doesNotCallPasswordEncoder() {
 
         // ARRANGE
-        // Exercita o "if (personDto.getPassword() != null)" do Service.
-        // Guardamos a senha original da entidade para provar que ela não foi alterada.
         Person entity = input.mockEntity(1);
-        String passwordBefore = entity.getPassword();
+        entity.setPassword(null); // <- Garante que a entidade mapeada reflete a senha nula
+
         PersonInsertDTO insertDto = input.mockInsertDTO(1);
         insertDto.setPassword(null);
 
@@ -355,9 +359,8 @@ class PersonServiceV1Test {
         service.create(insertDto);
 
         // ASSERT / VERIFY
-        // never() garante que a chamada NÃO aconteceu nenhuma vez.
         verify(passwordEncoder, never()).encode(any());
-        assertEquals(passwordBefore, entity.getPassword());
+        assertEquals(null, entity.getPassword());
     }
 
     // ========================================================================
@@ -424,6 +427,7 @@ class PersonServiceV1Test {
         // ARRANGE
         Person entity = input.mockEntity(1);
         when(repository.findById(1L)).thenReturn(Optional.of(entity));
+        when(bookRepository.existsByAuthorId(1L)).thenReturn(false);
 
         // ACT
         service.delete(1L);
@@ -431,10 +435,11 @@ class PersonServiceV1Test {
         // VERIFY
         // O método é void, então não há retorno para conferir: o que importa é
         // o efeito (delete) e a ordem (primeiro busca, depois remove).
-        InOrder order = inOrder(repository);
+        InOrder order = inOrder(repository, bookRepository);
         order.verify(repository).findById(1L);
+        order.verify(bookRepository).existsByAuthorId(1L);
         order.verify(repository).delete(entity);
-        verifyNoMoreInteractions(repository);
+        verifyNoMoreInteractions(repository, bookRepository);
     }
 
     @Test
@@ -453,25 +458,25 @@ class PersonServiceV1Test {
 }
 
 /*
- * ============================================================================
- * FORA DO ESCOPO DESTE TESTE: HATEOAS, STATUS HTTP E HEADERS
- * ============================================================================
+- ============================================================================
+- FORA DO ESCOPO DESTE TESTE: HATEOAS, STATUS HTTP E HEADERS
+- ============================================================================
  *
- * Links HATEOAS, códigos de status, headers e content negotiation são
- * responsabilidade do CONTROLLER, não do Service. Eles são testados com
- * @WebMvcTest + MockMvc, que sobem só a camada web e simulam requisições HTTP:
+- Links HATEOAS, códigos de status, headers e content negotiation são
+- responsabilidade do CONTROLLER, não do Service. Eles são testados com
+- @WebMvcTest + MockMvc, que sobem só a camada web e simulam requisições HTTP:
  *
- *   - existe o link rel="self"?
- *   - o href aponta para o recurso correto (ex.: /person/v1/1)?
- *   - GET / POST / PUT / DELETE respondem com o status esperado?
+- existe o link rel="self"?
+- o href aponta para o recurso correto (ex.: /person/v1/1)?
+- GET / POST / PUT / DELETE respondem com o status esperado?
  *
- * Observação: o atributo "type" de um Link HATEOAS é o media type do recurso,
- * e não o verbo HTTP.
+- Observação: o atributo "type" de um Link HATEOAS é o media type do recurso,
+- e não o verbo HTTP.
  *
- * Divisão de responsabilidades nos testes:
+- Divisão de responsabilidades nos testes:
  *
- *   Service    -> regras de negócio            -> JUnit + Mockito (este arquivo)
- *   Controller -> contrato HTTP e links        -> @WebMvcTest + MockMvc
- *   Repository -> consultas e mapeamento JPA   -> @DataJpaTest (ou Testcontainers)
- * ============================================================================
+-   Service    -> regras de negócio            -> JUnit + Mockito (este arquivo)
+-   Controller -> contrato HTTP e links        -> @WebMvcTest + MockMvc
+-   Repository -> consultas e mapeamento JPA   -> @DataJpaTest (ou Testcontainers)
+- ============================================================================
  */
