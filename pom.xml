@@ -196,14 +196,45 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- TESTCONTAINERS PARA POSTGRESQL (Auto-configuração): Integra o ecossistema do Spring Boot com o Testcontainers para gerenciar ciclos de vida de containers -->
+        <!-- REST ASSURED: Cliente HTTP para testes de integração da API REST.
+     Permite testar endpoints reais (GET, POST, PUT, DELETE)
+     como se fosse um consumidor externo da API. -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>5.5.6</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+        SPRING BOOT TESTCONTAINERS:
+        Integra o Spring Boot com o Testcontainers,
+        permitindo que containers forneçam automaticamente
+        configurações de conexão para serviços externos.
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- TESTCONTAINERS JUNIT JUPITER: Fornece a extensão do JUnit 5 para inicializar e encerrar containers Docker de forma declarativa nos testes -->
+        <!--
+          TESTCONTAINERS POSTGRESQL:
+          Módulo específico para criar e gerenciar containers Docker
+          com PostgreSQL durante a execução dos testes.
+         -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+        TESTCONTAINERS JUNIT JUPITER:
+        Integra o Testcontainers ao ciclo de vida do JUnit 5,
+        permitindo inicializar e encerrar containers Docker
+        de forma declarativa durante os testes.
+        -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -238,7 +269,8 @@
                 <configuration>
                     <url>jdbc:postgresql://localhost:5432/rest_with_springboot_java</url>
                     <user>postgres</user>
-                    <password>1985</password>
+                    <!-- Senha lida da variável de ambiente DB_PASSWORD (não fica escrita no arquivo) -->
+                    <password>${env.DB_PASSWORD}</password>
                 </configuration>
 
                 <dependencies>

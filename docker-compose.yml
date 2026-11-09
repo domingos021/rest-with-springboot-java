@@ -1,30 +1,33 @@
 # ==========================================================
 # DOCKER COMPOSE
 # Descreve os serviços (containers) que formam o sistema e
-# sobe todos juntos com um único comando: docker compose up
+# sobe todos juntos com um único comando: docker compose up --build
 # ==========================================================
+
 services:
 
   # ----------------------------------------------------------
   # SERVIÇO 1 - BANCO DE DADOS (PostgreSQL)
   # ----------------------------------------------------------
   db:
-    # Imagem oficial do PostgreSQL, versão 16, baixada do Docker Hub
+    # Imagem oficial do PostgreSQL, versão 16, baixada do Docker Hub.
     image: postgres:16
 
-    # Variáveis de ambiente que o PostgreSQL lê na primeira inicialização
+    # Variáveis de ambiente que o PostgreSQL lê na primeira inicialização.
     environment:
-      # Nome do banco criado automaticamente (o mesmo do seu DB_URL)
+      # Nome do banco criado automaticamente (o mesmo do application.properties).
       POSTGRES_DB: rest_with_springboot_java
-      # Usuário administrador do banco
+
+      # Usuário administrador do banco.
       POSTGRES_USER: postgres
-      # Senha do usuário. O ${DB_PASSWORD} vem do arquivo .env
+
+      # Senha do usuário. O ${DB_PASSWORD} vem do arquivo .env.
       POSTGRES_PASSWORD: ${DB_PASSWORD}
 
     # Volume: guarda os dados do banco FORA do container.
-    # Sem ele, os dados sumiriam toda vez que o container fosse apagado.
+    # Reutiliza o volume postgres_data já criado anteriormente.
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
     # Verificação de saúde: testa de 5 em 5 segundos se o PostgreSQL
     # já está pronto para receber conexões (pg_isready).
@@ -34,16 +37,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 10s
 
   # ----------------------------------------------------------
   # SERVIÇO 2 - APLICAÇÃO (Spring Boot)
   # ----------------------------------------------------------
   app:
-    # Constrói a imagem a partir do Dockerfile na pasta atual (.)
+    # Constrói a imagem a partir do Dockerfile da pasta atual.
+    # Com isso, "docker compose up --build" passa a valer de verdade.
     build: .
 
+    # Nome/tag da imagem gerada (1.1 evita confundir com a 1.0 antiga).
+    image: domingosjovete/curso_spring_boot:1.1
+
     # Mapeia portas: "porta do seu PC : porta dentro do container".
-    # Por isso você acessa em http://localhost:8080
+    # Por isso você acessa em http://localhost:8080.
     ports:
       - "8080:8080"
 
@@ -63,8 +71,10 @@ services:
 
 # ==========================================================
 # VOLUMES
-# Declara o volume "pgdata" usado pelo banco. O Docker cuida
-# de onde ele fica guardado na sua máquina.
+# Declara o volume postgres_data já existente.
+# O Docker preserva os dados mesmo quando o container é removido.
+# Se ainda não existir: docker volume create postgres_data
 # ==========================================================
 volumes:
-  pgdata:
+  postgres_data:
+    external: true

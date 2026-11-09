@@ -17,5 +17,8 @@ target/
 # Segredos (senha do banco): nunca devem entrar na imagem
 .env
 
+# Segredos locais do Spring (senha do banco): nunca devem entrar na imagem
+**/application-local.properties
+
 # Arquivos de log
 *.log
