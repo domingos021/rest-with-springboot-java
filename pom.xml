@@ -241,12 +241,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- TESTCONTAINERS POSTGRESQL: Fornece a imagem oficial do PostgreSQL encapsulada em container para a realização de testes de integração reais e isolados -->
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>test</scope>
-        </dependency>
+
 
     </dependencies>
 

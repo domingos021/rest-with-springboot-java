@@ -18,6 +18,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -201,8 +205,8 @@ class PersonServiceV2Test {
     }
 
     // ========================================================================
-    // findAll
-    // ========================================================================
+// findAll
+// ========================================================================
 
     @Test
     @DisplayName("findAll: converte cada entidade em DTO e preserva a ordem")
@@ -217,39 +221,52 @@ class PersonServiceV2Test {
         List<Person> personList = List.of(person1, person2);
         List<PersonDTOV2> dtoList = List.of(dto1, dto2);
 
-        when(repository.findAll()).thenReturn(personList);
-        // Ajustado para o mock responder à conversão da lista inteira usada no Service V2
-        when(mapper.mapEntityListToDtoList(personList)).thenReturn(dtoList);
+        Pageable pageable = PageRequest.of(0, 2);
+        Page<Person> personPage = new PageImpl<>(personList, pageable, personList.size());
+
+        when(repository.findAll(pageable)).thenReturn(personPage);
+        when(mapper.mapEntityToDto(person1)).thenReturn(dto1);
+        when(mapper.mapEntityToDto(person2)).thenReturn(dto2);
 
         // ACT
-        List<PersonDTOV2> result = service.findAll();
+        Page<PersonDTOV2> result = service.findAll(pageable);
 
         // ASSERT
-        // A lista inteira de uma vez: confere tamanho, conteúdo e ORDEM.
-        assertEquals(dtoList, result);
+        // Confere o conteúdo, a ordem e os metadados da página.
+        assertEquals(dtoList, result.getContent());
+        assertEquals(2, result.getTotalElements());
+        assertEquals(1, result.getTotalPages());
+        assertEquals(0, result.getNumber());
 
         // VERIFY
-        verify(repository).findAll();
-        verify(mapper).mapEntityListToDtoList(personList);
+        verify(repository).findAll(pageable);
+        verify(mapper).mapEntityToDto(person1);
+        verify(mapper).mapEntityToDto(person2);
         verifyNoMoreInteractions(repository, mapper);
     }
 
     @Test
-    @DisplayName("findAll: quando não há ninguém, devolve lista vazia sem acionar o mapper")
-    void findAll_whenThereIsNobody_returnsEmptyList() {
+    @DisplayName("findAll: quando não há ninguém, devolve uma página vazia sem acionar o mapper")
+    void findAll_whenThereIsNobody_returnsEmptyPage() {
 
         // ARRANGE
-        when(repository.findAll()).thenReturn(List.of());
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Person> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+
+        when(repository.findAll(pageable)).thenReturn(emptyPage);
 
         // ACT
-        List<PersonDTOV2> result = service.findAll();
+        Page<PersonDTOV2> result = service.findAll(pageable);
 
         // ASSERT
-        // Lista vazia (e não null) é o contrato esperado pelo Controller.
+        // A página vazia (e não null) é o resultado esperado quando não há pessoas.
         assertNotNull(result);
         assertTrue(result.isEmpty());
+        assertEquals(0, result.getTotalElements());
+        assertEquals(0, result.getTotalPages());
 
         // VERIFY
+        verify(repository).findAll(pageable);
         verifyNoInteractions(mapper);
     }
 

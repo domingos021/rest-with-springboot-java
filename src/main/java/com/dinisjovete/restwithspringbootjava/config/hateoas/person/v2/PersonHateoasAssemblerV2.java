@@ -1,6 +1,5 @@
 package com.dinisjovete.restwithspringbootjava.config.hateoas.person.v2;
 
-
 import com.dinisjovete.restwithspringbootjava.controllers.person.v2.PersonControllerV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonDTOV2;
 import org.springframework.stereotype.Component;
@@ -8,93 +7,47 @@ import org.springframework.stereotype.Component;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
-
-/*
+/**
  * ============================================================================
- *
  * PERSON HATEOAS ASSEMBLER V2
- *
  * ============================================================================
  *
  * Responsável por adicionar links HATEOAS ao recurso PersonDTOV2.
  *
- * Importante:
+ * O HATEOAS pertence à camada de representação HTTP. Por isso, esta lógica
+ * fica no assembler, que enriquece o DTO com links navegáveis antes de ele
+ * ser enviado na resposta REST.
  *
- * O HATEOAS pertence à camada de representação HTTP.
- *
- * Ele NÃO deve ficar no:
- *
- *      Service
- *      Mapper
- *      Repository
- *
- * Porque essas camadas trabalham com:
- *
- *      regra de negócio
- *      conversão de dados
- *      persistência
- *
- * O Controller monta a resposta REST e utiliza este assembler para
- * enriquecer o DTO com links navegáveis.
- *
+ * As camadas de serviço, mapeamento e persistência continuam responsáveis,
+ * respectivamente, pelas regras de negócio, conversão de dados e acesso
+ * aos dados.
  * ============================================================================
  */
 @Component
 public class PersonHateoasAssemblerV2 {
 
-
-    /*
-     * ============================================================================
+    /**
+     * Recebe um PersonDTOV2 preenchido e adiciona a ele os links HATEOAS.
      *
-     * ADD LINKS
-     *
-     * ============================================================================
-     *
-     * Recebe um PersonDTOV2 já preenchido pelo Service.
-     *
-     * Exemplo:
-     *
-     *      Service
-     *          |
-     *          v
-     *      PersonDTOV2
-     *          |
-     *          v
-     *      HATEOAS adiciona links
-     *          |
-     *          v
-     *      Resposta HTTP
-     *
-     * ============================================================================
+     * Fluxo:
+     * Service -> PersonDTOV2 -> HATEOAS adiciona links -> resposta HTTP
      */
     public PersonDTOV2 addLinks(PersonDTOV2 person) {
 
-
         Long id = person.getId();
-
-
 
         /*
          * ============================================================================
-         *
          * SELF
-         *
          * ============================================================================
          *
-         * Representa o próprio recurso.
-         *
-         * Informa ao cliente:
-         *
-         * "Este é o endereço para consultar este recurso novamente."
+         * Link para consultar novamente este recurso.
          *
          * Exemplo:
+         *     GET /person/v2/1
          *
-         *      GET /person/v2/1
-         *
-         * Resultado:
-         *
-         *      self -> /person/v2/1
-         *
+         * Relação:
+         *     self -> /person/v2/1
          * ============================================================================
          */
         person.add(
@@ -105,31 +58,19 @@ public class PersonHateoasAssemblerV2 {
                         .withSelfRel()
         );
 
-
-
         /*
          * ============================================================================
-         *
          * UPDATE
-         *
          * ============================================================================
          *
-         * Informa que este recurso pode ser atualizado.
-         *
-         * O cliente descobre que existe uma operação PUT disponível.
+         * Link para a operação de atualização completa do recurso.
          *
          * Exemplo:
+         *     PUT /person/v2/1
          *
-         *      PUT /person/v2/1
-         *
-         * Observação:
-         *
-         * O null representa o corpo da requisição.
-         *
-         * Ele não executa o método update().
-         *
-         * O Spring HATEOAS utiliza o método apenas para construir a URL.
-         *
+         * O `null` representa o corpo da requisição usado para montar a chamada.
+         * O método `update()` não é executado; o Spring HATEOAS usa a chamada
+         * para descobrir e construir a URL do link.
          * ============================================================================
          */
         person.add(
@@ -140,21 +81,38 @@ public class PersonHateoasAssemblerV2 {
                         .withRel("update")
         );
 
-
+        /*
+         * ============================================================================
+         * PATCH
+         * ============================================================================
+         *
+         * Link para a operação de atualização parcial do recurso.
+         *
+         * Exemplo:
+         *     PATCH /person/v2/1
+         *
+         * O `null` representa o corpo da requisição usado para montar a chamada.
+         * O método `patch()` não é executado; o Spring HATEOAS usa a chamada
+         * para descobrir e construir a URL do link.
+         * ============================================================================
+         */
+        person.add(
+                linkTo(
+                        methodOn(PersonControllerV2.class)
+                                .patch(id, null)
+                )
+                        .withRel("patch")
+        );
 
         /*
          * ============================================================================
-         *
          * DELETE
-         *
          * ============================================================================
          *
-         * Informa que este recurso pode ser removido.
+         * Link para remover este recurso.
          *
          * Exemplo:
-         *
-         *      DELETE /person/v2/1
-         *
+         *     DELETE /person/v2/1
          * ============================================================================
          */
         person.add(
@@ -165,29 +123,13 @@ public class PersonHateoasAssemblerV2 {
                         .withRel("delete")
         );
 
-
-
         /*
          * ============================================================================
-         *
          * RETORNO
-         *
          * ============================================================================
          *
-         * Retorna o próprio DTO agora enriquecido com links HATEOAS.
-         *
-         * Antes:
-         *
-         *      PersonDTOV2
-         *
-         * Depois:
-         *
-         *      PersonDTOV2
-         *          |
-         *          +-- self
-         *          +-- update
-         *          +-- delete
-         *
+         * Retorna o próprio DTO, agora enriquecido com os links:
+         *     self, update, patch e delete.
          * ============================================================================
          */
         return person;

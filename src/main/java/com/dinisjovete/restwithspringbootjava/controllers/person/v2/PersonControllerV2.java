@@ -4,19 +4,22 @@ import com.dinisjovete.restwithspringbootjava.config.hateoas.person.v2.PersonHat
 import com.dinisjovete.restwithspringbootjava.config.mediatypes.CustomMediaType;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonInsertDTOV2;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonPatchDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonUpdateDTOV2;
 import com.dinisjovete.restwithspringbootjava.services.person.v2.PersonServiceV2;
 import jakarta.validation.Valid;
-import org.springframework.hateoas.CollectionModel;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 /*
  * ============================================================================
@@ -60,6 +63,7 @@ public class PersonControllerV2 implements PersonControllerDocsV2 { // documenta
     // =========================================================================
     private final PersonServiceV2 service;
     private final PersonHateoasAssemblerV2 assemblerV2; // adiciona os links HATEOAS aos DTOs
+    private final PagedResourcesAssembler<PersonDTOV2> pagedAssembler; // monta o PagedModel com os links de paginação
 
     // =========================================================================
     // Construtor utilizado pelo Spring para realizar a Injeção de Dependência.
@@ -67,9 +71,14 @@ public class PersonControllerV2 implements PersonControllerDocsV2 { // documenta
     // A partir do Spring Boot 3.x, quando existe apenas um construtor,
     // a anotação @Autowired não é mais necessária.
     // =========================================================================
-    public PersonControllerV2(PersonServiceV2 personService, PersonHateoasAssemblerV2 personHateoasAssembler) {
+    public PersonControllerV2(
+            PersonServiceV2 personService,
+            PersonHateoasAssemblerV2 personHateoasAssembler,
+            PagedResourcesAssembler<PersonDTOV2> pagedAssembler
+    ) {
         this.service = personService;
         this.assemblerV2 = personHateoasAssembler;
+        this.pagedAssembler = pagedAssembler;
     }
 
     /*
@@ -226,23 +235,38 @@ public class PersonControllerV2 implements PersonControllerDocsV2 { // documenta
 
     /*
      * ============================================================================
-     * GET /person/v2  ->  LISTAR TODAS AS PESSOAS (com HATEOAS)
+     * GET /person/v2  ->  LISTAR PESSOAS COM PAGINAÇÃO (com HATEOAS)
      * ============================================================================
      *
-     * Retorna todos os registros de pessoas com suporte completo a HATEOAS
+     * Retorna uma PÁGINA de registros de pessoas com suporte completo a HATEOAS
      * (Hypermedia as the Engine of Application State).
      *
      * POR QUE FAZEMOS ISSO?
-     * Para transformar uma listagem comum em uma API HATEOAS, permitindo que o
-     * cliente navegue pela API através de links dinâmicos e auto-descritivos,
-     * tanto para os itens individuais quanto para a coleção como um todo.
+     * Para não carregar a tabela inteira a cada requisição. O cliente pede só a
+     * página que precisa e navega entre elas pelos links dinâmicos (first, prev,
+     * self, next, last) que a própria API devolve, além dos links individuais de
+     * cada item.
+     *
+     * Parâmetros (opcionais, vêm na URL):
+     *
+     *      page  número da página, começando em 0      (padrão: 0)
+     *      size  quantidade de itens por página        (padrão: 10, máximo: 100)
+     *      sort  campo e direção, ex.: lastName,desc   (padrão: firstName,asc)
+     *
+     *      GET http://localhost:8080/person/v2
+     *      GET http://localhost:8080/person/v2?page=1&size=12&sort=lastName,desc
+     *
+     * O tamanho máximo (100) é definido no application.properties:
+     *
+     *      spring.data.web.pageable.max-page-size=100
      *
      * Respostas:
      *
-     *      200 OK  sempre. Se não houver ninguém, a coleção vem vazia (isso não é erro).
+     *      200 OK           sempre. Se não houver ninguém, a página vem vazia (isso não é erro).
+     *      400 Bad Request  parâmetros inválidos (ex.: sort por um campo que não existe)
      * ============================================================================
      */
-    // @Override: implementa findAll() de PersonControllerDocsV2.
+// @Override: implementa findAll(Pageable) de PersonControllerDocsV2.
     @Override
     @GetMapping(
             value = "",
@@ -254,27 +278,32 @@ public class PersonControllerV2 implements PersonControllerDocsV2 { // documenta
                     CustomMediaType.APPLICATION_YAML_VALUE
             }
     )
-    public CollectionModel<PersonDTOV2> findAll() {
+    public ResponseEntity<PagedModel<PersonDTOV2>> findAll(
+            // Expõe page, size e sort como parâmetros separados no Swagger.
+            @ParameterObject
+            // Valores padrão quando a URL não informa size ou sort.
+            @PageableDefault(
+                    page = 1,
+                    size = 10,
+                    sort = "firstName",
+                    direction = Sort.Direction.ASC
+            )
+            Pageable pageable
+    ) {
 
-        // 1º Passo: Acessa o banco via Service para buscar os dados brutos (DTOs).
-        // Motivo: o Service/Repository gerencia a persistência, retornando uma lista comum do Java.
-        List<PersonDTOV2> persons = service.findAll();
+        // 1º Passo: Pede ao Service apenas a página solicitada (e não a tabela inteira).
+        // Motivo: o corte acontece na query (LIMIT/OFFSET) e o retorno é um Page de DTOs,
+        // que já traz os itens e os dados da paginação (total de páginas, total de registros...).
+        Page<PersonDTOV2> page = service.findAll(pageable);
 
-        // 2º Passo: Adiciona os links HATEOAS individuais em cada objeto da lista.
-        // Motivo: cada item da lista precisa expor seus próprios links (ex.: link "self"),
-        // e o 'assemblerV2' concentra essa montagem num único lugar, evitando código duplicado.
-        persons.forEach(assemblerV2::addLinks);
+        // 2º Passo: Monta o PagedModel e adiciona os links HATEOAS individuais em cada item.
+        // Motivo: o PagedResourcesAssembler cria sozinho os links da paginação
+        // (first, prev, self, next, last) a partir da URL da requisição, e o
+        // 'assemblerV2::addLinks' continua montando os links de cada item (ex.: "self").
+        PagedModel<PersonDTOV2> model = pagedAssembler.toModel(page, assemblerV2::addLinks);
 
-        // 3º Passo: Empacota a lista em um CollectionModel e adiciona o link da própria coleção.
-        // Motivo: o Spring HATEOAS exige um 'CollectionModel' para conseguir anexar links
-        // referentes à coleção inteira (como o link 'self' da listagem).
-        return CollectionModel.of(persons,
-                linkTo(
-                        methodOn(PersonControllerV2.class)
-                                .findAll()
-                )
-                        .withSelfRel() // link "self" da coleção
-        );
+        // 3º Passo: Devolve 200 OK com a página, os itens e todos os links.
+        return ResponseEntity.ok(model);
     }
 
 
@@ -457,6 +486,64 @@ public class PersonControllerV2 implements PersonControllerDocsV2 { // documenta
         return ResponseEntity.noContent().build(); // 204, sem conteúdo no corpo
     }
 
+    /*
+       ============================================================================
+       - PATCH /person/v2/{id}  ->  ATUALIZAÇÃO PARCIAL DE UMA PESSOA
+       ============================================================================
+        *
+        *      PATCH http://localhost:8080/person/v2/1
+        *
+        * O ID vem pela URL (@PathVariable) e apenas os campos que precisam ser
+        * alterados vêm no corpo da requisição (@RequestBody). Campos omitidos
+        * permanecem inalterados no banco de dados.
+        *
+        * Respostas:
+        *      200 OK          pessoa atualizada parcialmente (corpo: PersonDTOV2 com links)
+        *      400 Bad Request corpo malformado ou ID que não é número
+        *      404 Not Found   ID inexistente
+        *      415 Unsupported Media Type  Content-Type fora de JSON/XML/YAML
+        *
+        * ----------------------------------------------------------------------------
+        * EXEMPLO DE JSON PARA O PATCH (Atualizar apenas o primeiro nome e o telefone)
+        * ----------------------------------------------------------------------------
+        *      {
+        *        "firstName": "Ayrton",
+        *        "phone": "+55 11 98888-8888"
+        *      }
+       ============================================================================
+        */
+    // @Override: implementa o método patch correspondente na interface de documentação (PersonControllerDocsV2).
+    @Override
+    @PatchMapping(
+            value = "/{id}",
+            consumes = {
+                    MediaType.APPLICATION_JSON_VALUE,
+                    MediaType.APPLICATION_XML_VALUE,
+                    CustomMediaType.APPLICATION_YAML_VALUE
+            },
+            produces = {
+                    MediaType.APPLICATION_JSON_VALUE,
+                    MediaType.APPLICATION_XML_VALUE,
+                    CustomMediaType.APPLICATION_YAML_VALUE
+            }
+    )
+    public PersonDTOV2 patch(
+            @PathVariable("id") Long id,
+            @RequestBody PersonPatchDTOV2 personPatch // DTO contendo apenas os campos opcionais/parciais
+    ) {
+        /*
+         * Fluxo da requisição PATCH:
+         * 1. Recebe o ID da URL e o payload parcial com os dados a alterar.
+         * 2. Delega para o Service realizar a busca, identificar quais campos foram preenchidos (não nulos)
+         *    e aplicar as alterações de forma seletiva na entidade.
+         * 3. Salva no banco de dados.
+         * 4. Converte em DTO, adiciona os links HATEOAS via assembler e retorna 200 OK.
+         */
+        return assemblerV2.addLinks(
+                service.patch(id, personPatch)
+        );
+    }
+
 }
 
 //Swagger UI: http://localhost:8080/swagger-ui/index.html
@@ -476,4 +563,22 @@ MOdelo de criação
   "gender": "Male",
   "role": "CLIENT"
 }
+ */
+
+/*
+ * Exemplo de requisição paginada:
+ *
+ * GET /person/v2?page=0&size=12&sort=firstName,asc
+ *  http://localhost:8080/person/v2?page=0&size=10&sort=lastName,asc
+ *
+ * Query params:
+ * - page: número da página, começando em 0 (a primeira página é 0).
+ * - size: quantidade de pessoas por página.
+ * - sort: campo usado para ordenar e direção da ordenação.
+ *         Neste exemplo, ordena por firstName em ordem crescente.
+ *
+ * O Spring reúne esses parâmetros no objeto Pageable. O controller o envia
+ * ao service, que consulta o repositório e retorna somente a página solicitada.
+ * O PagedResourcesAssembler transforma o resultado em um PagedModel com os
+ * dados da página e os links HATEOAS de navegação.
  */

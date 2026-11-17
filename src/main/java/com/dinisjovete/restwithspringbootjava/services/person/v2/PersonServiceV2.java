@@ -2,6 +2,7 @@ package com.dinisjovete.restwithspringbootjava.services.person.v2;
 
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonInsertDTOV2;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonPatchDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonUpdateDTOV2;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.enums.PersonRole;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
@@ -14,6 +15,8 @@ import com.dinisjovete.restwithspringbootjava.repositories.PersonRepository;
 import com.dinisjovete.restwithspringbootjava.repositories.book.BookRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,24 +83,19 @@ public class PersonServiceV2 {
     }
 
     /*
-     * FIND ALL
-     * Lista todas as pessoas convertendo cada entidade em DTO de resposta.
+     * FIND ALL COM PAGINAÇÃO
+     * Busca uma página de pessoas no repositório usando as informações de
+     * paginação recebidas em `pageable` (página, tamanho e ordenação).
+     * Converte cada entidade Person em PersonDTOV2 e preserva os metadados
+     * da página, como número da página, tamanho e total de registros.
      */
     @Transactional(readOnly = true)
-    public List<PersonDTOV2> findAll() {
+    public Page<PersonDTOV2> findAll(Pageable pageable) {
+        logger.info("Finding all Persons with pagination!");
 
-        logger.info("Finding all Persons!");
-
-        List<Person> persons = repository.findAll();
-
-        // Adicionado apenas este "if" para não chamar o mapper se a lista vier vazia
-        if (persons.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        return mapper.mapEntityListToDtoList(persons);
+        return repository.findAll(pageable)
+                .map(mapper::mapEntityToDto);
     }
-
 
 
     /*
@@ -221,6 +219,31 @@ public class PersonServiceV2 {
         }
 
         repository.delete(entity);
+    }
+
+    /*
+- ============================================================================
+- PATCH
+- ============================================================================
+- Busca a entidade existente pelo ID. Utiliza o MapStruct para atualizar
+- apenas os campos informados no PersonPatchDTOV2 (graças à estratégia de
+- ignorar nulos), preservando os demais dados e salvando no banco.
+- ============================================================================
+     */
+    @Transactional
+    public PersonDTOV2 patch(Long id, PersonPatchDTOV2 patchDTO) {
+
+        logger.info("Patching one Person!");
+
+        Person entity = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND_MESSAGE));
+
+        // Atualiza in-place apenas os campos presentes no DTO (campos null são ignorados)
+        mapper.updateEntityFromPatchDTO(patchDTO, entity);
+
+        Person patchedPerson = repository.save(entity);
+
+        return mapper.mapEntityToDto(patchedPerson);
     }
 }
 

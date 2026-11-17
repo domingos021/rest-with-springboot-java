@@ -17,6 +17,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -277,70 +282,112 @@ class PersonControllerV2Test {
     }
 
     // ========================================================================
-    // GET /person/v2  ->  findAll
-    // ========================================================================
+// GET /person/v2 -> findAll
+// ========================================================================
 
     @Test
-    @DisplayName("GET /: responde 200 com a lista, o link de cada item e o link self da coleção")
+    @DisplayName("GET /: responde 200 com a página, links dos itens e links de navegação")
     void findAll_whenThereArePeople_returns200WithItemsAndLinks() throws Exception {
 
         // ARRANGE
-        when(service.findAll())
-                .thenReturn(List.of(input.mockDTO(1), input.mockDTO(2)));
+        List<PersonDTOV2> people = List.of(
+                input.mockDTO(1),
+                input.mockDTO(2)
+        );
+
+        // Simula a primeira página com 2 itens e 4 registros no total.
+        // Assim, existe uma próxima página e o link "next" deve ser incluído.
+        Pageable pageable = PageRequest.of(0, 2);
+        Page<PersonDTOV2> page = new PageImpl<>(people, pageable, 4);
+
+        when(service.findAll(any(Pageable.class))).thenReturn(page);
 
         // ACT + ASSERT
-        // No HAL, uma coleção vem dentro de "_embedded". O NOME da lista é gerado
-        // a partir do nome da classe (PersonDTOV2 -> personDTOV2List). Se você usar
-        // @Relation no DTO, ajuste este nome.
+        // No HAL, os itens da página ficam dentro de "_embedded".
+        // O nome da lista deriva do tipo do recurso (PersonDTOV2 -> personDTOV2List).
+        // O PagedModel também inclui os metadados da página e links de navegação.
         mockMvc.perform(get(BASE_URL)
+                        .param("page", "0")
+                        .param("size", "2")
                         .accept(MediaType.APPLICATION_JSON))
                 .andDo(print()) // <-- imprime no console
                 .andExpect(status().isOk())
-                //.andExpect(status().isNotFound()); //da erro
                 /*
-                 * Com Spring HATEOAS, um CollectionModel<PersonDTOV2> gera:
+                 * Exemplo da estrutura HAL paginada:
                  * {
                  *   "_embedded": { "personDTOV2List": [ {...}, {...} ] },
-                 *   "_links": { "self": { "href": ".../person" } }
+                 *   "_links": {
+                 *     "self": { "href": "..." },
+                 *     "next": { "href": "..." }
+                 *   },
+                 *   "page": {
+                 *     "size": 2,
+                 *     "totalElements": 4,
+                 *     "totalPages": 2,
+                 *     "number": 0
+                 *   }
                  * }
-                 * "$" = raiz do JSON | "." = entra no campo | "[0]" = item da lista
+                 *
+                 * "$" = raiz do JSON | "." = entra no campo | "[0]" = primeiro item
                  */
                 .andExpect(jsonPath("$._embedded.personDTOV2List", hasSize(2)))
 
-                // primeiro item
+                // Primeiro item e seu link HATEOAS "self"
                 .andExpect(jsonPath("$._embedded.personDTOV2List[0].ID_usuário").value(1))
                 .andExpect(jsonPath("$._embedded.personDTOV2List[0].Nome").value("First Name Test1"))
                 .andExpect(jsonPath("$._embedded.personDTOV2List[0]._links.self.href",
                         endsWith(BASE_URL + "/1")))
 
-                // segundo item
+                // Segundo item e seu link HATEOAS "self"
                 .andExpect(jsonPath("$._embedded.personDTOV2List[1].ID_usuário").value(2))
                 .andExpect(jsonPath("$._embedded.personDTOV2List[1]._links.self.href",
                         endsWith(BASE_URL + "/2")))
 
-                // link da própria coleção
-                .andExpect(jsonPath("$._links.self.href", endsWith(BASE_URL)));
+                // Metadados da página
+                .andExpect(jsonPath("$.page.size").value(2))
+                .andExpect(jsonPath("$.page.totalElements").value(4))
+                .andExpect(jsonPath("$.page.totalPages").value(2))
+                .andExpect(jsonPath("$.page.number").value(0))
+
+                // Links de navegação da página
+                .andExpect(jsonPath("$._links.self.href").exists())
+                .andExpect(jsonPath("$._links.next.href").exists());
+
         // VERIFY
-        verify(service).findAll();
+        verify(service).findAll(any(Pageable.class));
         verifyNoMoreInteractions(service);
     }
 
     @Test
-    @DisplayName("GET /: quando não há ninguém, responde 200 (e não 404) com coleção vazia")
-    void findAll_whenThereIsNobody_returns200WithEmptyCollection() throws Exception {
+    @DisplayName("GET /: quando não há ninguém, responde 200 com página vazia")
+    void findAll_whenThereIsNobody_returns200WithEmptyPage() throws Exception {
 
         // ARRANGE
-        when(service.findAll()).thenReturn(List.of());
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<PersonDTOV2> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+
+        when(service.findAll(any(Pageable.class))).thenReturn(emptyPage);
 
         // ACT + ASSERT
-        // Lista vazia é um resultado VÁLIDO, não um erro: o status correto é 200.
-        // No HAL, uma coleção vazia omite "_embedded" e mantém "_links".
+        // Uma página vazia é um resultado válido, não um erro: o status correto é 200.
+        // No HAL, a resposta mantém os links e os metadados da página.
+        // Como não há itens, o HAL omite "_embedded".
         mockMvc.perform(get(BASE_URL)
+                        .param("page", "0")
+                        .param("size", "20")
                         .accept(MediaType.APPLICATION_JSON))
                 .andDo(print()) // <-- imprime no console
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$._embedded").doesNotExist())
-                .andExpect(jsonPath("$._links.self.href", endsWith(BASE_URL)));
+                .andExpect(jsonPath("$.page.size").value(20))
+                .andExpect(jsonPath("$.page.totalElements").value(0))
+                .andExpect(jsonPath("$.page.totalPages").value(0))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$._links.self.href").exists());
+
+        // VERIFY
+        verify(service).findAll(any(Pageable.class));
+        verifyNoMoreInteractions(service);
     }
 
     // ========================================================================

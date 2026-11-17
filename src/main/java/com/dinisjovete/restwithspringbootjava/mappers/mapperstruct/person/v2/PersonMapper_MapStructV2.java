@@ -17,11 +17,10 @@ package com.dinisjovete.restwithspringbootjava.mappers.mapperstruct.person.v2;
 
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonInsertDTOV2;
+import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonPatchDTOV2;
 import com.dinisjovete.restwithspringbootjava.data.dto.person.v2.PersonUpdateDTOV2;
 import com.dinisjovete.restwithspringbootjava.data_model.entities.person.v1.Person;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 
 import java.util.List;
 
@@ -78,4 +77,17 @@ public interface PersonMapper_MapStructV2 {
      * permanecem intactos por segurança (não existem no PersonUpdateDTOV2).
      */
     void updateEntityFromDTO(PersonUpdateDTOV2 dto, @MappingTarget Person entity);
+
+
+    /*
+     * ========================================================================
+     * ATUALIZAÇÃO PARCIAL (PATCH MAPPING)
+     * ========================================================================
+     * O NullValuePropertyMappingStrategy.IGNORE diz ao MapStruct para ignorar
+     * os campos nulos do DTO durante a cópia para a entidade existente.
+     * ========================================================================
+     */
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateEntityFromPatchDTO(PersonPatchDTOV2 dto, @MappingTarget Person entity);
+
 }
